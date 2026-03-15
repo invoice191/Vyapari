@@ -1,0 +1,121 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and role information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "manager", "staff"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Inventory item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "price": { "type": "number" },
+        "stock": { "type": "integer" },
+        "minStock": { "type": "integer" },
+        "margin": { "type": "number" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "category", "price", "stock"]
+    },
+    "Sale": {
+      "title": "Sale",
+      "description": "Transaction record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "itemIds": { "type": "array", "items": { "type": "string" } },
+        "amount": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "items": { "type": "integer" },
+        "category": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "customerName": { "type": "string" }
+      },
+      "required": ["amount", "timestamp"]
+    },
+    "StockLog": {
+      "title": "StockLog",
+      "description": "Inventory stock movement log",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "itemId": { "type": "string" },
+        "quantity": { "type": "integer" },
+        "previousStock": { "type": "integer" },
+        "newStock": { "type": "integer" },
+        "reason": { "type": "string" },
+        "type": { "type": "string", "enum": ["in", "out"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["itemId", "quantity", "type", "timestamp"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "OCR processed invoice",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "vendor": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "items": { "type": "array", "items": { "type": "object" } },
+        "rawText": { "type": "string" }
+      },
+      "required": ["vendor", "amount", "date", "status"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "System activity log",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "action": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "details": { "type": "string" }
+      },
+      "required": ["userId", "action", "timestamp"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "inventory": {
+      "schema": "Product",
+      "description": "Product inventory"
+    },
+    "sales": {
+      "schema": "Sale",
+      "description": "Sales history"
+    },
+    "stock_logs": {
+      "schema": "StockLog",
+      "description": "Inventory stock movement logs"
+    },
+    "invoices": {
+      "schema": "Invoice",
+      "description": "Processed invoices"
+    },
+    "auditLogs": {
+      "schema": "AuditLog",
+      "description": "System audit logs"
+    }
+  }
+}

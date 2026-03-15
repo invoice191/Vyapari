@@ -1,0 +1,93 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+         (request.auth.token.email == "saurabhprajwal2220@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isManager() {
+      return isAuthenticated() && 
+        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager') || isAdmin());
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return data.uid is string && 
+             data.email is string && 
+             data.role in ['admin', 'manager', 'staff'];
+    }
+
+    function isValidProduct(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.category is string &&
+             data.price is number && data.price >= 0 &&
+             data.stock is int && data.stock >= 0;
+    }
+
+    function isValidStockLog(data) {
+      return data.itemId is string &&
+             data.quantity is int &&
+             data.type in ['in', 'out'] &&
+             data.timestamp is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && 
+                    (request.resource.data.role == 'staff' || 
+                     (request.auth.token.email == "saurabhprajwal2220@gmail.com" && request.resource.data.role == 'admin'));
+      allow update: if isAdmin() && isValidUser(request.resource.data);
+    }
+
+    match /inventory/{productId} {
+      allow read: if isAuthenticated();
+      allow create: if isManager() && isValidProduct(request.resource.data);
+      allow update: if isManager() && isValidProduct(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /stock_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if isManager() && isValidStockLog(request.resource.data);
+    }
+
+    match /sales/{saleId} {
+      allow read: if isAuthenticated();
+      allow create: if isManager();
+      allow update: if isAdmin();
+    }
+
+    match /invoices/{invoiceId} {
+      allow read: if isAuthenticated();
+      allow write: if isManager();
+    }
+
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+    }
+  }
+}
