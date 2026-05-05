@@ -151,13 +151,16 @@ function AppContent() {
   );
 
   const SidebarContent = ({ inDrawer = false }: any) => (
-    <div className="flex flex-col h-full py-6">
+    <div className="flex flex-col h-full py-8">
       {!inDrawer && sidebarOpen && (
-        <div className="px-6 mb-10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-ink text-white flex items-center justify-center font-black text-xl border border-neon">V</div>
-            <span className="font-black text-xl tracking-tighter italic">VYAPARI</span>
-          </div>
+        <div className="px-8 mb-12">
+          <motion.div 
+            whileHover={{ scale: 1.05, rotate: -2 }}
+            className="flex items-center gap-4 cursor-pointer"
+          >
+            <div className="w-12 h-12 bg-ink text-white flex items-center justify-center font-black text-2xl border-2 border-neon shadow-[4px_4px_0px_var(--color-neon)]">V</div>
+            <span className="font-black text-3xl tracking-tighter italic">VYAPARI</span>
+          </motion.div>
         </div>
       )}
       
@@ -175,51 +178,59 @@ function AppContent() {
         </div>
       </div>
       
-      <div className="px-6 mt-auto">
+      <div className="px-8 mt-auto">
         <button 
           onClick={logout}
-          className="w-full py-3 border border-ink font-bold text-xs uppercase tracking-widest hover:bg-red-500 hover:text-white transition-colors"
+          className="w-full py-4 border-2 border-ink font-black text-xs uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all shadow-[4px_4px_0px_var(--color-ink)] active:shadow-none active:translate-x-1 active:translate-y-1"
         >
-          Logout
+          Logout_System
         </button>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col selection:bg-neon selection:text-ink">
       {/* Top Nav */}
-      <header className="h-16 bg-white border-b border-ink flex items-center px-4 sm:px-6 sticky top-0 z-[200] gap-2 sm:gap-4">
-        <button
+      <header className="h-20 bg-white/80 backdrop-blur-xl border-b-4 border-ink flex items-center px-6 sm:px-10 sticky top-0 z-[200] gap-4 sm:gap-8 shadow-[0_4px_30px_rgba(0,0,0,0.05)]">
+        <motion.button
+          whileHover={{ scale: 1.1, rotate: 90 }}
+          whileTap={{ scale: 0.9 }}
           onClick={() => isMobile ? setDrawerOpen(o => !o) : setSidebarOpen(o => !o)}
-          className="text-2xl hover:text-neon transition-colors flex-shrink-0"
+          className="w-10 h-10 border-2 border-ink flex items-center justify-center text-xl hover:bg-neon transition-colors flex-shrink-0 shadow-[2px_2px_0px_var(--color-ink)]"
         >
-          {sidebarOpen ? "◂" : "▸"}
-        </button>
+          {sidebarOpen ? "×" : "☰"}
+        </motion.button>
 
-        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-          <div className="text-[8px] sm:text-xs font-black bg-neon text-white px-2 py-0.5 uppercase tracking-widest flex-shrink-0">Live</div>
-          <h1 className="text-xs sm:text-sm font-black tracking-widest truncate">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="neon-badge">Live_Sync</div>
+          <h1 className="text-sm sm:text-lg font-black tracking-[0.1em] truncate italic">
             {moduleTitles[active]}
           </h1>
         </div>
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-3 sm:gap-6 flex-shrink-0">
-          <button className="text-lg sm:text-xl relative hover:scale-110 transition-transform">
+        <div className="flex items-center gap-4 sm:gap-8 flex-shrink-0">
+          <motion.button 
+            whileHover={{ scale: 1.2, rotate: 15 }}
+            className="text-xl relative"
+          >
             🔔
-            <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-neon text-white text-[7px] sm:text-[9px] font-black rounded-full flex items-center justify-center">3</span>
-          </button>
+            <span className="absolute -top-2 -right-2 w-5 h-5 bg-neon text-white text-[10px] font-black border-2 border-ink flex items-center justify-center">3</span>
+          </motion.button>
           
-          <div className="flex items-center gap-2 sm:gap-3 pl-3 sm:pl-6 border-l border-ink/10">
+          <div className="flex items-center gap-4 pl-4 sm:pl-8 border-l-2 border-ink/10">
             <div className="text-right hidden sm:block">
-              <div className="text-[10px] font-black uppercase leading-none truncate max-w-[80px] md:max-w-[120px]">{user.displayName}</div>
-              <div className="text-[8px] text-ink/40 font-bold uppercase tracking-tighter">{profile?.role || 'Admin'}</div>
+              <div className="text-[11px] font-black uppercase leading-none truncate max-w-[150px]">{user.displayName}</div>
+              <div className="text-[9px] text-neon font-black uppercase tracking-widest mt-1">{profile?.role || 'System Admin'}</div>
             </div>
-            <div className="w-8 h-8 sm:w-10 sm:h-10 border border-ink overflow-hidden shadow-[2px_2px_0px_var(--color-ink)] flex-shrink-0">
-              {user.photoURL ? <img src={user.photoURL} alt="profile" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-ink text-white flex items-center justify-center font-black text-xs">{user.displayName?.charAt(0)}</div>}
-            </div>
+            <motion.div 
+              whileHover={{ scale: 1.1, rotate: -5 }}
+              className="w-10 h-10 sm:w-12 sm:h-12 border-2 border-ink overflow-hidden shadow-[4px_4px_0px_var(--color-ink)] flex-shrink-0 bg-white"
+            >
+              {user.photoURL ? <img src={user.photoURL} alt="profile" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-ink text-white flex items-center justify-center font-black text-sm">{user.displayName?.charAt(0)}</div>}
+            </motion.div>
           </div>
         </div>
       </header>
@@ -228,8 +239,8 @@ function AppContent() {
         {/* Sidebar */}
         {!isMobile && (
           <motion.aside 
-            animate={{ width: sidebarOpen ? 260 : 80 }}
-            className="bg-white border-r border-ink sticky top-16 h-[calc(100vh-64px)] overflow-hidden flex-shrink-0"
+            animate={{ width: sidebarOpen ? 300 : 100 }}
+            className="bg-white border-r-4 border-ink sticky top-20 h-[calc(100vh-80px)] overflow-hidden flex-shrink-0 z-[100]"
           >
             <SidebarContent />
           </motion.aside>
@@ -275,10 +286,10 @@ function AppContent() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={active}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3, ease: "circOut" }}
+                initial={{ opacity: 0, scale: 0.98, filter: "blur(10px)" }}
+                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                exit={{ opacity: 0, scale: 1.02, filter: "blur(10px)" }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               >
                 {renderModule()}
               </motion.div>

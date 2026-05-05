@@ -1,15 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;600;900&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Outfit", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-  --font-serif: "Cormorant Garamond", serif;
 
   --color-ink: #0A0A0A;
   --color-paper: #F5F5F4;
   --color-neon: #FF6B35;
-  --color-grid: rgba(10, 10, 10, 0.1);
+  --color-grid: rgba(10, 10, 10, 0.05);
+  --color-glass: rgba(255, 255, 255, 0.4);
 }
 
 @layer base {
@@ -19,32 +19,43 @@
       linear-gradient(var(--color-grid) 1px, transparent 1px),
       linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
     background-size: 40px 40px;
+    background-attachment: fixed;
   }
 
   h1, h2, h3, h4 {
-    @apply font-sans font-bold tracking-tight uppercase;
+    @apply font-sans font-black tracking-tighter uppercase italic;
   }
 }
 
 @layer components {
   .brutal-card {
-    @apply bg-white border border-ink p-6 transition-all duration-200;
-    box-shadow: 4px 4px 0px var(--color-ink);
+    @apply bg-white border-2 border-ink p-6 transition-all duration-300;
+    box-shadow: 6px 6px 0px var(--color-ink);
   }
 
   .brutal-card:hover {
     @apply -translate-x-1 -translate-y-1;
-    box-shadow: 8px 8px 0px var(--color-ink);
+    box-shadow: 12px 12px 0px var(--color-ink);
+  }
+
+  .glass-card {
+    @apply bg-white/40 backdrop-blur-2xl border-2 border-ink p-6 transition-all duration-300;
+    box-shadow: 6px 6px 0px var(--color-ink);
+  }
+
+  .glass-card:hover {
+    @apply -translate-x-1 -translate-y-1;
+    box-shadow: 12px 12px 0px var(--color-ink);
   }
 
   .brutal-btn {
-    @apply px-6 py-3 bg-ink text-white font-bold uppercase tracking-wider transition-all duration-200 border border-ink;
+    @apply px-6 py-3 bg-ink text-white font-black uppercase tracking-widest transition-all duration-200 border-2 border-ink cursor-pointer;
     box-shadow: 4px 4px 0px var(--color-neon);
   }
 
   .brutal-btn:hover {
     @apply -translate-x-0.5 -translate-y-0.5;
-    box-shadow: 6px 6px 0px var(--color-neon);
+    box-shadow: 8px 8px 0px var(--color-neon);
   }
 
   .brutal-btn:active {
@@ -52,26 +63,33 @@
   }
 
   .brutal-input {
-    @apply w-full bg-white border-2 border-ink p-3 font-mono text-xs uppercase tracking-widest outline-none transition-all;
+    @apply w-full bg-white border-2 border-ink p-4 font-mono text-xs uppercase tracking-widest outline-none transition-all;
     box-shadow: 4px 4px 0px var(--color-ink);
   }
 
   .brutal-input:focus {
     @apply bg-neon/5;
-    box-shadow: 6px 6px 0px var(--color-neon);
+    box-shadow: 8px 8px 0px var(--color-neon);
   }
 
-  .neon-card {
-    @apply bg-neon text-ink border-2 border-ink p-6 transition-all duration-200;
-    box-shadow: 4px 4px 0px var(--color-ink);
-  }
-
-  .neon-card:hover {
-    @apply -translate-x-1 -translate-y-1;
-    box-shadow: 8px 8px 0px var(--color-ink);
+  .neon-badge {
+    @apply px-3 py-1 bg-neon text-ink font-black text-[10px] uppercase tracking-[0.2em] border-2 border-ink shadow-[2px_2px_0px_var(--color-ink)];
   }
 
   .data-value {
     @apply font-mono tracking-tighter;
   }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-paper;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-ink border-2 border-paper;
+  }
 }
+

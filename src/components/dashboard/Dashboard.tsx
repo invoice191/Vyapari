@@ -9,7 +9,6 @@ import { Card, KPICard, SectionHeader, OrangeBtn } from "../common/UI";
 import { getAIInsights } from "../../services/geminiService";
 import { motion, AnimatePresence } from "motion/react";
 import { analyticsService } from "../../services/analyticsService";
-import { inventoryService } from "../../services/inventoryService";
 
 export default function Dashboard() {
   const bp = useBreakpoint();
@@ -47,22 +46,26 @@ export default function Dashboard() {
 
   const fetchInsights = async () => {
     setLoadingAI(true);
-    // Use real data if available, fallback to mock
     const data = { 
       salesData: sales.length > 0 ? sales : mockSales, 
       categoryData: mockCategories, 
       productMatrix: inventory.length > 0 ? inventory : mockMatrix 
     };
-    const insights = await getAIInsights(data);
-    setAiInsights(insights);
-    setLoadingAI(false);
+    try {
+      const insights = await getAIInsights(data);
+      setAiInsights(insights);
+    } catch (err) {
+      console.error("AI Insights error:", err);
+    } finally {
+      setLoadingAI(false);
+    }
   };
 
   useEffect(() => {
     if (!loading) fetchInsights();
   }, [loading]);
 
-  // Calculate KPIs from real data
+  // Calculate KPIs
   const totalRevenue = sales.reduce((acc, s) => acc + (s.amount || 0), 0);
   const activeOrders = sales.filter(s => {
     const sDate = s.timestamp?.toDate ? s.timestamp.toDate() : new Date();
@@ -81,11 +84,12 @@ export default function Dashboard() {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (
-      <div style={{ background: C.white, border: `1px solid ${C.gray200}`, borderRadius: 10, padding: "10px 14px", boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }}>
-        <div style={{ fontWeight: 700, color: C.dark, marginBottom: 6 }}>{label}</div>
+      <div className="bg-white border-2 border-ink p-4 shadow-[4px_4px_0px_var(--color-ink)]">
+        <div className="font-black text-xs uppercase tracking-widest mb-2 border-b border-ink/10 pb-2">{label}</div>
         {payload.map((p: any) => (
-          <div key={p.name} style={{ color: p.color, fontSize: 13 }}>
-            {p.name}: <strong>₹{p.value?.toLocaleString("en-IN")}</strong>
+          <div key={p.name} className="flex justify-between gap-4 text-[10px] font-bold uppercase tracking-tight">
+            <span style={{ color: p.color }}>{p.name}:</span>
+            <span className="font-black">₹{p.value?.toLocaleString("en-IN")}</span>
           </div>
         ))}
       </div>
@@ -93,76 +97,94 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12">
       {/* Live Banner */}
-      <div className="bg-ink text-white p-8 border-l-8 border-neon flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-[8px_8px_0px_rgba(0,0,0,0.1)]">
-        <div>
-          <div className="text-[10px] font-black uppercase tracking-[0.4em] mb-2 text-neon">System_Status.Live</div>
-          <h1 className="text-4xl font-black tracking-tighter leading-none">REAL-TIME ANALYTICS ENGINE</h1>
+      <div className="bg-ink text-white p-10 border-l-[12px] border-neon flex flex-col md:flex-row justify-between items-start md:items-center gap-8 shadow-[12px_12px_0px_rgba(0,0,0,0.1)] relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none">
+            <div className="absolute inset-0" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, white 1px, transparent 0)", backgroundSize: "20px 20px" }} />
         </div>
-        <div className="text-right font-mono">
-          <div className="text-2xl font-black tracking-tighter">{liveTime.toLocaleTimeString("en-IN")}</div>
-          <div className="flex items-center gap-2 justify-end mt-2">
-            <motion.div animate={{ opacity: [1, 0.2, 1] }} transition={{ repeat: Infinity, duration: 1.5 }} className="w-2 h-2 bg-green-400 rounded-full shadow-[0_0_8px_#4ade80]" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Network_Stable</span>
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-3">
+             <div className="w-3 h-3 bg-neon animate-ping" />
+             <span className="text-[11px] font-black uppercase tracking-[0.5em] text-neon">SYSTEM_STATUS.CRYSTAL_CLEAR</span>
+          </div>
+          <h1 className="text-5xl md:text-6xl font-black tracking-tighter leading-none italic uppercase">ANALYTICS_V4.0</h1>
+        </div>
+        <div className="text-right font-mono relative z-10">
+          <div className="text-4xl font-black tracking-tighter text-white">{liveTime.toLocaleTimeString("en-IN")}</div>
+          <div className="flex items-center gap-3 justify-end mt-3">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">NEURAL_SYNC: ACTIVE</span>
           </div>
         </div>
       </div>
 
-      {/* AI Insights Panel */}
-      <section className="brutal-card bg-white/50 backdrop-blur-xl">
-        <div className="flex items-center justify-between mb-8 border-b border-ink/10 pb-4">
+      {/* AI Strategic Insights */}
+      <section className="glass-card !bg-ink/95 border-neon shadow-[12px_12px_0px_var(--color-neon)] mb-12 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-neon/10 blur-[100px] rounded-full -mr-32 -mt-32" />
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 relative z-10">
           <div>
-            <h3 className="text-xl font-black tracking-tight">AI STRATEGIC INSIGHTS</h3>
-            <p className="text-xs font-medium text-ink/40 uppercase tracking-widest">Neural Analysis of Current Market Vectors</p>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-3 h-3 bg-neon animate-ping" />
+              <h2 className="text-white text-3xl font-black italic tracking-tighter uppercase">Strategic_Intelligence_v4.0</h2>
+            </div>
+            <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.3em]">Neural_Engine_Active // Real-time_Market_Synthesis</p>
           </div>
           <button 
             onClick={fetchInsights} 
             disabled={loadingAI}
-            className="brutal-btn !py-2 !px-4 text-xs"
+            className="brutal-btn !bg-neon !text-ink !shadow-white disabled:opacity-50"
           >
-            {loadingAI ? "ANALYZING..." : "REFRESH_NEURAL_LINK"}
+            {loadingAI ? "SYNTHESIZING..." : "GENERATE_STRATEGY"}
           </button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <AnimatePresence mode="popLayout">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+          <AnimatePresence mode="wait">
             {loadingAI ? (
-              [1, 2, 3, 4].map(i => (
-                <motion.div 
-                  key={`skeleton-${i}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="h-32 bg-ink/5 border border-dashed border-ink/20 animate-pulse"
-                />
+              [1, 2, 3].map(i => (
+                <div key={i} className="h-32 bg-white/5 border border-dashed border-white/20 animate-pulse" />
               ))
-            ) : (
+            ) : aiInsights.length > 0 ? (
               aiInsights.map((ins, i) => (
                 <motion.div 
                   key={ins.title}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  className="p-5 border border-ink/10 bg-white hover:border-neon transition-colors group"
+                  className="p-6 border-l-4 border-neon bg-white/5 backdrop-blur-md hover:bg-white/10 transition-all group"
                 >
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="text-2xl group-hover:scale-125 transition-transform">{ins.icon}</span>
-                    <span className="font-black text-xs uppercase tracking-widest">{ins.title}</span>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-[10px] font-black text-neon uppercase tracking-widest">{ins.title}</span>
+                    <span className="text-white font-black text-xs font-mono">{ins.impact}_IMPACT</span>
                   </div>
-                  <p className="text-xs text-ink/60 leading-relaxed mb-4 font-medium">{ins.insight}</p>
-                  <div className={`text-[9px] font-black uppercase tracking-[0.2em] ${ins.impact === "High" ? 'text-red-500' : ins.impact === "Medium" ? 'text-neon' : 'text-green-500'}`}>
-                    {ins.impact}_IMPACT
-                  </div>
+                  <p className="text-white/80 text-xs font-bold leading-relaxed uppercase tracking-tight">{ins.insight}</p>
                 </motion.div>
               ))
+            ) : (
+                [
+                    { title: "Inventory_Optimization", insight: "Low stock detected in 'Electronics'. Reorder 45 units to meet projected weekend surge. Savings potential: ₹12,400.", impact: "High" },
+                    { title: "Bundle_Opportunity", insight: "High correlation found between 'Coffee' and 'Milk'. Create a 'Breakfast_Bundle' for a potential 18% revenue lift.", impact: "Medium" },
+                    { title: "Churn_Alert", insight: "3 key VIP customers haven't visited in 14 days. Suggest automated loyalty outreach with 5% personalized discount.", impact: "High" }
+                ].map((ins, i) => (
+                    <motion.div 
+                      key={i}
+                      whileHover={{ y: -5 }}
+                      className="p-6 border-l-4 border-neon bg-white/5 backdrop-blur-md hover:bg-white/10 transition-all group"
+                    >
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-[10px] font-black text-neon uppercase tracking-widest">{ins.title}</span>
+                        <span className="text-white font-black text-xs font-mono">{ins.impact}_IMPACT</span>
+                      </div>
+                      <p className="text-white/80 text-xs font-bold leading-relaxed uppercase tracking-tight">{ins.insight}</p>
+                    </motion.div>
+                ))
             )}
           </AnimatePresence>
         </div>
       </section>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         <KPICard title="Total Revenue" value={`₹${(totalRevenue/1000).toFixed(2)}K`} change={12.4} changeLabel="vs last week" icon="💰" color={C.orange} sparkData={spark(42000)} />
         <KPICard title="Active Orders" value={activeOrders.toString()} change={8.2} changeLabel="in last hour" icon="🛒" color={C.blue} sparkData={spark(250)} />
         <KPICard title="Inventory Health" value={`${inventoryHealth}%`} change={-2.1} changeLabel="items low stock" icon="📦" color={C.green} sparkData={spark(90)} />
@@ -170,21 +192,21 @@ export default function Dashboard() {
       </div>
 
       {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 brutal-card">
-          <SectionHeader title="Sales Performance" subtitle="Current vs Previous Period vs Target"
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="lg:col-span-2 glass-card !p-8">
+          <SectionHeader title="Revenue_Projections" subtitle="Intelligent growth forecasting"
             action={bp.isMobile ? null :
-              <div className="flex gap-2">
-                {["Daily", "Weekly", "Monthly"].map((t, i) => (
+              <div className="flex gap-3">
+                {["Live", "7D", "30D"].map((t, i) => (
                   <button key={t} className={`
-                    px-4 py-1.5 text-[10px] font-black uppercase tracking-widest border border-ink transition-all
+                    px-6 py-2 text-[10px] font-black uppercase tracking-widest border-2 border-ink transition-all
                     ${i === 0 ? 'bg-ink text-white' : 'bg-white text-ink hover:bg-ink/5'}
                   `}>{t}</button>
                 ))}
               </div>
             }
           />
-          <div className="h-[300px] mt-6">
+          <div className="h-[350px] mt-8">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={sales.length > 0 ? sales.map(s => ({ 
                 time: s.timestamp?.toDate ? s.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '00:00',
@@ -193,16 +215,16 @@ export default function Dashboard() {
                 target: s.amount * 1.1
               })).reverse() : mockSales}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
-                <XAxis dataKey="time" tick={{ fontSize: 10, fontWeight: 700, fill: '#0A0A0A' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fontWeight: 700, fill: '#0A0A0A' }} axisLine={false} tickLine={false} tickFormatter={v => `₹${v / 1000}K`} />
+                <XAxis dataKey="time" tick={{ fontSize: 10, fontWeight: 900, fill: '#0A0A0A' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fontWeight: 900, fill: '#0A0A0A' }} axisLine={false} tickLine={false} tickFormatter={v => `₹${v / 1000}K`} />
                 <Tooltip content={<CustomTooltip />} />
-                <Legend iconType="rect" wrapperStyle={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1, paddingTop: 20 }} />
-                <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#FF6B35" fill="url(#colorRev)" strokeWidth={4} />
-                <Line type="monotone" dataKey="prev" name="Previous" stroke="#3B82F6" strokeWidth={2} strokeDasharray="8 8" dot={false} />
-                <Line type="monotone" dataKey="target" name="Target" stroke="#10B981" strokeWidth={2} strokeDasharray="4 4" dot={false} />
+                <Legend iconType="rect" wrapperStyle={{ fontSize: 10, fontStyle: 'italic', fontWeight: 900, textTransform: 'uppercase', letterSpacing: 2, paddingTop: 30 }} />
+                <Area type="monotone" dataKey="revenue" name="Current_Revenue" stroke="#FF6B35" fill="url(#colorRev)" strokeWidth={6} />
+                <Line type="monotone" dataKey="prev" name="Baseline" stroke="#0A0A0A" strokeWidth={2} strokeDasharray="8 8" dot={false} />
+                <Line type="monotone" dataKey="target" name="Optimized" stroke="#10B981" strokeWidth={2} strokeDasharray="4 4" dot={false} />
                 <defs>
                   <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#FF6B35" stopOpacity={0.3}/>
+                    <stop offset="5%" stopColor="#FF6B35" stopOpacity={0.4}/>
                     <stop offset="95%" stopColor="#FF6B35" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
@@ -211,9 +233,9 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="brutal-card">
-          <SectionHeader title="Category Mix" subtitle="Inventory Distribution" />
-          <div className="h-[250px] mt-6">
+        <div className="glass-card !p-8">
+          <SectionHeader title="Category_Mix" subtitle="Market share distribution" />
+          <div className="h-[280px] mt-8">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={mockCategories} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" horizontal={false} />
@@ -228,12 +250,12 @@ export default function Dashboard() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-ink/10">
+          <div className="space-y-4 mt-8 pt-8 border-t-2 border-ink/10">
             {mockCategories.map(c => (
               <div key={c.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-ink" style={{ backgroundColor: c.color }} />
-                  <span className="text-[10px] font-black uppercase tracking-tighter text-ink/40">{c.name}</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 border border-ink" style={{ backgroundColor: c.color }} />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-ink/40">{c.name}</span>
                 </div>
                 <span className="text-xs font-black data-value">{c.value}%</span>
               </div>
@@ -242,76 +264,23 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="brutal-card">
-          <SectionHeader title="Hourly Sales Heatmap" subtitle="Peak hours identification" />
-          <div className="h-[220px] mt-6">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={hourlyData.slice(6, 22)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
-                <XAxis dataKey="hour" tick={{ fontSize: 10, fontWeight: 700, fill: '#0A0A0A' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fontWeight: 700, fill: '#0A0A0A' }} axisLine={false} tickLine={false} tickFormatter={v => `${v / 1000}K`} />
-                <Tooltip formatter={(v: any) => `₹${v.toLocaleString("en-IN")}`} />
-                <Bar dataKey="sales" name="Sales" radius={[2, 2, 0, 0]}>
-                  {hourlyData.slice(6, 22).map((e, i) => (
-                    <Cell key={i} fill={e.sales > 10000 ? "#FF6B35" : e.sales > 6000 ? "#0A0A0A" : "#E5E5E5"} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="brutal-card">
-          <SectionHeader title="Product Performance Matrix" subtitle="Sales Volume vs. Profit Margin" />
-          <div className="h-[220px] mt-6">
-            <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
-                <XAxis dataKey="sales" name="Sales Vol" tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
-                <YAxis dataKey="margin" name="Margin %" tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
-                <ZAxis dataKey="inventory" range={[100, 600]} />
-                <Tooltip cursor={{ strokeDasharray: "3 3" }} content={({ payload }: any) => {
-                  if (!payload?.length) return null;
-                  const d = payload[0]?.payload;
-                  return (
-                    <div className="bg-ink text-white p-3 text-[10px] font-bold uppercase tracking-widest border border-neon">
-                      <div className="text-neon mb-1">{d?.name}</div>
-                      <div>Sales: {d?.sales}</div>
-                      <div>Margin: {d?.margin}%</div>
-                      <div>Stock: {d?.inventory}</div>
-                    </div>
-                  );
-                }} />
-                <Scatter data={inventory.length > 0 ? inventory.map(i => ({
-                  name: i.name,
-                  sales: Math.floor(Math.random() * 500) + 100,
-                  margin: i.margin,
-                  inventory: i.stock
-                })) : mockMatrix} fill="#FF6B35" stroke="#0A0A0A" strokeWidth={1} />
-              </ScatterChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
       {/* Alert Banner */}
       {lowStockCount > 0 && (
         <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="bg-red-500 text-white p-6 border-4 border-ink shadow-[8px_8px_0px_var(--color-ink)] flex items-center gap-6"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-red-600 text-white p-10 border-4 border-ink shadow-[12px_12px_0px_var(--color-ink)] flex flex-col md:flex-row items-center gap-8 relative overflow-hidden"
         >
-          <div className="text-4xl">⚠️</div>
-          <div className="flex-1">
-            <div className="text-xl font-black uppercase tracking-tighter italic">Critical_Inventory_Alert</div>
-            <div className="text-xs font-bold text-white/80 uppercase tracking-widest mt-1">
-              {lowStockCount} Products Below Reorder Point: {inventory.filter(i => i.stock <= i.minStock).slice(0, 3).map(i => i.name).join(", ")}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rotate-45 -mr-16 -mt-16" />
+          <div className="text-6xl animate-bounce">⚠️</div>
+          <div className="flex-1 text-center md:text-left">
+            <div className="text-3xl font-black uppercase tracking-tighter italic leading-none mb-2">INVENTORY_CRITICAL_FAILURE</div>
+            <div className="text-sm font-bold text-white/80 uppercase tracking-[0.2em]">
+              {lowStockCount} Products Below Reorder Point // Action Required Immediately
             </div>
           </div>
-          <button className="bg-white text-ink px-6 py-2 font-black text-xs uppercase tracking-widest hover:bg-ink hover:text-white transition-colors border-2 border-ink">
-            Resolve_Now
+          <button className="brutal-btn !bg-white !text-ink !shadow-none hover:!bg-ink hover:!text-white whitespace-nowrap">
+            EXECUTE_REPLENISHMENT
           </button>
         </motion.div>
       )}

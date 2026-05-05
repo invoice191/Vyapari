@@ -55,42 +55,67 @@ export default function VANI({ onCommand, activeModule }: VANIProps) {
   };
 
   return (
-    <div className="fixed bottom-8 right-8 z-[500] flex flex-col items-end gap-4">
+    <div className="fixed bottom-8 right-8 z-[500] flex flex-col items-end gap-6">
       <AnimatePresence>
         {transcript && (
           <motion.div 
-            initial={{ opacity: 0, y: 10, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="brutal-card bg-ink text-white p-4 max-w-xs text-xs font-black uppercase tracking-widest border-neon"
+            initial={{ opacity: 0, x: 20, filter: "blur(10px)" }}
+            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, x: 20, filter: "blur(10px)" }}
+            className="glass-card !bg-ink !text-white p-6 max-w-xs text-sm font-black uppercase tracking-[0.1em] border-neon shadow-[8px_8px_0px_var(--color-neon)]"
           >
-            <span className="text-neon mr-2">»</span> {transcript}
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-neon animate-pulse" />
+              <span className="text-[10px] text-neon">VANI_LISTENING</span>
+            </div>
+            <span className="leading-relaxed italic">"{transcript}"</span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="relative">
+      <div className="relative group">
         <AnimatePresence>
           {showPulse && (
-            <motion.div 
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 2, opacity: 0 }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-              className="absolute inset-0 bg-neon rounded-full"
-            />
+            <>
+              <motion.div 
+                initial={{ scale: 1, opacity: 0.5 }}
+                animate={{ scale: 2.5, opacity: 0 }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="absolute inset-0 bg-neon/30 border-2 border-neon"
+              />
+              <motion.div 
+                initial={{ scale: 1, opacity: 0.3 }}
+                animate={{ scale: 1.8, opacity: 0 }}
+                transition={{ repeat: Infinity, duration: 1.5, delay: 0.5 }}
+                className="absolute inset-0 bg-white/20 border-2 border-white"
+              />
+            </>
           )}
         </AnimatePresence>
         
-        <button 
+        <motion.button 
+          whileHover={{ scale: 1.1, rotate: 5 }}
+          whileTap={{ scale: 0.9, rotate: -5 }}
           onClick={toggleListening}
           className={`
-            w-16 h-16 rounded-full border-4 border-ink flex items-center justify-center text-2xl
-            shadow-[4px_4px_0px_#000] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all
-            ${isListening ? 'bg-neon text-white' : 'bg-white text-ink hover:bg-neon/10'}
+            w-20 h-20 border-4 border-ink flex items-center justify-center text-3xl
+            shadow-[8px_8px_0px_var(--color-ink)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all z-10 relative
+            ${isListening ? 'bg-neon text-white' : 'bg-white text-ink hover:bg-neon/5'}
           `}
         >
-          {isListening ? "🛑" : "🎤"}
-        </button>
+          {isListening ? (
+            <div className="flex gap-1 items-center">
+              {[0, 1, 2].map(i => (
+                <motion.div 
+                  key={i}
+                  animate={{ height: [8, 24, 8] }}
+                  transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.2 }}
+                  className="w-1.5 bg-white"
+                />
+              ))}
+            </div>
+          ) : "🎤"}
+        </motion.button>
       </div>
     </div>
   );
