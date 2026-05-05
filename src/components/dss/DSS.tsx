@@ -6,7 +6,7 @@ import { C, invoices as mockInvoices } from "../../constants";
 import { useBreakpoint, rv } from "../../hooks/useBreakpoint";
 import { Card, OrangeBtn, SectionHeader, Badge } from "../common/UI";
 import { motion, AnimatePresence } from "motion/react";
-import { getInventorySummary, getInvoicesSummary } from "../../services/dataService";
+import { analyticsService } from "../../services/analyticsService";
 
 // Shared DSS helper
 function DSSInsight({ icon, title, body, color = C.orange }: any) {
@@ -209,11 +209,10 @@ function DSS_InventoryOptimizer() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = getInventorySummary((data) => {
-      setInventory(data);
-      setLoading(false);
-    });
-    return () => unsub();
+    analyticsService.getInventorySummary()
+      .then(data => setInventory(data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   const stockData = inventory.length > 0 ? inventory.map(i => ({
@@ -265,16 +264,15 @@ function DSS_FinancialArchitect() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = getInvoicesSummary((data) => {
-      setInvoices(data);
-      setLoading(false);
-    });
-    return () => unsub();
+    analyticsService.getSalesSummary()
+      .then(data => setInvoices(data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   // Use real data if available
   const currentInvoices = invoices.length > 0 ? invoices : mockInvoices;
-  const totalDue = currentInvoices.filter(i => i.status !== "Paid").reduce((a, b: any) => a + b.amount, 0);
+  const totalDue = currentInvoices.filter(i => i.status !== "Paid").reduce((a, b: any) => a + (b.total_amount || b.amount || 0), 0);
   const projectedSales = 620000 * (1 + salesChange / 100);
   const currentBalance = 879704; // From last month's closing
   const projectedBalance = currentBalance + projectedSales - totalDue;

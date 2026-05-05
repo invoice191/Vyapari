@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth, db } from '../firebase';
-import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
-import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
+import { supabase } from '../supabase';
+import { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
@@ -20,48 +18,65 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (u) => {
-      setUser(u);
-      if (u) {
-        const path = `users/${u.uid}`;
-        try {
-          // Fetch or create profile
-          const docRef = doc(db, 'users', u.uid);
-          const docSnap = await getDoc(docRef);
-          
-          if (docSnap.exists()) {
-            setProfile(docSnap.data());
-          } else {
-            const isAdminEmail = u.email === "saurabhprajwal2220@gmail.com";
-            const newProfile = {
-              uid: u.uid,
-              email: u.email,
-              displayName: u.displayName,
-              role: isAdminEmail ? 'admin' : 'staff', // Assign admin role to default user
-              createdAt: new Date().toISOString()
-            };
-            await setDoc(docRef, newProfile);
-            setProfile(newProfile);
-          }
-        } catch (error) {
-          handleFirestoreError(error, OperationType.WRITE, path);
-        }
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) fetchProfile(session.user);
+      else setLoading(false);
     });
 
-    return () => unsubscribe();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user);
+      } else {
+        setProfile(null);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
+  const fetchProfile = async (u: User) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', u.id)
+        .single();
+        
+      if (data) {
+        setProfile(data);
+      } else {
+        const isAdminEmail = u.email === "saurabhprajwal2220@gmail.com";
+        const newProfile = {
+          id: u.id,
+          email: u.email,
+          role: isAdminEmail ? 'admin' : 'staff',
+        };
+        setProfile(newProfile);
+      }
+    } catch (err) {
+      console.error("Error fetching user profile:", err);
+      // Fallback profile if table doesn't exist or RLS blocks
+      const isAdminEmail = u.email === "saurabhprajwal2220@gmail.com";
+      setProfile({
+        id: u.id,
+        email: u.email,
+        role: isAdminEmail ? 'admin' : 'staff',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const login = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    await supabase.auth.signInWithOAuth({ provider: 'google' });
   };
 
   const logout = async () => {
-    await signOut(auth);
+    await supabase.auth.signOut();
   };
 
   return (

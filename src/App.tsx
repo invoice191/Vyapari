@@ -12,6 +12,7 @@ import UserManagement from "./components/users/UserManagement";
 import AuditLogs from "./components/audit/AuditLogs";
 import Background3D from "./components/common/Background3D";
 import LandingPage from "./components/LandingPage";
+import VANI from "./components/VANI/VANI";
 import { motion, AnimatePresence } from "motion/react";
 import { FirebaseProvider, useAuth } from "./hooks/useAuth";
 import ErrorBoundary from "./components/common/ErrorBoundary";
@@ -103,6 +104,21 @@ function AppContent() {
       case "audit":     return <AuditLogs />;
       default:          return <Dashboard />;
     }
+  };
+
+  const handleVoiceCommand = (cmd: string) => {
+    if (cmd.includes("dashboard") || cmd.includes("home")) setActive("dashboard");
+    if (cmd.includes("report")) setActive("reports");
+    if (cmd.includes("brain") || cmd.includes("dss")) setActive("dss");
+    if (cmd.includes("predict") || cmd.includes("simulate")) setActive("prediction");
+    if (cmd.includes("scan") || cmd.includes("ocr")) setActive("ocr");
+    if (cmd.includes("invoice") || cmd.includes("bill")) setActive("invoices");
+    if (cmd.includes("setting")) setActive("settings");
+    if (cmd.includes("user")) setActive("users");
+    if (cmd.includes("audit") || cmd.includes("history")) setActive("audit");
+    
+    // Action commands
+    if (cmd.includes("logout") || cmd.includes("sign out")) logout();
   };
 
   const moduleTitles: Record<string, string> = {
@@ -270,6 +286,12 @@ function AppContent() {
           </div>
         </main>
       </div>
+
+      {/* VANI Assistant Overlay */}
+      <VANI 
+        activeModule={active} 
+        onCommand={handleVoiceCommand} 
+      />
     </div>
   );
 }

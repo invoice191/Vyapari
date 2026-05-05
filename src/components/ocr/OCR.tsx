@@ -3,6 +3,7 @@ import { C, ocrQueue } from "../../constants";
 import { useBreakpoint, rv } from "../../hooks/useBreakpoint";
 import { Card, SectionHeader, Badge, OrangeBtn } from "../common/UI";
 import { motion, AnimatePresence } from "motion/react";
+import { supabase } from "../../supabase";
 
 export default function OCR() {
   const bp = useBreakpoint();
@@ -10,49 +11,52 @@ export default function OCR() {
   const [selected, setSelected] = useState<any>(null);
   const [queue, setQueue] = useState(ocrQueue);
   const [isUploading, setIsUploading] = useState(false);
+  const [extractedResult, setExtractedResult] = useState<any>(null);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setQueue(prev => prev.map(item => {
-        if (item.status === "Processing") {
-          if (Math.random() > 0.7) {
-            return { ...item, status: "Completed", vendor: "Auto-Detected Vendor", amount: "₹" + (Math.random() * 5000 + 500).toFixed(0) };
-          }
-        }
-        return item;
-      }));
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
+  const handleUpload = async (event: any) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  const handleUpload = () => {
     setIsUploading(true);
-    setTimeout(() => {
-      const newItem = {
-        id: Date.now(),
-        name: "invoice_" + Math.floor(Math.random() * 1000) + ".pdf",
-        status: "Processing",
-        confidence: 0,
-        vendor: "Extracting...",
-        amount: "—"
-      };
-      setQueue([newItem, ...queue]);
-      setIsUploading(false);
-    }, 1500);
-  };
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const base64 = (reader.result as string).split(',')[1];
+        
+        const newItem = {
+          id: Date.now(),
+          name: file.name,
+          status: "Processing",
+          confidence: null as number | null,
+          vendor: "Neural Scanning...",
+          amount: "—"
+        };
+        setQueue(prev => [newItem, ...prev]);
 
-  const extractedData = {
-    vendor: "TechCorp Distributors",
-    invoice_no: "TC-2024-0892",
-    date: "January 15, 2024",
-    items: [
-      { desc: "iPhone 15 Pro (128GB)", qty: 5, unit: 28000, tax: 8400, total: 148400 },
-      { desc: "Apple Watch S9", qty: 3, unit: 42000, tax: 7560, total: 133560 },
-      { desc: "AirPods Pro 2nd Gen", qty: 10, unit: 18000, tax: 10800, total: 190800 },
-    ],
-    subtotal: 444200,
-    gst: 26760,
-    total: 470960,
+        const { data, error } = await supabase.functions.invoke('ocr-service', {
+          body: { image: base64 }
+        });
+
+        if (error) throw error;
+
+        setQueue(prev => prev.map(item => 
+          item.id === newItem.id 
+            ? { ...item, status: "Completed", vendor: data.vendor, amount: `₹${data.total_amount}`, confidence: data.confidence } 
+            : item
+        ));
+        
+        setExtractedResult(data);
+        setSelected(data);
+      } catch (err) {
+        console.error("OCR Error:", err);
+        setQueue(prev => prev.map(item => 
+          item.status === "Processing" ? { ...item, status: "Failed" } : item
+        ));
+      } finally {
+        setIsUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -90,8 +94,15 @@ export default function OCR() {
               <div className="text-6xl mb-6">📁</div>
               <h3 className="text-xl font-black tracking-tight mb-2 uppercase">Drop_Invoices_Here</h3>
               <p className="text-xs font-bold text-ink/40 uppercase tracking-widest mb-8">Support for PDF, JPG, PNG (Max 10MB)</p>
+              <input 
+                type="file" 
+                id="ocr-upload" 
+                className="hidden" 
+                onChange={handleUpload}
+                accept="image/*,.pdf"
+              />
               <button 
-                onClick={handleUpload} 
+                onClick={() => document.getElementById('ocr-upload')?.click()} 
                 disabled={isUploading}
                 className="brutal-btn"
               >
@@ -127,12 +138,9 @@ export default function OCR() {
                       <div className="font-black text-xs uppercase tracking-widest truncate">{item.name}</div>
                       <div className="text-[10px] font-bold text-ink/40 uppercase tracking-widest">{item.vendor}</div>
                     </div>
-                    <div className={`px-2 py-0.5 text-[8px] font-black uppercase tracking-widest border ${
-                      item.status === "Completed" ? 'border-green-500 text-green-500' : 
-                      item.status === "Processing" ? 'border-neon text-neon' : 'border-ink/20 text-ink/40'
-                    }`}>
-                      {item.status}
-                    </div>
+                    {item.confidence && (
+                      <div className="text-[10px] font-black text-neon">{item.confidence}%</div>
+                    )}
                   </motion.div>
                 ))}
               </AnimatePresence>
@@ -152,9 +160,9 @@ export default function OCR() {
           <div className="bg-ink text-white p-6 mb-8 border-l-4 border-neon">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {[
-                { label: "Vendor", value: extractedData.vendor },
-                { label: "Invoice No", value: extractedData.invoice_no },
-                { label: "Date", value: extractedData.date },
+                { label: "Vendor", value: selected?.vendor || "—" },
+                { label: "Invoice No", value: selected?.invoice_no || "—" },
+                { label: "Date", value: selected?.date || "—" },
               ].map(f => (
                 <div key={f.label}>
                   <div className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">{f.label}</div>
@@ -174,18 +182,20 @@ export default function OCR() {
                 </tr>
               </thead>
               <tbody>
-                {extractedData.items.map((item, i) => (
+                {selected?.items?.map((item: any, i: number) => (
                   <tr key={i} className="border-b border-ink/5 last:border-0 hover:bg-neon/5 transition-colors">
-                    <td className="p-3 text-xs font-bold uppercase tracking-tight">{item.desc}</td>
-                    <td className="p-3 text-xs font-black text-right">{item.qty}</td>
-                    <td className="p-3 text-xs font-black text-right data-value">₹{item.total.toLocaleString("en-IN")}</td>
+                    <td className="p-3 text-xs font-bold uppercase tracking-tight">{item.description}</td>
+                    <td className="p-3 text-xs font-black text-right">{item.quantity}</td>
+                    <td className="p-3 text-xs font-black text-right data-value">₹{(item.total || 0).toLocaleString("en-IN")}</td>
                   </tr>
-                ))}
+                )) || (
+                  <tr><td colSpan={3} className="p-12 text-center text-[10px] font-black text-ink/20 uppercase">No_Items_Extracted</td></tr>
+                )}
               </tbody>
               <tfoot className="bg-ink text-white">
                 <tr>
                   <td colSpan={2} className="p-3 text-[10px] font-black uppercase tracking-widest">Total_Payable</td>
-                  <td className="p-3 text-sm font-black text-right data-value tracking-tighter">₹{extractedData.total.toLocaleString("en-IN")}</td>
+                  <td className="p-3 text-sm font-black text-right data-value tracking-tighter">₹{(selected?.total_amount || 0).toLocaleString("en-IN")}</td>
                 </tr>
               </tfoot>
             </table>

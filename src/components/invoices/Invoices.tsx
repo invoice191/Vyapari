@@ -3,7 +3,7 @@ import { C, invoices as mockInvoices } from "../../constants";
 import { useBreakpoint, rv } from "../../hooks/useBreakpoint";
 import { Card, Badge, OrangeBtn, SectionHeader } from "../common/UI";
 import { motion, AnimatePresence } from "motion/react";
-import { getInvoicesSummary } from "../../services/dataService";
+import { invoiceService } from "../../services/invoiceService";
 
 export default function Invoices() {
   const bp = useBreakpoint();
@@ -13,13 +13,26 @@ export default function Invoices() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 10;
+
   useEffect(() => {
-    const unsub = getInvoicesSummary((data) => {
-      setInvoices(data);
+    fetchInvoices();
+  }, [page, search, filterStatus]);
+
+  const fetchInvoices = async () => {
+    setLoading(true);
+    try {
+      const { data, count } = await invoiceService.getInvoices(page, pageSize, search);
+      setInvoices(data || []);
+      setTotalCount(count || 0);
+    } catch (error) {
+      console.error("Failed to fetch invoices:", error);
+    } finally {
       setLoading(false);
-    });
-    return () => unsub();
-  }, []);
+    }
+  };
 
   const currentInvoices = invoices.length > 0 ? invoices : mockInvoices;
 
@@ -29,10 +42,10 @@ export default function Invoices() {
   );
 
   const totals = {
-    total: currentInvoices.reduce((a, i) => a + i.amount, 0),
-    paid: currentInvoices.filter(i => i.status === "Paid").reduce((a, i) => a + i.amount, 0),
-    pending: currentInvoices.filter(i => i.status === "Pending").reduce((a, i) => a + i.amount, 0),
-    overdue: currentInvoices.filter(i => i.status === "Overdue").reduce((a, i) => a + i.amount, 0)
+    total: currentInvoices.reduce((a, i) => a + (i.total_amount || 0), 0),
+    paid: currentInvoices.filter(i => i.status === "Paid").reduce((a, i) => a + (i.total_amount || 0), 0),
+    pending: currentInvoices.filter(i => i.status === "Pending").reduce((a, i) => a + (i.total_amount || 0), 0),
+    overdue: currentInvoices.filter(i => i.status === "Overdue").reduce((a, i) => a + (i.total_amount || 0), 0)
   };
 
   if (loading) return <div style={{ padding: 40, textAlign: "center", color: C.mid }}>Loading invoices...</div>;
@@ -107,10 +120,10 @@ export default function Invoices() {
                     onClick={() => setSelectedInvoice(inv)}
                     className="border-b border-ink/5 last:border-0 hover:bg-neon/5 transition-colors cursor-pointer group"
                   >
-                    <td className="p-4 text-xs font-black text-ink group-hover:text-ink transition-colors uppercase tracking-widest">{inv.id}</td>
-                    <td className="p-4 text-xs font-bold uppercase tracking-tight">{inv.customer}</td>
-                    <td className="p-4 text-[10px] font-black text-ink/40 uppercase tracking-widest">{inv.date}</td>
-                    <td className="p-4 text-xs font-black data-value">₹{inv.amount.toLocaleString("en-IN")}</td>
+                    <td className="p-4 text-xs font-black text-ink group-hover:text-ink transition-colors uppercase tracking-widest">{inv.invoice_number}</td>
+                    <td className="p-4 text-xs font-bold uppercase tracking-tight">{inv.customers?.name || "WALK-IN"}</td>
+                    <td className="p-4 text-[10px] font-black text-ink/40 uppercase tracking-widest">{inv.invoice_date}</td>
+                    <td className="p-4 text-xs font-black data-value">₹{(inv.total_amount || 0).toLocaleString("en-IN")}</td>
                     <td className="p-4"><Badge status={inv.status} /></td>
                     <td className="p-4 text-[10px] font-black text-ink/40 uppercase tracking-widest">{inv.method}</td>
                   </motion.tr>
@@ -152,10 +165,10 @@ export default function Invoices() {
               
               <div className="space-y-4 mb-12">
                 {[
-                  { label: "Customer", val: selectedInvoice.customer },
-                  { label: "Payment Method", val: selectedInvoice.method },
-                  { label: "Due Date", val: "2024-02-15" },
-                  { label: "Tax (18% GST)", val: `₹${(selectedInvoice.amount * 0.18).toLocaleString("en-IN")}` },
+                  { label: "Customer", val: selectedInvoice.customers?.name || "WALK-IN" },
+                  { label: "Payment Method", val: selectedInvoice.payment_method },
+                  { label: "Due Date", val: selectedInvoice.due_date || "N/A" },
+                  { label: "Tax (18% GST)", val: `₹${((selectedInvoice.total_amount || 0) * 0.18).toLocaleString("en-IN")}` },
                 ].map(f => (
                   <div key={f.label} className="flex justify-between items-center border-b-2 border-ink/5 pb-4">
                     <span className="text-[10px] font-black text-ink/40 uppercase tracking-widest">{f.label}</span>

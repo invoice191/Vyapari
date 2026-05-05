@@ -1,18 +1,33 @@
-import { useState } from "react";
-import { C, auditLogsData } from "../../constants";
-import { useBreakpoint, rv } from "../../hooks/useBreakpoint";
+import { useState, useEffect } from "react";
+import { auditService } from "../../services/auditService";
 import { Card, SectionHeader } from "../common/UI";
 import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { motion } from "motion/react";
 
 export default function AuditLogs() {
-  const bp = useBreakpoint();
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 15;
 
-  const filtered = auditLogsData.filter(l =>
-    l.user.toLowerCase().includes(search.toLowerCase()) ||
-    l.action.toLowerCase().includes(search.toLowerCase()) ||
-    l.target.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    fetchLogs();
+  }, [page, search]);
+
+  const fetchLogs = async () => {
+    setLoading(true);
+    try {
+      const { data, count } = await auditService.getLogs(page, pageSize, search);
+      setLogs(data || []);
+      setTotalCount(count || 0);
+    } catch (err) {
+      console.error("Audit fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const activityData = [
     { day: "Mon", info: 18, warning: 4, critical: 0 },
@@ -58,7 +73,7 @@ export default function AuditLogs() {
           <input 
             placeholder="SEARCH_SYSTEM_LOGS_BY_USER_ACTION_OR_TARGET..." 
             value={search} 
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); setPage(1); }}
             className="w-full bg-ink/5 border-2 border-ink p-3 pl-12 font-black text-xs uppercase tracking-widest outline-none focus:bg-neon/10 transition-colors"
           />
         </div>
@@ -72,10 +87,14 @@ export default function AuditLogs() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((log, i) => (
-                <tr key={i} className="border-b border-ink/5 last:border-0 hover:bg-neon/5 transition-colors group">
-                  <td className="p-4 text-xs font-black text-ink uppercase tracking-widest">{log.id}</td>
-                  <td className="p-4 text-xs font-bold uppercase tracking-tight">{log.user}</td>
+              {loading ? (
+                <tr><td colSpan={6} className="p-12 text-center font-black text-ink/20 uppercase">Syncing_Records...</td></tr>
+              ) : logs.length === 0 ? (
+                <tr><td colSpan={6} className="p-12 text-center font-black text-ink/20 uppercase">No_Logs_Available</td></tr>
+              ) : logs.map((log) => (
+                <tr key={log.id} className="border-b border-ink/5 last:border-0 hover:bg-neon/5 transition-colors group">
+                  <td className="p-4 text-xs font-black text-ink uppercase tracking-widest">{log.id.slice(0, 8)}</td>
+                  <td className="p-4 text-xs font-bold uppercase tracking-tight">{log.user_email}</td>
                   <td className="p-4 text-xs font-black uppercase tracking-tight">{log.action}</td>
                   <td className="p-4 text-[10px] font-black text-ink/40 uppercase tracking-widest">{log.module}</td>
                   <td className="p-4">
@@ -85,13 +104,37 @@ export default function AuditLogs() {
                       {log.severity}
                     </span>
                   </td>
-                  <td className="p-4 text-[10px] font-black text-ink/40 uppercase tracking-widest">{log.timestamp}</td>
+                  <td className="p-4 text-[10px] font-black text-ink/40 uppercase tracking-widest">{new Date(log.timestamp).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
+        {/* PAGINATION */}
+        <div className="flex justify-between items-center mt-8">
+          <div className="text-[10px] font-black text-ink/40 uppercase tracking-widest">
+            Showing {logs.length} of {totalCount} Events
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-4 py-2 border-2 border-ink font-black text-[10px] disabled:opacity-20 uppercase"
+            >
+              PREV
+            </button>
+            <button 
+              onClick={() => setPage(p => p + 1)}
+              disabled={logs.length < pageSize}
+              className="px-4 py-2 border-2 border-ink font-black text-[10px] disabled:opacity-20 uppercase"
+            >
+              NEXT
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+

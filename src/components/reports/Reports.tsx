@@ -6,18 +6,9 @@ import { C, R } from "../../constants";
 import { useBreakpoint, rv } from "../../hooks/useBreakpoint";
 import { Card, SectionHeader, Badge, OrangeBtn } from "../common/UI";
 import { motion, AnimatePresence } from "motion/react";
-import { 
-  getDailySales, 
-  getInventorySummary, 
-  getInventoryValuation,
-  addInventoryItem,
-  updateInventoryItem,
-  deleteInventoryItem,
-  getItemLogs,
-  getItemSalesLogs,
-  InventoryItem,
-  StockLog
-} from "../../services/dataService";
+import { analyticsService } from "../../services/analyticsService";
+import { inventoryService } from "../../services/inventoryService";
+
 import { Settings, Download, FileText, Table, FileSpreadsheet, Check, X, Plus, Trash2, History, TrendingUp, User } from "lucide-react";
 
 const REPORT_TREE = [
@@ -344,11 +335,23 @@ function ReportDailySales() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = getDailySales((data) => {
-      setDailyData(data);
-      setLoading(false);
-    });
-    return () => unsub();
+    analyticsService.getSalesSummary()
+      .then(raw => {
+        // Aggregate from invoices into daily buckets
+        const map: Record<string, any> = {};
+        raw.forEach((inv: any) => {
+          const date = (inv.invoice_date || inv.created_at || '').slice(0, 10);
+          if (!map[date]) map[date] = { date, txns: 0, gross: 0, net: 0, tax: 0, profit: 0 };
+          map[date].txns++;
+          map[date].gross += inv.total_amount || 0;
+          map[date].net += inv.total_amount || 0;
+          map[date].tax += (inv.total_amount || 0) * 0.18;
+          map[date].profit += (inv.total_amount || 0) * 0.25;
+        });
+        setDailyData(Object.values(map).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30));
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   const headers = ["Date", "Transactions", "Gross Revenue", "Net Revenue", "Tax", "Net Profit", "Avg Ticket"];
@@ -516,21 +519,20 @@ function ReportLowStock() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = getInventorySummary((data) => {
-      setItems(data.filter(i => i.stock <= i.minStock));
-      setLoading(false);
-    });
-    return () => unsub();
+    analyticsService.getInventorySummary()
+      .then(data => setItems(data.filter((i: any) => (i.stock?.[0]?.quantity ?? i.stock ?? 0) <= (i.min_stock ?? i.minStock ?? 0))))
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   const headers = ["Product", "Category", "Current Stock", "Min Stock", "Shortfall", "Status"];
-  const rows = items.map(r => [
-    r.name, 
-    r.category, 
-    r.stock, 
-    r.minStock, 
-    r.minStock - r.stock, 
-    r.stock === 0 ? "Out of Stock" : "Critical"
+  const rows = items.map((r: any) => [
+    r.name,
+    r.category,
+    r.stock?.[0]?.quantity ?? r.stock ?? 0,
+    r.min_stock ?? r.minStock ?? 0,
+    (r.min_stock ?? r.minStock ?? 0) - (r.stock?.[0]?.quantity ?? r.stock ?? 0),
+    (r.stock?.[0]?.quantity ?? r.stock ?? 0) === 0 ? "Out of Stock" : "Critical"
   ]);
 
   if (loading) return <div className="p-10 text-center font-black text-ink/40 uppercase tracking-widest">Loading low stock data...</div>;
@@ -560,11 +562,22 @@ function ReportInventoryValuation() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = getInventoryValuation((val) => {
-      setData(val);
-      setLoading(false);
-    });
-    return () => unsub();
+    analyticsService.getInventorySummary()
+      .then(items => {
+        const total = items.reduce((a: number, p: any) => a + (p.price || 0) * (p.stock?.[0]?.quantity ?? p.stock ?? 0), 0);
+        const catMap: Record<string, number> = {};
+        items.forEach((p: any) => {
+          const cat = p.category || 'Other';
+          catMap[cat] = (catMap[cat] || 0) + (p.price || 0) * (p.stock?.[0]?.quantity ?? p.stock ?? 0);
+        });
+        setData({
+          totalValue: total,
+          totalItems: items.reduce((a: number, p: any) => a + (p.stock?.[0]?.quantity ?? p.stock ?? 0), 0),
+          categoryBreakdown: Object.entries(catMap).map(([name, value]) => ({ name, value }))
+        });
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="p-10 text-center font-black text-ink/40 uppercase tracking-widest">Calculating valuation...</div>;
@@ -782,40 +795,43 @@ const REPORT_COMPONENTS: Record<string, React.FC> = {
 };
 
 function InventoryManager() {
-  const [items, setItems] = useState<InventoryItem[]>([]);
-  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
-  const [logs, setLogs] = useState<StockLog[]>([]);
+  const [items, setItems] = useState<any[]>([]);
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [logs, setLogs] = useState<any[]>([]);
   const [salesLogs, setSalesLogs] = useState<any[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newItem, setNewItem] = useState<Partial<InventoryItem>>({
+  const [newItem, setNewItem] = useState<any>({
     name: "", category: "Groceries", stock: 0, minStock: 10, price: 0, margin: 15, description: ""
   });
 
   useEffect(() => {
-    const unsub = getInventorySummary(setItems);
-    return () => unsub();
+    inventoryService.getProducts(1, 100)
+      .then(({ data }) => setItems(data || []))
+      .catch(console.error);
   }, []);
 
   useEffect(() => {
     if (selectedItem?.id) {
-      const unsubLogs = getItemLogs(selectedItem.id, setLogs);
-      const unsubSales = getItemSalesLogs(selectedItem.id, setSalesLogs);
-      return () => { unsubLogs(); unsubSales(); };
+      inventoryService.getStockLogs(selectedItem.id)
+        .then(setLogs)
+        .catch(console.error);
     }
   }, [selectedItem]);
 
   const handleAddItem = async () => {
     if (newItem.name && newItem.price !== undefined) {
-      await addInventoryItem(newItem as Omit<InventoryItem, "id">);
+      await inventoryService.createProduct(newItem);
       setShowAddModal(false);
       setNewItem({ name: "", category: "Groceries", stock: 0, minStock: 10, price: 0, margin: 15, description: "" });
+      inventoryService.getProducts(1, 100).then(({ data }) => setItems(data || []));
     }
   };
 
   const handleDeleteItem = async (id: string) => {
     if (window.confirm("Are you sure you want to remove this item?")) {
-      await deleteInventoryItem(id);
+      await inventoryService.deleteProduct(id);
       if (selectedItem?.id === id) setSelectedItem(null);
+      inventoryService.getProducts(1, 100).then(({ data }) => setItems(data || []));
     }
   };
 

@@ -8,7 +8,8 @@ import { useBreakpoint, rv } from "../../hooks/useBreakpoint";
 import { Card, KPICard, SectionHeader, OrangeBtn } from "../common/UI";
 import { getAIInsights } from "../../services/geminiService";
 import { motion, AnimatePresence } from "motion/react";
-import { getSalesSummary, getInventorySummary, seedInitialData } from "../../services/dataService";
+import { analyticsService } from "../../services/analyticsService";
+import { inventoryService } from "../../services/inventoryService";
 
 export default function Dashboard() {
   const bp = useBreakpoint();
@@ -24,17 +25,22 @@ export default function Dashboard() {
   useEffect(() => {
     const t = setInterval(() => setLiveTime(new Date()), 1000);
     
-    // Seed and fetch data
-    seedInitialData().then(() => {
-      const unsubSales = getSalesSummary((data) => setSales(data));
-      const unsubInv = getInventorySummary((data) => setInventory(data));
-      setLoading(false);
-      
-      return () => {
-        unsubSales();
-        unsubInv();
-      };
-    });
+    const fetchData = async () => {
+      try {
+        const [salesData, invData] = await Promise.all([
+          analyticsService.getSalesSummary(),
+          analyticsService.getInventorySummary()
+        ]);
+        setSales(salesData);
+        setInventory(invData);
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
 
     return () => clearInterval(t);
   }, []);
