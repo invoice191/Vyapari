@@ -1,32 +1,38 @@
 import React from "react";
-import { C } from "../../constants";
+import { C } from "../../lib/constants";
 import { ResponsiveContainer, AreaChart, Area } from "recharts";
 import { motion } from "motion/react";
 
 export const formatCurrency = (n: number) => `₹${(n / 1000).toFixed(0)}K`;
 export const formatNum = (n: number) => n.toLocaleString("en-IN");
 
-export function Badge({ status }: { status: string }) {
+export function Badge({ status, className = "", children }: { status?: string, className?: string, children?: React.ReactNode }) {
   const map: Record<string, string> = {
-    Paid: 'border-green-500 text-green-500 bg-green-500/10',
-    Pending: 'border-yellow-500 text-yellow-500 bg-yellow-500/10',
-    Overdue: 'border-red-500 text-red-500 bg-red-500/10',
-    Cancelled: 'border-ink/20 text-ink/40 bg-ink/5',
-    Completed: 'border-green-500 text-green-500 bg-green-500/10',
-    Processing: 'border-neon text-neon bg-neon/10',
-    Failed: 'border-red-500 text-red-500 bg-red-500/10',
-    "Low Risk": 'border-green-500 text-green-500 bg-green-500/10',
-    "Medium Risk": 'border-yellow-500 text-yellow-500 bg-yellow-500/10',
-    "High Risk": 'border-red-500 text-red-500 bg-red-500/10',
+    Paid: 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20 shadow-emerald-500/5',
+    Unpaid: 'text-rose-600 bg-rose-500/10 border-rose-500/20 shadow-rose-500/5',
+    Pending: 'text-amber-600 bg-amber-500/10 border-amber-500/20 shadow-amber-500/5',
+    Overdue: 'text-rose-600 bg-rose-500/10 border-rose-500/20 shadow-rose-500/5',
+    Cancelled: 'text-slate-400 bg-slate-500/10 border-slate-500/20',
+    Completed: 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20',
+    Processing: 'text-brand bg-brand/10 border-brand/20',
+    Failed: 'text-rose-600 bg-rose-500/10 border-rose-500/20',
+    "Almost finished": 'text-amber-600 bg-amber-500/10 border-amber-500/20 shadow-amber-500/5',
+    "Out of stock": 'text-rose-600 bg-rose-500/10 border-rose-500/20 shadow-rose-500/5',
+    Ordered: 'text-indigo-600 bg-indigo-500/10 border-indigo-500/20',
+    Delivered: 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20',
+    "Low Risk": 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20',
+    "Medium Risk": 'text-amber-600 bg-amber-500/10 border-amber-500/20',
+    "High Risk": 'text-rose-600 bg-rose-500/10 border-rose-500/20',
   };
-  const classes = map[status] || 'border-ink/20 text-ink/40 bg-ink/5';
+  const classes = map[status || ""] || 'text-slate-400 bg-slate-500/10 border-slate-500/20';
   return (
     <motion.span 
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`px-3 py-1 border-2 text-[9px] font-black uppercase tracking-[0.2em] whitespace-nowrap inline-block shadow-[2px_2px_0px_var(--color-ink)] ${classes}`}
+      whileHover={{ scale: 1.05 }}
+      className={`px-4 py-1.5 border text-[12px] font-black uppercase tracking-[0.2em] whitespace-nowrap inline-block rounded-full backdrop-blur-md shadow-sm ${classes} ${className}`}
     >
-      {status}
+      {children || status}
     </motion.span>
   );
 }
@@ -35,27 +41,45 @@ export const Card: React.FC<{ children: React.ReactNode, className?: string, onC
   return (
     <motion.div 
       onClick={onClick}
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={onClick ? { y: -4 } : {}}
-      className={`brutal-card bg-white p-8 ${onClick ? 'cursor-pointer' : 'cursor-default'} ${className}`}
+      whileHover={onClick ? { y: -2, scale: 1.001 } : {}}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className={`${className.includes('bg-') ? '' : 'bg-white'} rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-brand/5 p-6 ${onClick ? 'cursor-pointer' : 'cursor-default'} ${className}`}
     >
       {children}
     </motion.div>
   );
 }
 
-export function OrangeBtn({ children, onClick, className = "", secondary = false, small = false, disabled = false }: { children: React.ReactNode, onClick?: any, className?: string, secondary?: boolean, small?: boolean, disabled?: boolean }) {
+export function ActionBtn({ 
+  children, 
+  onClick, 
+  className = "", 
+  secondary = false, 
+  small = false, 
+  disabled = false,
+  type = "button"
+}: { 
+  children: React.ReactNode, 
+  onClick?: any, 
+  className?: string, 
+  secondary?: boolean, 
+  small?: boolean, 
+  disabled?: boolean,
+  type?: "button" | "submit" | "reset"
+}) {
   return (
     <motion.button 
+      type={type}
       onClick={disabled ? undefined : onClick}
-      whileHover={disabled ? {} : { scale: 1.05 }}
-      whileTap={disabled ? {} : { scale: 0.95 }}
+      whileHover={disabled ? {} : { scale: 1.015, y: -1 }}
+      whileTap={disabled ? {} : { scale: 0.98 }}
       className={`
-        brutal-btn transition-all
-        ${small ? '!py-1.5 !px-4 !text-[10px] !shadow-[2px_2px_0px_var(--color-neon)] hover:!shadow-[4px_4px_0px_var(--color-neon)]' : ''}
-        ${secondary ? '!bg-white !text-ink border-2 border-ink !shadow-[4px_4px_0px_var(--color-ink)] hover:!shadow-[8px_8px_0px_var(--color-ink)]' : ''}
-        ${disabled ? 'opacity-50 grayscale cursor-not-allowed shadow-none translate-y-0 translate-x-0' : ''}
+        px-5 py-2.5 rounded-xl font-bold uppercase tracking-wider text-xs transition-all duration-300 shadow-sm
+        ${secondary ? 'bg-white text-slate-800 border border-slate-200 hover:border-slate-300 hover:bg-slate-50' : 'bg-slate-900 text-white shadow-slate-900/5 hover:bg-slate-850'}
+        ${small ? '!py-1.5 !px-3.5 !text-[10px] !rounded-lg' : ''}
+        ${disabled ? 'opacity-50 grayscale cursor-not-allowed shadow-none' : ''}
         ${className}
       `}
     >
@@ -64,56 +88,148 @@ export function OrangeBtn({ children, onClick, className = "", secondary = false
   );
 }
 
-export function KPICard({ title, value, change, changeLabel, icon, color = '#FF6B35', sparkData }: any) {
-  const isPos = change >= 0;
+export function OrangeBtn({ 
+  children, 
+  onClick, 
+  className = "", 
+  disabled = false,
+  type = "button"
+}: { 
+  children: React.ReactNode, 
+  onClick?: any, 
+  className?: string, 
+  disabled?: boolean,
+  type?: "button" | "submit" | "reset"
+}) {
   return (
-    <Card className="group hover:bg-ink hover:text-white transition-all duration-300 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-ink/5 -mr-16 -mt-16 rounded-full group-hover:bg-white/5 transition-colors" />
-      <div className="flex justify-between items-start relative z-10">
-        <div>
-          <div className="text-[10px] font-black text-ink/40 group-hover:text-white/40 uppercase tracking-[0.3em] mb-4">{title}</div>
+    <motion.button 
+      type={type}
+      onClick={disabled ? undefined : onClick}
+      whileHover={disabled ? {} : { scale: 1.015, y: -1 }}
+      whileTap={disabled ? {} : { scale: 0.98 }}
+      className={`
+        px-5 py-2.5 rounded-xl font-bold uppercase tracking-wider text-xs transition-all duration-300 shadow-sm
+        bg-orange-600 text-white shadow-orange-500/20 hover:bg-orange-700
+        ${disabled ? 'opacity-50 grayscale cursor-not-allowed shadow-none' : ''}
+        ${className}
+      `}
+    >
+      {children}
+    </motion.button>
+  );
+}
+
+
+export function KPICard({ title, value, change, changeLabel, icon, color = '#4f46e5', sparkData, onClick }: any) {
+  const isPos = change >= 0;
+  const [mousePos, setMousePos] = React.useState({ x: 50, y: 50 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setMousePos({ x, y });
+  };
+
+  return (
+    <Card 
+      className={`group relative border border-white/5 bg-slate-950 hover:bg-slate-900 transition-all duration-500 overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/20' : ''}`} 
+      onClick={onClick}
+    >
+      <div 
+        onMouseMove={handleMouseMove}
+        className="absolute inset-0 opacity-40 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-0"
+        style={{ 
+          background: `radial-gradient(circle at ${mousePos.x}% ${mousePos.y}%, ${color}25 0%, transparent 70%)` 
+        }}
+      />
+      
+      <div className="flex justify-between items-start relative z-10 p-7">
+        <div className="space-y-5">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: color, color }} />
+            <div className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">{title}</div>
+          </div>
           <motion.div 
-            initial={{ opacity: 0, x: -10 }}
+            initial={{ opacity: 0, x: -5 }}
             animate={{ opacity: 1, x: 0 }}
-            className="text-4xl font-black tracking-tighter mb-4 italic"
+            className="text-4xl font-black tracking-tighter text-white drop-shadow-sm"
           >
             {value}
           </motion.div>
           <div className="flex items-center gap-3">
-            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 border-2 ${isPos ? 'border-green-500 text-green-500' : 'border-red-500 text-red-500'}`}>
-              {isPos ? "▲" : "▼"} {Math.abs(change)}%
+            <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg border ${isPos ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/10' : 'border-rose-500/20 text-rose-400 bg-rose-500/10'}`}>
+              {isPos ? "↑" : "↓"} {Math.abs(change)}%
             </span>
-            <span className="text-[9px] font-black text-ink/30 group-hover:text-white/30 uppercase tracking-[0.1em]">{changeLabel}</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{changeLabel}</span>
           </div>
         </div>
-        <motion.div 
-          whileHover={{ rotate: 15, scale: 1.2 }}
-          className="w-14 h-14 flex items-center justify-center text-3xl border-2 border-ink group-hover:border-white transition-all shadow-[4px_4px_0px_var(--color-ink)] group-hover:shadow-[4px_4px_0px_white]"
-          style={{ background: `${color}20` }}
-        >
-          {icon}
-        </motion.div>
+        <div className="flex flex-col items-end gap-3">
+          <div className="w-14 h-14 flex items-center justify-center text-white border border-white/20 rounded-2xl bg-white/10 transition-all group-hover:border-indigo-500/50 group-hover:bg-indigo-500/10 group-hover:shadow-[0_0_20px_rgba(79,70,229,0.2)]">
+            <span className="text-2xl transform group-hover:scale-110 transition-transform">{icon}</span>
+          </div>
+        </div>
       </div>
+
       {sparkData && (
-        <div className="mt-8 h-12 opacity-30 group-hover:opacity-100 transition-all duration-500">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={sparkData}>
-              <Area type="monotone" dataKey="v" stroke={color} fill={`${color}40`} strokeWidth={4} dot={false} />
-            </AreaChart>
-          </ResponsiveContainer>
+        <div className="mt-8 h-10 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 to-transparent z-10" />
+          <div className="h-full group-hover:scale-y-110 transition-transform duration-700 origin-bottom">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={sparkData}>
+                <defs>
+                  <linearGradient id={`grad-${title}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity={0.4}/>
+                    <stop offset="100%" stopColor={color} stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <Area 
+                  type="monotone" 
+                  dataKey="v" 
+                  stroke={color} 
+                  fill={`url(#grad-${title})`} 
+                  strokeWidth={3} 
+                  dot={false} 
+                  animationDuration={1500}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
     </Card>
   );
 }
 
+export function SkeletonCard() {
+  return (
+    <div className="glass-card animate-pulse !p-6">
+      <div className="flex justify-between items-start">
+        <div className="flex-1 space-y-4">
+          <div className="h-2 bg-slate-100 rounded w-1/3"></div>
+          <div className="h-8 bg-slate-100 rounded w-2/3"></div>
+          <div className="h-2 bg-slate-100 rounded w-1/2"></div>
+        </div>
+        <div className="w-12 h-12 bg-slate-100 rounded-xl"></div>
+      </div>
+    </div>
+  );
+}
+
 export function SectionHeader({ title, subtitle, action }: { title: string, subtitle?: string, action?: React.ReactNode }) {
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-12 border-b-4 border-ink pb-6 relative">
-      <div className="absolute -bottom-1 left-0 w-24 h-1 bg-neon" />
-      <div>
-        <h2 className="text-3xl font-black tracking-tighter uppercase leading-none italic">{title}</h2>
-        {subtitle && <p className="text-[10px] font-black text-ink/40 uppercase tracking-[0.2em] mt-3 italic">{subtitle}</p>}
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8 border-b border-slate-100 pb-6 relative">
+      <div className="relative pl-6 group">
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-600 rounded-full group-hover:h-full transition-all duration-500" />
+        <h2 className="text-base font-extrabold tracking-tight text-slate-900 uppercase leading-snug">
+          {title}
+        </h2>
+        {subtitle && (
+          <div className="flex items-center gap-2 mt-1.5">
+             <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></div>
+             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{subtitle}</p>
+          </div>
+        )}
       </div>
       <div className="flex-shrink-0">
         {action}
@@ -121,4 +237,6 @@ export function SectionHeader({ title, subtitle, action }: { title: string, subt
     </div>
   );
 }
+
+
 

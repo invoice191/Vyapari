@@ -27,6 +27,7 @@
   "exclude": [
     "node_modules",
     "supabase/functions",
-    "server.ts"
+    "server.ts",
+    "vyapari-gateway-main"
   ]
 }

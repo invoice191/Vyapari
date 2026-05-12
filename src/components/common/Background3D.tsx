@@ -1,63 +1,26 @@
-import React, { useRef, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
-
-function Particles({ count = 1500 }) {
-  const mesh = useRef<THREE.Points>(null!);
-
-  const particles = useMemo(() => {
-    const temp = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      temp[i * 3] = (Math.random() - 0.5) * 10;
-      temp[i * 3 + 1] = (Math.random() - 0.5) * 10;
-      temp[i * 3 + 2] = (Math.random() - 0.5) * 10;
-    }
-    return temp;
-  }, [count]);
-
-  useFrame((state) => {
-    const time = state.clock.getElapsedTime();
-    mesh.current.rotation.y = time * 0.05;
-    mesh.current.rotation.x = time * 0.02;
-  });
-
-  return (
-    <points ref={mesh}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={particles.length / 3}
-          array={particles}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <pointsMaterial
-        size={0.015}
-        color="#FF6B35"
-        transparent
-        opacity={0.4}
-        sizeAttenuation
-      />
-    </points>
-  );
-}
+import React from 'react';
 
 export default function Background3D() {
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      zIndex: -1,
-      background: 'linear-gradient(to bottom, #F8F9FA, #FFF0E6)',
-      pointerEvents: 'none'
-    }}>
-      <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
-        <ambientLight intensity={0.5} />
-        <Particles />
-      </Canvas>
+    <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-white">
+      {/* High-Tech Glowing Radial Gradients */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,_rgba(99,102,241,0.06),_transparent_75%)] animate-pulse" style={{ animationDuration: '8s' }} />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,_rgba(14,165,233,0.04),_transparent_60%)] animate-pulse" style={{ animationDuration: '12s' }} />
+      
+      {/* High-Tech HUD Grid Pattern */}
+      <div className="absolute inset-0 opacity-[0.06]">
+        <svg className="w-full h-full">
+          <defs>
+            <pattern id="grid-3d" width="60" height="60" patternUnits="userSpaceOnUse">
+              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-slate-200" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid-3d)" />
+        </svg>
+      </div>
+
+      {/* Ambient Glowing Anchor */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
     </div>
   );
 }

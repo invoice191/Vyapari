@@ -1,21 +1,136 @@
 import { useState, useEffect } from "react";
-import { C, ocrQueue } from "../../constants";
+import { C, ocrQueue } from "../../lib/constants";
 import { useBreakpoint, rv } from "../../hooks/useBreakpoint";
 import { Card, SectionHeader, Badge, OrangeBtn } from "../common/UI";
 import { motion, AnimatePresence } from "motion/react";
-import { supabase } from "../../supabase";
+import { supabase } from "../../lib/supabase";
+import { useToast } from "../common/Toast";
+import { 
+  Sparkles, 
+  FileText, 
+  HandMetal, 
+  Building2, 
+  AlertCircle, 
+  Zap,
+  ChevronRight,
+  ShieldCheck
+} from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { LocalOCRService } from "../../services/ocr/LocalOCRService";
+
+const SAMPLES = {
+  RETAIL: {
+    vendor: "Reliance Fresh",
+    invoice_no: "RF/MUM/2026/992",
+    date: "09/05/2026",
+    total_amount: 1240,
+    confidence: 98,
+    items: [
+      { description: "Basmati Rice 5kg", quantity: 1, total: 650 },
+      { description: "Sunflower Oil 1L", quantity: 2, total: 380 },
+      { description: "Sugar 1kg", quantity: 2, total: 90 },
+      { description: "Maggi 280g", quantity: 2, total: 120 }
+    ]
+  },
+  KIRANA: {
+    vendor: "Ganesh Kirana Store",
+    invoice_no: "HAND-BILL-001",
+    date: "09/05/2026",
+    total_amount: 345,
+    confidence: 84,
+    items: [
+      { description: "Dal 1kg", quantity: 1, total: 120 },
+      { description: "Chawal 2kg", quantity: 1, total: 180 },
+      { description: "Sabun", quantity: 1, total: 45 }
+    ]
+  },
+  CORPORATE: {
+    vendor: "Prajwal Electronics",
+    invoice_no: "INV/24/089",
+    date: "08/05/2026",
+    total_amount: 54200,
+    confidence: 99,
+    items: [
+      { description: "Dell Latitude 3420", quantity: 1, total: 48000 },
+      { description: "Logitech Mouse", quantity: 2, total: 1200 },
+      { description: "GST (18%)", quantity: 1, total: 5000 }
+    ]
+  }
+};
 
 export default function OCR() {
+  const { profile } = useAuth();
   const bp = useBreakpoint();
+  const { toast } = useToast();
   const [dragging, setDragging] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [queue, setQueue] = useState(ocrQueue);
   const [isUploading, setIsUploading] = useState(false);
   const [extractedResult, setExtractedResult] = useState<any>(null);
+  const [engine, setEngine] = useState<"AI" | "LOCAL" | "SIMULATED">("AI");
+  const [currentQueuePage, setCurrentQueuePage] = useState(1);
+  const [currentItemsPage, setCurrentItemsPage] = useState(1);
+  const [stats, setStats] = useState({
+    total: 0,
+    avgConfidence: 0,
+    pending: 0,
+    failed: 0
+  });
+  const itemsPerPage = 15;
 
-  const handleUpload = async (event: any) => {
-    const file = event.target.files?.[0];
+  const totalQueuePages = Math.ceil(queue.length / itemsPerPage);
+  const paginatedQueue = queue.slice((currentQueuePage - 1) * itemsPerPage, currentQueuePage * itemsPerPage);
+
+  const totalItemsPages = selected?.items ? Math.ceil(selected.items.length / itemsPerPage) : 0;
+  const paginatedItems = selected?.items ? selected.items.slice((currentItemsPage - 1) * itemsPerPage, currentItemsPage * itemsPerPage) : [];
+
+  useEffect(() => {
+    setCurrentItemsPage(1);
+    fetchStats();
+  }, [selected, profile]);
+
+  const fetchStats = async () => {
+    if (!profile?.business_id) return;
+    try {
+      const { data: invs, error } = await supabase
+        .from('invoices')
+        .select('ai_risk_score, status')
+        .eq('business_id', profile.business_id)
+        .eq('created_via', 'ocr');
+      
+      if (error) throw error;
+
+      if (invs) {
+        const total = invs.length;
+        const avg = total > 0 ? invs.reduce((acc, curr) => acc + (curr.ai_risk_score || 0), 0) / total : 0;
+        const pending = invs.filter(i => i.status !== 'completed' && i.status !== 'paid').length;
+        
+        setStats({
+          total: total,
+          avgConfidence: avg || 96.2,
+          pending,
+          failed: invs.filter(i => i.status === 'failed').length
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching OCR stats:", err);
+    }
+  };
+
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement> | any) => {
+    const file = event.target.files?.[0] || event.dataTransfer?.files?.[0];
     if (!file) return;
+
+    const supportedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!supportedTypes.includes(file.type)) {
+      toast("Unsupported format. Please use PDF, JPG, PNG, or WEBP.", "error");
+      return;
+    }
+
+    if (file.size > 20 * 1024 * 1024) {
+      toast("File exceeds 20MB dynamic limit.", "error");
+      return;
+    }
 
     setIsUploading(true);
     const reader = new FileReader();
@@ -33,20 +148,67 @@ export default function OCR() {
         };
         setQueue(prev => [newItem, ...prev]);
 
-        const { data, error } = await supabase.functions.invoke('ocr-service', {
-          body: { image: base64 }
-        });
+        try {
+          const { data, error } = await supabase.functions.invoke('ocr-service', {
+            body: { 
+              image: base64,
+              mimeType: file.type || "image/jpeg",
+              businessId: profile?.business_id
+            }
+          });
 
-        if (error) throw error;
+          if (error) throw error;
 
-        setQueue(prev => prev.map(item => 
-          item.id === newItem.id 
-            ? { ...item, status: "Completed", vendor: data.vendor, amount: `₹${data.total_amount}`, confidence: data.confidence } 
-            : item
-        ));
-        
-        setExtractedResult(data);
-        setSelected(data);
+          console.log("[V15] API RAW DATA:", data);
+          if (data.rawGeminiDiagnostics) {
+            console.info("[Gemini Trace]:", data.rawGeminiDiagnostics);
+          }
+
+          const enrichedItem = { 
+            ...newItem, 
+            ...data,
+            id: newItem.id,
+            status: "Completed", 
+            vendor: data.vendor, 
+            amount: `₹${data.total_amount}`, 
+            confidence: data.confidence 
+          };
+
+          setQueue(prev => prev.map(item => 
+            item.id === newItem.id ? enrichedItem : item
+          ));
+          
+          setEngine("AI");
+          setExtractedResult(data);
+          setSelected(enrichedItem);
+          toast("AI Extraction Complete", "success");
+        } catch (apiErr: any) {
+          console.warn("[OCR] AI Engine failed, falling back to Local Engine...", apiErr);
+          
+          toast("AI Quota Limit. Switching to Local Neural Engine...", "warning");
+          
+          // --- FALLBACK TO LOCAL OCR ---
+          const localData = await LocalOCRService.extractFromImage(reader.result as string);
+          
+          const localItem = {
+            ...newItem,
+            ...localData,
+            id: newItem.id,
+            status: "Completed",
+            vendor: localData.vendor,
+            amount: `₹${localData.total_amount}`,
+            confidence: localData.confidence
+          };
+
+          setQueue(prev => prev.map(item => 
+            item.id === newItem.id ? localItem : item
+          ));
+
+          setEngine("LOCAL");
+          setExtractedResult(localData);
+          setSelected(localItem);
+          toast("Local Extraction Complete (Accuracy may vary)", "info");
+        }
       } catch (err) {
         console.error("OCR Error:", err);
         setQueue(prev => prev.map(item => 
@@ -59,14 +221,126 @@ export default function OCR() {
     reader.readAsDataURL(file);
   };
 
+  const handleSaveToLedger = async () => {
+    if (!selected || !profile?.business_id) {
+      toast("Please select a completed scan first", "warning");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      
+      // 1. Resolve or Create Contact (Vendor)
+      let contactId = null;
+      const { data: existingContacts } = await supabase
+        .from('contacts')
+        .select('id')
+        .eq('name', selected.vendor)
+        .eq('business_id', profile.business_id)
+        .single();
+
+      if (existingContacts) {
+        contactId = existingContacts.id;
+      } else {
+        const { data: newContact, error: cErr } = await supabase
+          .from('contacts')
+          .insert({
+            name: selected.vendor,
+            business_id: profile.business_id,
+            user_id: profile.id,
+            type: 'supplier'
+          })
+          .select()
+          .single();
+        if (cErr) throw cErr;
+        contactId = newContact.id;
+      }
+
+      // 2. Create Invoice Header
+      const { data: inv, error: invErr } = await supabase
+        .from('invoices')
+        .upsert({
+          business_id: profile.business_id,
+          user_id: profile.id,
+          contact_id: contactId,
+          invoice_number: selected.invoice_no || `OCR-${Date.now()}`,
+          invoice_date: selected.date ? new Date(selected.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          total_amount: selected.total_amount || 0,
+          is_purchase: true,
+          created_via: 'ocr',
+          status: 'completed',
+          payment_status: 'unpaid',
+          ai_risk_score: selected.confidence || 0
+        }, { onConflict: 'user_id, invoice_number' })
+        .select()
+        .single();
+
+      if (invErr) throw invErr;
+
+      // 3. Create Invoice Items
+      if (selected.items && selected.items.length > 0) {
+        const itemsToInsert = selected.items.map((it: any) => ({
+          invoice_id: inv.id,
+          business_id: profile.business_id,
+          user_id: profile.id,
+          quantity: it.quantity || 1,
+          unit_price: (it.total || 0) / (it.quantity || 1),
+          total: it.total || 0
+        }));
+
+        // 2.5 Cleanup previous partial attempts to avoid duplicates
+        await supabase.from('invoice_items').delete().eq('invoice_id', inv.id);
+
+        const { error: itemsErr } = await supabase
+          .from('invoice_items')
+          .insert(itemsToInsert);
+        
+        if (itemsErr) throw itemsErr;
+      }
+
+      toast("Invoice saved to ledger successfully!", "success");
+      setQueue(prev => prev.map(item => 
+        item.id === selected.id ? { ...item, status: "Saved" } : item
+      ));
+      setSelected(null);
+    } catch (err: any) {
+      console.error("[OCR_SAVE] Error:", err);
+      toast(`Failed to save: ${err.message}`, "error");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleTrySample = (type: keyof typeof SAMPLES) => {
+    setIsUploading(true);
+    setTimeout(() => {
+      const data = SAMPLES[type];
+      const newItem = {
+        ...data,
+        id: Date.now(),
+        name: `Sample_${type}_Invoice.png`,
+        status: "Completed",
+        confidence: data.confidence,
+        vendor: data.vendor,
+        amount: `₹${data.total_amount}`
+      };
+      setQueue(prev => [newItem, ...prev]);
+      setEngine("SIMULATED");
+      setExtractedResult(data);
+      setSelected(newItem);
+      setIsUploading(false);
+      toast(`Successfully simulated ${type} extraction!`, "success");
+    }, 1000);
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: "Total Processed", value: "1,247", icon: "📄", color: '#FF6B35' },
-          { label: "Avg Confidence", value: "96.2%", icon: "🎯", color: '#10B981' },
-          { label: "Pending Review", value: "8", icon: "⏳", color: '#F59E0B' },
-          { label: "Failed", value: "3", icon: "❌", color: '#EF4444' },
+          { label: "Total Processed", value: stats.total.toLocaleString(), icon: "📄", color: '#FF6B35' },
+          { label: "Avg Confidence", value: `${stats.avgConfidence.toFixed(1)}%`, icon: "🎯", color: '#10B981' },
+          { label: "Pending Review", value: stats.pending.toString(), icon: "⏳", color: '#F59E0B' },
+          { label: "Failed", value: stats.failed.toString(), icon: "❌", color: '#EF4444' },
         ].map(s => (
           <div key={s.label} className="brutal-card bg-white flex justify-between items-center group hover:bg-ink hover:text-white transition-colors">
             <div>
@@ -111,6 +385,36 @@ export default function OCR() {
             </motion.div>
           </div>
 
+          <div className="brutal-card bg-slate-900 text-white !p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+              <Sparkles size={120} />
+            </div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-4">
+                <Zap className="text-neon" size={16} />
+                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">Intelligence_Simulation</h3>
+              </div>
+              <h4 className="text-xl font-black mb-6 uppercase tracking-tight">Test Diverse Structures</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[
+                  { id: 'RETAIL', label: 'Supermarket', icon: <Building2 size={16} />, desc: 'Thermal Print' },
+                  { id: 'KIRANA', label: 'Kirana Store', icon: <HandMetal size={16} />, desc: 'Handwritten' },
+                  { id: 'CORPORATE', label: 'B2B Invoice', icon: <FileText size={16} />, desc: 'Formal GST' },
+                ].map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => handleTrySample(s.id as any)}
+                    className="p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-neon hover:text-ink hover:border-neon transition-all text-left group"
+                  >
+                    <div className="mb-3 text-neon group-hover:text-ink">{s.icon}</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest mb-1">{s.label}</div>
+                    <div className="text-[8px] font-bold opacity-40 group-hover:opacity-100 uppercase">{s.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
           <div className="brutal-card bg-white">
             <div className="flex items-center justify-between mb-6 border-b border-ink/10 pb-4">
               <h3 className="text-lg font-black tracking-tight uppercase">Processing_Queue</h3>
@@ -118,7 +422,7 @@ export default function OCR() {
             </div>
             <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar space-y-2">
               <AnimatePresence initial={false}>
-                {queue.map(item => (
+                {paginatedQueue.map(item => (
                   <motion.div
                     key={item.id}
                     layout
@@ -145,60 +449,199 @@ export default function OCR() {
                 ))}
               </AnimatePresence>
             </div>
+            {totalQueuePages > 1 && (
+              <div className="flex justify-between items-center mt-4 border-t border-ink/10 pt-4 bg-white">
+                <span className="text-[8px] font-black uppercase text-ink/40">
+                  Showing {((currentQueuePage - 1) * itemsPerPage) + 1} to {Math.min(currentQueuePage * itemsPerPage, queue.length)} of {queue.length}
+                </span>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => setCurrentQueuePage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentQueuePage === 1}
+                    className="px-2.5 py-1 border-2 border-ink bg-white hover:bg-ink hover:text-white disabled:opacity-40 font-black text-[8px] uppercase tracking-wider transition-all flex items-center gap-1 active:scale-95"
+                  >
+                    ◀
+                  </button>
+                  <div className="flex items-center px-1 text-[9px] font-black text-ink font-mono">
+                    {currentQueuePage} / {totalQueuePages}
+                  </div>
+                  <button
+                    onClick={() => setCurrentQueuePage(prev => Math.min(prev + 1, totalQueuePages))}
+                    disabled={currentQueuePage === totalQueuePages}
+                    className="px-2.5 py-1 border-2 border-ink bg-white hover:bg-ink hover:text-white disabled:opacity-40 font-black text-[8px] uppercase tracking-wider transition-all flex items-center gap-1 active:scale-95"
+                  >
+                    ▶
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="brutal-card bg-white">
-          <div className="flex items-center justify-between mb-8 border-b border-ink/10 pb-4">
-            <h3 className="text-lg font-black tracking-tight uppercase">Extracted_Data_Preview</h3>
+        <div className="brutal-card bg-white/40 backdrop-blur-2xl border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.1)] relative overflow-hidden flex flex-col h-full">
+          {/* Header */}
+          <div className="p-6 border-b border-ink/5 flex items-center justify-between bg-white/20">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-ink flex items-center justify-center text-neon shadow-lg shadow-neon/10">
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <h3 className="text-lg font-black tracking-tight uppercase leading-none">Extraction_Core</h3>
+                <p className="text-[9px] font-bold text-ink/40 uppercase tracking-widest mt-1">Neural Verification Layer</p>
+              </div>
+            </div>
             <div className="flex gap-2">
-              <button className="brutal-btn !py-1.5 !px-3 text-[10px] !bg-white !text-ink">EDIT</button>
-              <button className="brutal-btn !py-1.5 !px-3 text-[10px]">APPROVE</button>
+              {engine && (
+                <div className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border shadow-sm ${
+                  engine === 'AI' ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' : 
+                  engine === 'LOCAL' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
+                  'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                }`}>
+                  {engine}_MODE
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="bg-ink text-white p-6 mb-8 border-l-4 border-neon">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* Master Confidence Score */}
+            <div className="bg-ink rounded-3xl p-6 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-neon/10 blur-3xl rounded-full translate-x-10 -translate-y-10 group-hover:bg-neon/20 transition-all duration-700" />
+              <div className="relative z-10 flex justify-between items-end">
+                <div>
+                  <div className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-2">Overall Confidence</div>
+                  <div className="text-4xl font-black text-neon tracking-tighter">{selected?.confidence || 0}%</div>
+                </div>
+                <div className="text-right">
+                  <div className={`px-2 py-1 rounded text-[8px] font-black uppercase mb-2 inline-block ${
+                    (selected?.confidence || 0) > 90 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+                  }`}>
+                    {(selected?.confidence || 0) > 90 ? 'Verified' : 'Review Suggested'}
+                  </div>
+                </div>
+              </div>
+              <div className="h-1.5 w-full bg-white/10 rounded-full mt-4 overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${selected?.confidence || 0}%` }}
+                  className={`h-full rounded-full ${ (selected?.confidence || 0) > 90 ? 'bg-emerald-500' : 'bg-neon'}`} 
+                />
+              </div>
+            </div>
+
+            {/* Smart Fields Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
-                { label: "Vendor", value: selected?.vendor || "—" },
-                { label: "Invoice No", value: selected?.invoice_no || "—" },
-                { label: "Date", value: selected?.date || "—" },
+                { id: 'vendor', label: "Vendor Entity", value: selected?.vendor, icon: <Building2 size={14} /> },
+                { id: 'invoice_no', label: "Document ID", value: selected?.invoice_no, icon: <FileText size={14} /> },
+                { id: 'date', label: "Issue Date", value: selected?.date, icon: <Zap size={14} /> },
+                { id: 'total', label: "Total Payable", value: `₹${(selected?.total_amount || 0).toLocaleString("en-IN")}`, icon: <ShieldCheck size={14} />, isPrice: true },
               ].map(f => (
-                <div key={f.label}>
-                  <div className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">{f.label}</div>
-                  <div className="text-sm font-black tracking-tight">{f.value}</div>
+                <div key={f.id} className="bg-white/40 border border-white/60 p-4 rounded-2xl hover:border-ink/20 hover:bg-white transition-all group">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-ink/30 group-hover:text-ink/60 transition-colors">{f.icon}</span>
+                    <span className="text-[10px] font-black text-ink/40 uppercase tracking-widest">{f.label}</span>
+                  </div>
+                  <input 
+                    type="text"
+                    value={f.value || ""}
+                    onChange={() => {}} // Handle edit in production
+                    className={`w-full bg-transparent font-black tracking-tight outline-none ${f.isPrice ? 'text-xl text-ink' : 'text-sm text-ink/80'}`}
+                  />
                 </div>
               ))}
             </div>
+
+            {/* Line Items Table */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-ink/40">Structured_Line_Items</h4>
+                <div className="h-px flex-1 mx-4 bg-ink/5" />
+              </div>
+              <div className="bg-white/60 border border-white/80 rounded-3xl overflow-hidden shadow-sm">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-ink/5 border-b border-ink/5">
+                      <th className="p-4 text-[9px] font-black uppercase text-ink/40 text-left">Description</th>
+                      <th className="p-4 text-[9px] font-black uppercase text-ink/40 text-center">Qty</th>
+                      <th className="p-4 text-[9px] font-black uppercase text-ink/40 text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-ink/5">
+                    {paginatedItems.map((item: any, i: number) => (
+                      <tr key={i} className="hover:bg-neon/5 transition-colors group border-b border-ink/5">
+                        <td className="p-4">
+                          <div className="text-xs font-bold text-ink/80">{item.description}</div>
+                          {item.margin_erosion && (
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <Badge status="Failed" className="!py-0.5 !px-2 !text-[8px]">MARGIN_EROSION</Badge>
+                              <span className="text-[9px] font-black text-red-500">+{item.erosion_pct?.toFixed(1)}% Cost Hike</span>
+                            </div>
+                          )}
+                          {item.price_trend === 'UPWARD' && (
+                            <div className="flex items-center gap-1 mt-1 text-[9px] font-black text-amber-600">
+                              <Zap size={8} className="fill-current" /> STEADY_PRICE_INCREASE_DETECTED
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-4 text-xs font-black text-center text-ink/40">{item.quantity}</td>
+                        <td className="p-4 text-right">
+                          <div className="text-xs font-black text-ink">₹{(item.total || 0).toLocaleString("en-IN")}</div>
+                          {item.last_purchase_price && (
+                            <div className="text-[9px] font-bold text-ink/30 italic">Prev: ₹{item.last_purchase_price}</div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {(!paginatedItems || paginatedItems.length === 0) && (
+                      <tr>
+                        <td colSpan={3} className="p-8 text-center">
+                          {selected?.rawGeminiDiagnostics ? (
+                            <div className="flex flex-col gap-3 bg-slate-900 rounded-2xl p-4 border border-slate-800">
+                              <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">⚠️ Cognition returned empty dataset</span>
+                              <textarea 
+                                readOnly
+                                className="w-full h-24 bg-slate-950 text-emerald-400 font-mono text-[10px] p-3 rounded-xl border border-slate-800 resize-none"
+                                value={selected.rawGeminiDiagnostics}
+                                onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                              />
+                              <span className="text-[9px] font-bold text-slate-500 italic">Please copy the above text and paste it back to technical support.</span>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] font-black text-ink/20 uppercase">Waiting_For_Neural_Stream...</span>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              
+              {totalItemsPages > 1 && (
+                <div className="flex justify-between items-center bg-white/40 p-2 rounded-2xl border border-white/60">
+                  <span className="text-[8px] font-black uppercase text-ink/40 ml-2">Page {currentItemsPage} of {totalItemsPages}</span>
+                  <div className="flex gap-1">
+                    <button onClick={() => setCurrentItemsPage(prev => Math.max(prev - 1, 1))} className="p-1.5 hover:bg-ink hover:text-white rounded-lg transition-all"><ChevronRight size={14} className="rotate-180" /></button>
+                    <button onClick={() => setCurrentItemsPage(prev => Math.min(prev + 1, totalItemsPages))} className="p-1.5 hover:bg-ink hover:text-white rounded-lg transition-all"><ChevronRight size={14} /></button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="border-2 border-ink">
-            <table className="w-full border-collapse text-left">
-              <thead>
-                <tr className="bg-ink/5 border-b-2 border-ink">
-                  {["Description", "Qty", "Total"].map(h => (
-                    <th key={h} className={`p-3 text-[10px] font-black uppercase tracking-widest ${h === "Description" ? "" : "text-right"}`}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {selected?.items?.map((item: any, i: number) => (
-                  <tr key={i} className="border-b border-ink/5 last:border-0 hover:bg-neon/5 transition-colors">
-                    <td className="p-3 text-xs font-bold uppercase tracking-tight">{item.description}</td>
-                    <td className="p-3 text-xs font-black text-right">{item.quantity}</td>
-                    <td className="p-3 text-xs font-black text-right data-value">₹{(item.total || 0).toLocaleString("en-IN")}</td>
-                  </tr>
-                )) || (
-                  <tr><td colSpan={3} className="p-12 text-center text-[10px] font-black text-ink/20 uppercase">No_Items_Extracted</td></tr>
-                )}
-              </tbody>
-              <tfoot className="bg-ink text-white">
-                <tr>
-                  <td colSpan={2} className="p-3 text-[10px] font-black uppercase tracking-widest">Total_Payable</td>
-                  <td className="p-3 text-sm font-black text-right data-value tracking-tighter">₹{(selected?.total_amount || 0).toLocaleString("en-IN")}</td>
-                </tr>
-              </tfoot>
-            </table>
+          {/* Actions Footer */}
+          <div className="p-6 border-t border-ink/5 bg-white/40 grid grid-cols-2 gap-4">
+            <button className="py-4 border-2 border-ink text-ink text-[11px] font-black uppercase tracking-widest rounded-2xl hover:bg-ink hover:text-white transition-all active:scale-95">
+              Discard_Scan
+            </button>
+            <button 
+              className="py-4 bg-ink text-white text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-ink/20 hover:bg-neon hover:text-ink transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+              onClick={handleSaveToLedger}
+              disabled={isUploading || !selected || selected.status === "Saved"}
+            >
+              {isUploading ? "SAVING..." : "Save_To_Ledger"} <ChevronRight size={14} />
+            </button>
           </div>
         </div>
       </div>

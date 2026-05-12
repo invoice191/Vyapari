@@ -1,44 +1,26 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { ocrService } from "./ocrService";
+import { dssService } from "./dssService";
+import { invoiceService } from "./invoiceService";
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-const ai = new GoogleGenAI({ apiKey });
+/**
+ * Gemini Service (Legacy Wrapper)
+ * Delegates to specialized services for production reliability.
+ */
+export const geminiService = {
+  // Legacy method preserved for compatibility
+  getAIInsights: async (data: any) => {
+    return await dssService.generateBusinessBriefing(data);
+  },
 
-export async function getAIInsights(data: any) {
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `Analyze the following retail business data and provide 3-4 concise, actionable strategic insights. 
-      Focus on revenue trends, inventory risks, and customer behavior.
-      
-      Data: ${JSON.stringify(data)}`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              insight: { type: Type.STRING },
-              impact: { type: Type.STRING, description: "High, Medium, or Low" },
-              icon: { type: Type.STRING, description: "A single emoji representing the insight" }
-            },
-            required: ["title", "insight", "impact", "icon"]
-          }
-        }
-      }
-    });
+  analyzeInvoice: async (imageBase64: string, mimeType: string) => {
+    return await ocrService.extractFromImage(imageBase64, mimeType);
+  },
 
-    return JSON.parse(response.text || "[]");
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    return [
-      {
-        title: "AI Analysis Unavailable",
-        insight: "We couldn't reach the AI engine. Please check your connection or API key.",
-        impact: "Low",
-        icon: "⚠️"
-      }
-    ];
+  generateBriefing: async (data: any) => {
+    return await dssService.generateBusinessBriefing(data);
+  },
+
+  parseNaturalLanguageInvoice: async (businessId: string, command: string, products: any[]) => {
+    return await invoiceService.parseNaturalLanguageInvoice(businessId, command, products);
   }
-}
+};

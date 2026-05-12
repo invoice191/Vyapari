@@ -1,0 +1,126 @@
+.engine-panel-container {
+  margin-bottom: 2rem;
+}
+
+.engine-icon-container {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 107, 0, 0.1);
+  border: 1px solid rgba(255, 107, 0, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff6b00;
+  box-shadow: 0 0 15px rgba(255, 107, 0, 0.1);
+}
+
+.summary-stat-item {
+  position: relative;
+  transition: background 0.3s ease;
+}
+
+.summary-stat-item:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.summary-stat-item::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 25%;
+  height: 50%;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.summary-stat-item:last-child::after {
+  display: none;
+}
+
+.insight-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.insight-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 107, 0, 0.2);
+  transform: translateX(5px);
+}
+
+/* Custom Table Styles */
+.engine-data-table table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.engine-data-table th {
+  background: #1e1e24;
+  z-index: 10;
+}
+
+/* Recharts Customization */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: rgba(255, 255, 255, 0.05);
+}
+
+.recharts-text {
+  fill: rgba(255, 255, 255, 0.4) !important;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.recharts-tooltip-cursor {
+  fill: rgba(255, 255, 255, 0.03);
+}
+
+/* Scrollbar for tables */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: rgba(255, 107, 0, 0.2);
+  border-radius: 2px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 107, 0, 0.4);
+}
+
+/* Gauge Chart Simulation using PieChart */
+.gauge-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+/* Small Buttons in Header */
+.war-room-btn.small {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.65rem;
+  border-radius: 6px;
+}
+
+/* Tooltip Custom Styles */
+.recharts-default-tooltip {
+  background-color: #0d0d0f !important;
+  border: 1px solid rgba(255, 107, 0, 0.2) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
+}
+
+.recharts-tooltip-label {
+  color: #ff6b00 !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  font-size: 10px !important;
+  margin-bottom: 4px !important;
+}

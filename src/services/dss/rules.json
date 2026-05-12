@@ -1,0 +1,87 @@
+{
+  "_meta": {
+    "version": "3.0",
+    "description": "Vyapari DSS Neural Knowledge Base — Professional Grade Thresholds",
+    "last_tuned_by": "DeepMind Agentic Suite",
+    "tuned_at": "2026-05-12T10:00:00Z"
+  },
+  "inventory": {
+    "deadStockDays": 60,
+    "slowMoverDays": 30,
+    "criticalStockMultiplier": 0.5,
+    "daysOfCoverTarget": 30,
+    "safetyStockBuffer": 1.2,
+    "velocityTiers": {
+      "fastMover": 10,
+      "regularMover": 3,
+      "slowMover": 1
+    },
+    "holdingCostPct": 2.0
+  },
+  "pricing": {
+    "targetMarginPercent": 25,
+    "revenueLeakageThreshold": 15,
+    "priceElasticity": -1.2,
+    "underpricedDeviationPct": 20,
+    "premiumCategoryMultiplier": 1.15
+  },
+  "finance": {
+    "cashFlowWarningDays": 30,
+    "expenseRatioWarning": 0.70,
+    "receivablesAgingDays": 30,
+    "badDebtThresholdDays": 90,
+    "minCashReserveDays": 15,
+    "burnRateAvgMonths": 3
+  },
+  "forecast": {
+    "weightedAvgPeriods": [0.50, 0.30, 0.20],
+    "seasonalityEnabled": true,
+    "confidenceThreshold": 0.60,
+    "festivalBoostFactor": 1.35,
+    "festivalMonths": [10, 11, 3, 4]
+  },
+  "rfm": {
+    "recencyWeight": 0.4,
+    "frequencyWeight": 0.3,
+    "monetaryWeight": 0.3,
+    "segments": {
+      "champions": { "r": [4, 5], "f": [4, 5], "m": [4, 5] },
+      "loyal": { "r": [3, 5], "f": [3, 5], "m": [3, 5] },
+      "at_risk": { "r": [1, 2], "f": [3, 5], "m": [3, 5] },
+      "lost": { "r": [1, 2], "f": [1, 2], "m": [1, 5] },
+      "new": { "r": [4, 5], "f": [1, 1], "m": [1, 5] }
+    }
+  },
+  "churn": {
+    "riskThresholds": {
+      "critical": 3.0,
+      "high": 2.0,
+      "medium": 1.5,
+      "low": 1.0
+    },
+    "clvHighThreshold": 10000,
+    "clvLowThreshold": 1000
+  },
+  "gst": {
+    "standardRates": [0, 5, 12, 18, 28],
+    "filingGraceDays": 5,
+    "itcEligibilityPct": 95
+  },
+  "bundle": {
+    "minLift": 1.5,
+    "minSupport": 0.01,
+    "minConfidence": 0.2,
+    "discountMultiplier": 0.85
+  },
+  "market": {
+    "highGrowthThreshold": 15,
+    "decliningThreshold": -5,
+    "marketShareTarget": 10
+  },
+  "scoring": {
+    "criticalScoreFloor": 85,
+    "highScoreFloor": 65,
+    "mediumScoreFloor": 40,
+    "confidenceWeightInScore": 0.25
+  }
+}
