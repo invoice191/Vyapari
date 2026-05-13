@@ -1,4 +1,4 @@
-import heroImg from "../../assets/vyapari-hero.png";
+﻿import heroImg from "../../assets/vyapari-hero.png";
 import { Sparkles, ShieldCheck, Rocket } from "lucide-react";
 
 export const HeroPanel = () => (
@@ -19,7 +19,7 @@ export const HeroPanel = () => (
         Run your shop like a <span className="font-graffiti block text-6xl mt-2">superstar.</span>
       </h1>
       <p className="mt-5 max-w-md text-lg text-primary-foreground/90">
-        Vyapari is the all-in-one toolkit to track sales, manage stock, and grow your business — with a little extra swagger.
+        Vyapari is the all-in-one toolkit to track sales, manage stock, and grow your business - with a little extra swagger.
       </p>
     </div>
 

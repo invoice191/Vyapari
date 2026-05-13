@@ -1,9 +1,9 @@
-import { DSSRecommendation, EngineInput, EngineOutput, Sale } from './types';
+﻿import { DSSRecommendation, EngineInput, EngineOutput, Sale } from './types';
 import rules from './rules.json';
 import { Invoice } from '../types';
 
 /**
- * 2. RFM ENGINE — Customer Segmentation
+ * 2. RFM ENGINE - Customer Segmentation
  */
 export function runRFMEngine(input: EngineInput): EngineOutput {
   const start = Date.now();
@@ -67,12 +67,12 @@ export function runRFMEngine(input: EngineInput): EngineOutput {
           score: 65,
           confidence: 0.85,
           title: `Upsell Opportunity: ${stats.name}`,
-          headline: `Loyal customer with ₹${stats.total.toLocaleString()} LTV`,
+          headline: `Loyal customer with Rs.${stats.total.toLocaleString()} LTV`,
           detail: `${stats.name} is a 'Loyal' customer. Offering a VIP bundle or 10% loyalty discount could convert them to a 'Champion'.`,
           impactEstimate: {
             metric: 'Potential LTV Lift',
             value: Math.round(stats.total * 0.2),
-            unit: '₹',
+            unit: 'Rs.',
             direction: 'positive',
           },
           action: {
@@ -82,7 +82,7 @@ export function runRFMEngine(input: EngineInput): EngineOutput {
           },
           evidence: [
             `Orders: ${stats.count}`,
-            `Total Spend: ₹${stats.total.toLocaleString()}`,
+            `Total Spend: Rs.${stats.total.toLocaleString()}`,
             `Last Purchase: ${recencyDays} days ago`
           ],
           affectedItemId: id,
@@ -105,7 +105,7 @@ export function runRFMEngine(input: EngineInput): EngineOutput {
         impactEstimate: {
           metric: 'Revenue at Risk',
           value: Math.round(stats.total / stats.count * 2),
-          unit: '₹',
+          unit: 'Rs.',
           direction: 'negative',
         },
         action: {
@@ -114,7 +114,7 @@ export function runRFMEngine(input: EngineInput): EngineOutput {
           deepLink: `/contacts/${id}?action=whatsapp`,
         },
         evidence: [
-          `Avg Order: ₹${Math.round(stats.total / stats.count).toLocaleString()}`,
+          `Avg Order: Rs.${Math.round(stats.total / stats.count).toLocaleString()}`,
           `Past frequency: ${f}/5`,
           `Current recency: ${recencyDays} days`
         ],

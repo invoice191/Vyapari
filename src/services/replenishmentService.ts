@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+﻿import { supabase } from '../lib/supabase';
 
 export interface InventoryInsight {
   id: string;
@@ -35,7 +35,7 @@ export const replenishmentService = {
 
       if (vError) throw vError;
 
-      let formatted = (velocityData || []).map(v => {
+      let formatted: ReplenishmentDraft[] = (velocityData || []).map(v => {
         const product = v.products;
         const currentStock = (() => {
           if (!product) return 0;

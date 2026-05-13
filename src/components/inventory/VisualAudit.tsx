@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef } from 'react';
 import { Camera, RefreshCw, CheckCircle2, AlertTriangle, Scan } from 'lucide-react';
 import { Card, ActionBtn as Button } from '../common/UI';
 import { supabase } from '../../lib/supabase';

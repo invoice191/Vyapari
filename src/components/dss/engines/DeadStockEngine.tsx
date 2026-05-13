@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Package, Trash2, ArrowRight, Zap, Info, Lightbulb, ShoppingCart, RefreshCw, AlertTriangle, TrendingDown, Target, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { supabase } from '../../../lib/supabase';
@@ -43,7 +43,7 @@ export const DeadStockEngine: React.FC = () => {
            <div className="bg-[#1E293B]/50 border border-slate-800 px-6 py-3 rounded-2xl text-center shadow-lg">
              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Trapped Capital</span>
              <span className="text-xl font-bold text-rose-400">
-               ₹{data.reduce((acc, curr) => acc + curr.value, 0).toLocaleString()}
+               Rs.{data.reduce((acc, curr) => acc + curr.value, 0).toLocaleString()}
              </span>
            </div>
         </div>
@@ -66,7 +66,7 @@ export const DeadStockEngine: React.FC = () => {
               <h4 className="text-xs font-bold uppercase tracking-widest">Recovery Strategy</h4>
            </div>
            <p className="text-sm text-slate-400 leading-relaxed">
-             Executing a <span className="text-white font-bold">15% Clearance Bundle</span> for top-sitting items could recover ₹{Math.round(data.reduce((acc, curr) => acc + curr.value, 0) * 0.4).toLocaleString()} in cash within 7 days.
+             Executing a <span className="text-white font-bold">15% Clearance Bundle</span> for top-sitting items could recover Rs.{Math.round(data.reduce((acc, curr) => acc + curr.value, 0) * 0.4).toLocaleString()} in cash within 7 days.
            </p>
         </div>
       </div>
@@ -101,7 +101,7 @@ export const DeadStockEngine: React.FC = () => {
                   </div>
                 </td>
                 <td className="p-6 text-right text-sm text-slate-300 font-medium">{item.qty}</td>
-                <td className="p-6 text-right font-bold text-rose-400">₹{item.value.toLocaleString()}</td>
+                <td className="p-6 text-right font-bold text-rose-400">Rs.{item.value.toLocaleString()}</td>
                 <td className="p-6 text-right">
                   <span className="text-sm font-bold text-slate-400">{item.days}d</span>
                 </td>

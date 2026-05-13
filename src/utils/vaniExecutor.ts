@@ -1,4 +1,4 @@
-export const vaniExecutor = {
+﻿export const vaniExecutor = {
   processCommand: (transcript: string, setActive: (module: string) => void) => {
     const t = transcript.toLowerCase();
     

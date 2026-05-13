@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { vaniExecutor } from '../utils/vaniExecutor';
 
 export function useVANI(setActive: (module: string) => void) {

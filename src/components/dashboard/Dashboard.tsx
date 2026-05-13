@@ -12,7 +12,7 @@ import { dssService } from "../../services/dss/dssService";
 import { DailyBriefing } from "./DailyBriefing";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabase";
-import { useGlobalData } from "../../contexts/DataContext";
+import { useGlobalData } from "../../context/DataContext";
 import { useRFM } from "../../hooks/useRFM";
 import { useStockVelocity } from "../../hooks/useStockVelocity";
 import { useAnomaly } from "../../hooks/useAnomaly";
@@ -241,7 +241,7 @@ export default function Dashboard() {
         {payload.map((p: any) => (
           <div key={p.name} className="flex justify-between gap-4 text-[11px] font-semibold">
             <span className="text-slate-500">{p.name}:</span>
-            <span className="text-slate-900">₹{p.value?.toLocaleString("en-IN")}</span>
+            <span className="text-slate-900">Rs.{p.value?.toLocaleString("en-IN")}</span>
           </div>
         ))}
       </div>
@@ -458,12 +458,12 @@ export default function Dashboard() {
            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Tap a card for neural drilldown</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {renderCard("Revenue", `₹${((tier1Data?.today_revenue || 0) / 1000).toFixed(1)}K`, 12.4, "Daily Sales", "💰", C.orange, spark(42000), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'reports' } })), 0.1)}
-          {renderCard("Money In", `₹${(moneyIn / 1000).toFixed(1)}K`, 8.5, "Total Inflow", "📥", C.green, getLedgerSpark('credit'), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'ledger' } })), 0.15)}
-          {renderCard("Money Out", `₹${(moneyOut / 1000).toFixed(1)}K`, -2.4, "Total Outflow", "📤", C.rose, getLedgerSpark('debit'), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'ledger' } })), 0.2)}
-          {renderCard("Pending Bills", (tier1Data?.active_invoices_count || 0).toString(), 8.2, "To Collect", "🧾", C.blue, spark(250), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'invoices' } })), 0.25)}
-          {renderCard("Low Stock", (tier1Data?.low_stock_count || 0).toString(), -2.1, "To Restock", "📦", "#f59e0b", spark(90), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'inventory' } })), 0.3)}
-          {renderCard("Late Payments", (tier1Data?.overdue_count || 0).toString(), 5.6, "Overdue", "⚠️", C.purple, spark(1800), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'ledger' } })), 0.35)}
+          {renderCard("Revenue", `Rs.${((tier1Data?.today_revenue || 0) / 1000).toFixed(1)}K`, 12.4, "Daily Sales", "--", C.orange, spark(42000), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'reports' } })), 0.1)}
+          {renderCard("Money In", `Rs.${(moneyIn / 1000).toFixed(1)}K`, 8.5, "Total Inflow", "--", C.green, getLedgerSpark('credit'), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'ledger' } })), 0.15)}
+          {renderCard("Money Out", `Rs.${(moneyOut / 1000).toFixed(1)}K`, -2.4, "Total Outflow", "--", C.rose, getLedgerSpark('debit'), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'ledger' } })), 0.2)}
+          {renderCard("Pending Bills", (tier1Data?.active_invoices_count || 0).toString(), 8.2, "To Collect", "--", C.blue, spark(250), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'invoices' } })), 0.25)}
+          {renderCard("Low Stock", (tier1Data?.low_stock_count || 0).toString(), -2.1, "To Restock", "--", "#f59e0b", spark(90), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'inventory' } })), 0.3)}
+          {renderCard("Late Payments", (tier1Data?.overdue_count || 0).toString(), 5.6, "Overdue", "--", C.purple, spark(1800), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'ledger' } })), 0.35)}
         </div>
     </div>
 
@@ -474,7 +474,7 @@ export default function Dashboard() {
         <div className="brutal-card bg-white p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <span className="text-xl">👥</span>
+              <span className="text-xl">--</span>
               <div>
                 <h4 className="font-bold text-sm text-slate-900">Missing Customers</h4>
                 <p className="text-[12px] font-medium text-slate-400 uppercase tracking-wider">People who stopped buying</p>
@@ -501,7 +501,7 @@ export default function Dashboard() {
                       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: customer.segment_color }} title={customer.segment_label} />
                     </div>
                     <div className="text-[12px] font-medium text-slate-400 uppercase tracking-tight">
-                      IDLE: {customer.recency_days} DAYS // VALUE: ₹{customer.monetary.toLocaleString()}
+                      IDLE: {customer.recency_days} DAYS // VALUE: Rs.{customer.monetary.toLocaleString()}
                     </div>
                   </div>
                   <button 
@@ -521,7 +521,7 @@ export default function Dashboard() {
         <div className="brutal-card bg-white p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <span className="text-xl">⚡</span>
+              <span className="text-xl">-</span>
               <div>
                 <h4 className="font-bold text-sm text-slate-900">Stock Warning</h4>
                 <p className="text-[12px] font-medium text-slate-400 uppercase tracking-wider">Days until item is empty</p>
@@ -560,7 +560,7 @@ export default function Dashboard() {
         <div className="brutal-card bg-white p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <span className="text-xl">🚨</span>
+              <span className="text-xl">--</span>
               <div>
                 <h4 className="font-bold text-sm text-slate-900">Business Alerts</h4>
                 <p className="text-[12px] font-medium text-slate-400 uppercase tracking-wider">Important changes detected</p>
@@ -742,7 +742,7 @@ export default function Dashboard() {
               </div>
             ) : sales.length === 0 ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">📊</div>
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">--</div>
                 <div className="text-center">
                   <p className="text-[12px] font-black text-slate-900 uppercase tracking-widest">No Sales Data Logged</p>
                   <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Start invoicing to see neural projections</p>
@@ -778,7 +778,7 @@ export default function Dashboard() {
                     tick={{ fontSize: 10, fontWeight: 700, fill: '#475569' }} 
                     axisLine={{ stroke: '#E2E8F0', strokeWidth: 1 }} 
                     tickLine={{ stroke: '#E2E8F0' }} 
-                    tickFormatter={v => `₹${v / 1000}K`} 
+                    tickFormatter={v => `Rs.${v / 1000}K`} 
                   />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend 
@@ -858,11 +858,11 @@ export default function Dashboard() {
 
       {/* Drilldown Modal */}
       {drilldownData && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 bg-slate-950/60 backdrop-blur-md overflow-y-auto">
           <motion.div 
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="bg-white rounded-[2rem] border border-white/20 shadow-2xl w-full max-w-4xl overflow-hidden"
+            className="bg-white rounded-[2rem] border border-white/20 shadow-2xl w-full max-w-4xl overflow-hidden my-auto"
           >
             <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <div>
@@ -897,11 +897,11 @@ export default function Dashboard() {
                       <div className="space-y-4">
                         <div className="flex justify-between">
                           <span className="text-xs font-bold text-slate-400 uppercase">Selling</span>
-                          <span className="text-sm font-black text-slate-900">₹{drilldownData.product?.selling_price}</span>
+                          <span className="text-sm font-black text-slate-900">Rs.{drilldownData.product?.selling_price}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-xs font-bold text-slate-400 uppercase">Cost</span>
-                          <span className="text-sm font-black text-slate-900">₹{drilldownData.product?.cost_price}</span>
+                          <span className="text-sm font-black text-slate-900">Rs.{drilldownData.product?.cost_price}</span>
                         </div>
                       </div>
                     </div>
@@ -935,7 +935,7 @@ export default function Dashboard() {
                                 <div className="text-[10px] font-bold text-slate-400 uppercase">{sale.invoice} // {sale.time}</div>
                               </div>
                               <div className="text-right">
-                                <div className="text-sm font-black text-slate-900">₹{sale.amount}</div>
+                                <div className="text-sm font-black text-slate-900">Rs.{sale.amount}</div>
                                 <div className="text-[10px] font-bold text-emerald-600 uppercase">{sale.quantity} units</div>
                               </div>
                             </div>
@@ -969,7 +969,7 @@ export default function Dashboard() {
                     <div>
                       <h5 className="font-bold text-sm text-slate-900">{item.contact_name}</h5>
                       <p className="text-[12px] font-medium text-slate-400 uppercase tracking-tight">
-                        Visits: {item.purchase_frequency}x/mo // AOV: ₹{item.avg_order_value}
+                        Visits: {item.purchase_frequency}x/mo // AOV: Rs.{item.avg_order_value}
                       </p>
                     </div>
                   </div>
@@ -980,7 +980,7 @@ export default function Dashboard() {
                       {item.clv_tier}
                     </span>
                     <span className="font-bold text-[14px] text-indigo-600">
-                      ₹{(item.clv_estimate || 0).toLocaleString()}
+                      Rs.{(item.clv_estimate || 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -995,11 +995,11 @@ export default function Dashboard() {
           <div className="grid grid-cols-2 gap-6 mt-8">
             <div className="p-4 border border-emerald-100 bg-emerald-50/50 rounded-2xl">
               <div className="text-[12px] font-bold uppercase text-emerald-600 mb-1">Projected Inflow</div>
-              <div className="text-[22px] font-bold text-emerald-600">₹{forecastLoading ? '...' : Math.round(totalInflow || 0).toLocaleString()}</div>
+              <div className="text-[22px] font-bold text-emerald-600">Rs.{forecastLoading ? '...' : Math.round(totalInflow || 0).toLocaleString()}</div>
             </div>
             <div className="p-4 border border-rose-100 bg-rose-50/50 rounded-2xl">
               <div className="text-[12px] font-bold uppercase text-rose-600 mb-1">Projected Outflow</div>
-              <div className="text-[22px] font-bold text-rose-600">₹{forecastLoading ? '...' : Math.round(totalOutflow || 0).toLocaleString()}</div>
+              <div className="text-[22px] font-bold text-rose-600">Rs.{forecastLoading ? '...' : Math.round(totalOutflow || 0).toLocaleString()}</div>
             </div>
           </div>
 
@@ -1029,7 +1029,7 @@ export default function Dashboard() {
           className="bg-rose-600 text-white p-8 rounded-3xl shadow-2xl shadow-rose-500/20 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rotate-45 -mr-16 -mt-16" />
-          <div className="text-5xl">⚠️</div>
+          <div className="text-5xl">--</div>
           <div className="flex-1 text-center md:text-left relative z-10">
             <div className="text-[28px] font-bold uppercase tracking-tight mb-1">Inventory Critical Alert</div>
             <div className="text-[14px] font-medium text-white/80 uppercase tracking-widest">
@@ -1053,12 +1053,12 @@ export default function Dashboard() {
       {/* Strategic Pulse Audit Modal */}
       <AnimatePresence>
         {showPulseAudit && (
-          <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md overflow-y-auto">
+          <div className="fixed inset-0 z-[500] flex items-start justify-center p-4 bg-slate-950/90 backdrop-blur-md overflow-y-auto">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white rounded-[3rem] shadow-2xl w-full max-w-5xl overflow-hidden relative"
+              className="bg-white rounded-[3rem] shadow-2xl w-full max-w-5xl overflow-hidden relative my-auto"
             >
               {/* WIDE HEADER */}
               <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -1086,10 +1086,10 @@ export default function Dashboard() {
                     </div>
                     <div className="p-8 bg-indigo-600 rounded-[2.5rem] text-white shadow-2xl shadow-indigo-200 relative overflow-hidden group">
                        <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000" />
-                       <div className="text-5xl font-black tracking-tighter">₹54.2L</div>
+                       <div className="text-5xl font-black tracking-tighter">Rs.54.2L</div>
                        <div className="flex items-center gap-2 mt-3">
                           <div className="px-2 py-1 bg-emerald-400 text-slate-900 text-[9px] font-black rounded-lg uppercase">OPTIMIZED</div>
-                          <span className="text-[10px] font-bold text-indigo-100 uppercase tracking-widest">↑ 26% Growth Plan</span>
+                          <span className="text-[10px] font-bold text-indigo-100 uppercase tracking-widest">- 26% Growth Plan</span>
                        </div>
                     </div>
                   </div>
@@ -1097,7 +1097,7 @@ export default function Dashboard() {
                   <div className="grid grid-cols-2 gap-4">
                      <div className="p-5 bg-white border border-slate-100 rounded-3xl space-y-2">
                         <div className="text-[9px] font-black text-slate-400 uppercase">Profit Boost</div>
-                        <div className="text-xl font-black text-emerald-600">+₹4.8L</div>
+                        <div className="text-xl font-black text-emerald-600">+Rs.4.8L</div>
                         <p className="text-[8px] font-bold text-slate-500 uppercase">Via Bundle Logic</p>
                      </div>
                      <div className="p-5 bg-white border border-slate-100 rounded-3xl space-y-2">
@@ -1187,7 +1187,7 @@ export default function Dashboard() {
                        </div>
 
                        <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl space-y-6">
-                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Seasonal Demand Projection (₹ Lakhs)</div>
+                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Seasonal Demand Projection (Rs. Lakhs)</div>
                           <div className="h-[180px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
                               <AreaChart data={[{d:'Early',v:20},{d:'Mid',v:45},{d:'PEAK',v:100},{d:'Post',v:30}]} margin={{ top: 5, right: 5, left: 5, bottom: 0 }}>

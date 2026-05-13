@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Send, Smartphone, Bell, CheckCircle2, Loader2, RefreshCw, XCircle, Trash2, Copy, Check, Monitor, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -81,7 +81,7 @@ const TelegramSettings: React.FC = () => {
           setWaiting(false);
           setConnectCode(null);
           clearInterval(poll);
-          toast.success('Telegram Connected! 🎉');
+          toast.success('Telegram Connected! --');
         }
       }, 3000);
     }

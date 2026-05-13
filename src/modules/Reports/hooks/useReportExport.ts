@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useToast } from '../../../components/common/Toast';
 import { generateExecutivePDF } from '../export/templates/pdf/executivePDF';
@@ -51,7 +51,8 @@ export function useReportExport() {
     tableData,
     columns,
     filtersApplied,
-    chartRef
+    chartRef,
+    aiAdvisory: localAdvisory
   }: {
     format: ExportFormat;
     reportTitle: string;
@@ -66,6 +67,7 @@ export function useReportExport() {
     chartRef?: React.RefObject<HTMLDivElement | null>;
     category?: string;
     description?: string;
+    aiAdvisory?: string[];
   }) => {
     setExporting(true);
     try {
@@ -76,7 +78,9 @@ export function useReportExport() {
 
       switch (format) {
         case 'pdf_executive':
-          const aiAdvisory = await fetchReportInsight(reportTitle, kpis, tableData, period, businessId);
+          const aiAdvisory = localAdvisory && localAdvisory.length > 0
+            ? localAdvisory
+            : await fetchReportInsight(reportTitle, kpis, tableData, period, businessId);
           const reportDef = (await import('../reportConfig')).REPORT_CONFIG.find(r => r.title === reportTitle);
           await generateExecutivePDF({
             businessName, 
@@ -93,7 +97,9 @@ export function useReportExport() {
           });
           break;
         case 'pdf_detailed':
-          const aiAdvisoryDetailed = await fetchReportInsight(reportTitle, kpis, tableData, period, businessId);
+          const aiAdvisoryDetailed = localAdvisory && localAdvisory.length > 0 
+            ? localAdvisory 
+            : await fetchReportInsight(reportTitle, kpis, tableData, period, businessId);
           const reportDefDetailed = (await import('../reportConfig')).REPORT_CONFIG.find(r => r.title === reportTitle);
           await generateDetailedPDF({
             businessName, 
@@ -166,9 +172,10 @@ export function useReportExport() {
             columns: mappedColumns,
             rows: tableData.map(row => {
               const cleanRow: Record<string, unknown> = {};
-              columns.forEach(col => {
+              columns.forEach((col, idx) => {
                 const key = col.toLowerCase().replace(/\s+/g, '_');
-                cleanRow[key] = row[key] ?? row[col] ?? '';
+                const val = row[key] !== undefined ? row[key] : (row[col] !== undefined ? row[col] : Object.values(row || {})[idx]);
+                cleanRow[key] = val ?? '';
               });
               return cleanRow;
             }),

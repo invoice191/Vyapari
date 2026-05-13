@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { IndianRupee, Zap, TrendingUp, ArrowDownRight, ArrowUpRight, HelpCircle, Info, Lightbulb, Wallet, Calculator, Loader2, Calendar, Target, Activity } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '../../../lib/supabase';
@@ -47,7 +47,7 @@ export const CashFlowEngine: React.FC = () => {
            <div className="bg-[#1E293B]/50 border border-slate-800 px-6 py-3 rounded-2xl text-center shadow-lg">
              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Net Balance</span>
              <span className={`text-xl font-bold ${stats.net >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-               ₹{stats.net.toLocaleString()}
+               Rs.{stats.net.toLocaleString()}
              </span>
            </div>
         </div>
@@ -56,9 +56,9 @@ export const CashFlowEngine: React.FC = () => {
       {/* Modern Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
-          { label: 'Revenue In', value: `₹${stats.incoming.toLocaleString()}`, icon: ArrowUpRight, color: 'text-emerald-400', bg: 'bg-emerald-500/5' },
-          { label: 'Expenses Out', value: `₹${stats.outgoing.toLocaleString()}`, icon: ArrowDownRight, color: 'text-rose-400', bg: 'bg-rose-500/5' },
-          { label: 'Cash on Hand', value: `₹${stats.net.toLocaleString()}`, icon: Wallet, color: 'text-white', bg: 'bg-white/5' },
+          { label: 'Revenue In', value: `Rs.${stats.incoming.toLocaleString()}`, icon: ArrowUpRight, color: 'text-emerald-400', bg: 'bg-emerald-500/5' },
+          { label: 'Expenses Out', value: `Rs.${stats.outgoing.toLocaleString()}`, icon: ArrowDownRight, color: 'text-rose-400', bg: 'bg-rose-500/5' },
+          { label: 'Cash on Hand', value: `Rs.${stats.net.toLocaleString()}`, icon: Wallet, color: 'text-white', bg: 'bg-white/5' },
           { label: 'Runway', value: `${stats.runway} Days`, icon: Calendar, color: 'text-indigo-400', bg: 'bg-indigo-500/5' },
         ].map((stat, i) => (
           <div key={i} className={`p-6 rounded-2xl border border-slate-800 shadow-xl ${stat.bg} group hover:border-slate-700 transition-all`}>
@@ -83,7 +83,7 @@ export const CashFlowEngine: React.FC = () => {
            <h3 className="text-sm font-bold text-white uppercase tracking-widest italic">VANI Financial Advisor</h3>
         </div>
         <p className="text-sm text-slate-400 leading-relaxed max-w-3xl">
-          "Your operational expenses have increased by <span className="text-rose-400 font-bold">7%</span> this week. If you optimize your supplier payments to net-30, you could increase your available cash on hand by <span className="text-white font-bold">₹{Math.round(stats.incoming * 0.05).toLocaleString()}</span> before the next GST cycle."
+          "Your operational expenses have increased by <span className="text-rose-400 font-bold">7%</span> this week. If you optimize your supplier payments to net-30, you could increase your available cash on hand by <span className="text-white font-bold">Rs.{Math.round(stats.incoming * 0.05).toLocaleString()}</span> before the next GST cycle."
         </p>
       </div>
 

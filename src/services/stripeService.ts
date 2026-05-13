@@ -82,5 +82,18 @@ export const stripeService = {
       if (onCancel) onCancel();
       return false;
     }
+  },
+
+  /**
+   * Generates a Stripe Payment Link URL (mocked for demo purposes, as real Stripe Payment Links require backend API).
+   */
+  generatePaymentLink: async (invoiceId: string, amount: number, customer: any): Promise<{success: boolean; url: string}> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // Generate a mock Stripe payment link
+        const mockLink = `https://buy.stripe.com/test_${Math.random().toString(36).substring(2, 10)}?client_reference_id=${invoiceId}`;
+        resolve({ success: true, url: mockLink });
+      }, 800);
+    });
   }
 };

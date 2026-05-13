@@ -1,4 +1,4 @@
-import { DSSRecommendation, EngineInput, EngineOutput, Sale } from './types';
+﻿import { DSSRecommendation, EngineInput, EngineOutput, Sale } from './types';
 import rules from './rules.json';
 import { Product as InventoryItem, AuditLog as StockLog } from '../types';
 
@@ -43,7 +43,7 @@ export function runInventoryEngine(input: EngineInput): EngineOutput {
       ? Math.floor((now.getTime() - new Date(lastSale.created_at || 0).getTime()) / 86400000)
       : 999;
 
-    // ── DEAD STOCK LOGIC ──────────────────────────────────────
+    // -- DEAD STOCK LOGIC --------------------------------------
     if (daysSinceSale >= rules.inventory.deadStockDays) {
       const capitalLocked = qty * cost;
       totalDeadStockValue += capitalLocked;
@@ -66,12 +66,12 @@ export function runInventoryEngine(input: EngineInput): EngineOutput {
         score: Math.min(95, 50 + (daysSinceSale / 5)),
         confidence: 0.9,
         title: `Dead Stock Alert: ${item.name}`,
-        headline: `₹${capitalLocked.toLocaleString()} locked for ${daysSinceSale} days`,
-        detail: `This item hasn't moved in ${daysSinceSale} days. You are losing ₹${Math.round(monthlyOppCost)}/mo in opportunity cost. Run a ${aggressiveDiscountPct}% clearance sale to recover ₹${Math.round(recoveryValue).toLocaleString()}.`,
+        headline: `Rs.${capitalLocked.toLocaleString()} locked for ${daysSinceSale} days`,
+        detail: `This item hasn't moved in ${daysSinceSale} days. You are losing Rs.${Math.round(monthlyOppCost)}/mo in opportunity cost. Run a ${aggressiveDiscountPct}% clearance sale to recover Rs.${Math.round(recoveryValue).toLocaleString()}.`,
         impactEstimate: {
           metric: 'Recoverable Capital',
           value: Math.round(recoveryValue),
-          unit: '₹',
+          unit: 'Rs.',
           direction: 'positive',
         },
         action: {
@@ -80,10 +80,10 @@ export function runInventoryEngine(input: EngineInput): EngineOutput {
           deepLink: `/inventory/${item.id}?action=discount&pct=${aggressiveDiscountPct}`,
         },
         evidence: [
-          `Locked Capital: ₹${capitalLocked.toLocaleString()}`,
+          `Locked Capital: Rs.${capitalLocked.toLocaleString()}`,
           `Days Dead: ${daysSinceSale} days`,
-          `Monthly Opp. Cost: ₹${Math.round(monthlyOppCost)}`,
-          `Cost Floor: ₹${cost}`
+          `Monthly Opp. Cost: Rs.${Math.round(monthlyOppCost)}`,
+          `Cost Floor: Rs.${cost}`
         ],
         affectedItemId: item.id,
         affectedItemName: item.name,
@@ -92,7 +92,7 @@ export function runInventoryEngine(input: EngineInput): EngineOutput {
       });
     }
 
-    // ── STOCKOUT LOGIC (VELOCITY & REORDER POINTS) ──────────────────────────
+    // -- STOCKOUT LOGIC (VELOCITY & REORDER POINTS) --------------------------
     const isBelowReorder = item.reorder_point && qty <= item.reorder_point;
     
     if (avgDailySales > 0 || isBelowReorder) {
@@ -115,7 +115,7 @@ export function runInventoryEngine(input: EngineInput): EngineOutput {
           impactEstimate: {
             metric: 'Revenue at Risk',
             value: Math.round(Math.max(avgDailySales * 30 * price, (item.reorder_point || 0) * price)),
-            unit: '₹',
+            unit: 'Rs.',
             direction: 'negative',
           },
           action: {
@@ -138,7 +138,7 @@ export function runInventoryEngine(input: EngineInput): EngineOutput {
     }
   }
 
-  metrics.push({ label: 'Dead Stock Value', value: totalDeadStockValue, unit: '₹' });
+  metrics.push({ label: 'Dead Stock Value', value: totalDeadStockValue, unit: 'Rs.' });
   metrics.push({ label: 'Inventory Health', value: 72, unit: '%' });
 
   return {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   DollarSign, Users, Tag, BarChart3, Landmark, TrendingUp, 
   Package, TrendingDown, FileText, Gift, Microscope, RefreshCw, AlertTriangle, Brain, ChevronRight, LayoutDashboard, Settings, Radar
@@ -128,7 +128,7 @@ export const DSSLayout: React.FC = () => {
            <div className="flex items-center gap-4">
               <div className="text-right">
                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">Last Update</p>
-                 <p className="text-[10px] font-black text-emerald-400 uppercase tracking-tighter">Sync Active • Just Now</p>
+                 <p className="text-[10px] font-black text-emerald-400 uppercase tracking-tighter">Sync Active - Just Now</p>
               </div>
               <div className="w-px h-6 bg-slate-800" />
               <button className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all">

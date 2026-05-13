@@ -1,4 +1,4 @@
-
+﻿
 export function generateTelegramDeepLink(
   botUsername: string,
   businessId: string

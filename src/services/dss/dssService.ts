@@ -87,9 +87,9 @@ export const dssService = {
         description: 'Liquidity & Runway Analysis',
         score: 88,
         summary: [
-          { label: 'Current Cash', value: `₹${(finOut.metrics?.find(m => m.label === 'Current Cash')?.value || 0).toLocaleString()}`, color: '#10b981' },
+          { label: 'Current Cash', value: `Rs.${(finOut.metrics?.find(m => m.label === 'Current Cash')?.value || 0).toLocaleString()}`, color: '#10b981' },
           { label: 'Runway', value: `${finOut.metrics?.find(m => m.label === 'Runway')?.value || 0} Mo`, color: '#6366f1' },
-          { label: 'Receivables', value: `₹${(finOut.metrics?.find(m => m.label === 'Receivables')?.value || 0).toLocaleString()}`, color: '#f59e0b' }
+          { label: 'Receivables', value: `Rs.${(finOut.metrics?.find(m => m.label === 'Receivables')?.value || 0).toLocaleString()}`, color: '#f59e0b' }
         ],
         visualizationData: [
           { label: 'Month 1', value: 45000 },
@@ -104,7 +104,7 @@ export const dssService = {
         description: 'Margin & Leakage Detection',
         score: 74,
         summary: [
-          { label: 'Potential Recovery', value: `₹${(pricOut.metrics?.find(m => m.label === 'Revenue Leakage')?.value || 0).toLocaleString()}`, color: '#10b981' },
+          { label: 'Potential Recovery', value: `Rs.${(pricOut.metrics?.find(m => m.label === 'Revenue Leakage')?.value || 0).toLocaleString()}`, color: '#10b981' },
           { label: 'Avg Margin', value: '18%', color: '#6366f1' }
         ],
         visualizationData: pricOut.recommendations.slice(0, 5)
@@ -132,7 +132,7 @@ export const dssService = {
         description: 'Revenue Projections',
         score: 81,
         summary: [
-          { label: 'Next Mo Proj', value: `₹${(foreOut.metrics?.find(m => m.label === 'Next Mo. Forecast')?.value || 0).toLocaleString()}`, color: '#6366f1' },
+          { label: 'Next Mo Proj', value: `Rs.${(foreOut.metrics?.find(m => m.label === 'Next Mo. Forecast')?.value || 0).toLocaleString()}`, color: '#6366f1' },
           { label: 'Confidence', value: '70%', color: '#10b981' }
         ],
         visualizationData: foreOut.forecasts || [] // Adapted for UI
@@ -144,7 +144,7 @@ export const dssService = {
         description: 'Stock & Velocity Control',
         score: 65,
         summary: [
-          { label: 'Dead Stock', value: `₹${(invOut.metrics?.find(m => m.label === 'Dead Stock Value')?.value || 0).toLocaleString()}`, color: '#ef4444' },
+          { label: 'Dead Stock', value: `Rs.${(invOut.metrics?.find(m => m.label === 'Dead Stock Value')?.value || 0).toLocaleString()}`, color: '#ef4444' },
           { label: 'Stockout Risk', value: invOut.recommendations.filter(r => r.id.startsWith('stockout')).length, color: '#f59e0b' }
         ]
       },
@@ -155,7 +155,7 @@ export const dssService = {
         description: 'Customer Retention AI',
         score: 78,
         summary: [
-          { label: 'At Risk Revenue', value: `₹${(churnOut.metrics?.find(m => m.label === 'At Risk Revenue')?.value || 0).toLocaleString()}`, color: '#ef4444' }
+          { label: 'At Risk Revenue', value: `Rs.${(churnOut.metrics?.find(m => m.label === 'At Risk Revenue')?.value || 0).toLocaleString()}`, color: '#ef4444' }
         ]
       },
       { 
@@ -182,19 +182,40 @@ export const dssService = {
         id: 'gst', 
         title: 'GST Optimization', 
         description: 'Tax Compliance & ITC',
-        score: 95,
+        score: Math.min(99, Math.max(75, 80 + Math.round((ledger.filter(l => l.type === 'credit').length / Math.max(1, ledger.length)) * 20))),
         summary: [
-          { label: 'Potential ITC', value: '₹4,200', color: '#10b981' }
+          { 
+            label: 'Potential ITC', 
+            value: `Rs.${Math.round(ledger.filter(l => l.type?.toLowerCase() === 'debit').reduce((sum, l) => sum + (Number(l.amount) || 0), 0) * 0.18).toLocaleString()}`, 
+            color: '#10b981' 
+          }
         ],
-        recommendations: []
+        recommendations: ledger.length > 0 ? [
+          {
+            id: 'gst-audit-rec',
+            engine: 'gst',
+            title: 'Audit Missing Tax Invoices',
+            description: 'Scan recent purchases for standardized tax codes to secure max Input Tax Credit.',
+            impact: 'High',
+            priority: 'High',
+            score: 88,
+            evidence: [`Processed ${ledger.length} financial records.`],
+            createdAt: new Date(),
+            expiresAt: new Date(Date.now() + 7 * 86400000)
+          }
+        ] : []
       },
       { 
         id: 'discount', 
         title: 'Discount Lab', 
         description: 'Promotion Impact Testing',
-        score: 89,
+        score: Math.round(75 + (products.filter(p => Number(p.selling_price) > Number(p.cost_price) * 1.3).length / Math.max(1, products.length)) * 20),
         summary: [
-          { label: 'Efficiency', value: '92%', color: '#10b981' }
+          { 
+            label: 'Efficiency Index', 
+            value: `${Math.round(80 + Math.min(18, (invoices.length / 50) * 5))}%`, 
+            color: '#10b981' 
+          }
         ],
         recommendations: []
       },
@@ -202,9 +223,9 @@ export const dssService = {
         id: 'simulation', 
         title: 'Neural Simulator', 
         description: 'What-If Strategic Modeling',
-        score: 99,
+        score: 95,
         summary: [
-          { label: 'Precision', value: 'High', color: '#10b981' }
+          { label: 'Model Precision', value: invoices.length > 20 ? 'High' : 'Medium', color: '#10b981' }
         ],
         recommendations: []
       }
@@ -294,10 +315,10 @@ export const dssService = {
   },
 
   generateBusinessBriefing: async (analysis: any) => {
-    const ruleInsights = await generateInsights(analysis.engineOutputs || [], {});
+    const ruleInsights = await generateInsights(analysis.engineOutputs || [], {}, false);
     const health = analysis.summary.healthScore;
     const tone = health > 80 ? "Your shop is doing great!" : health > 60 ? "Your business is stable, but there are areas to grow." : "Attention needed: Your business metrics are under pressure.";
-    const summaryBody = `${tone} Overall health is ${Math.round(health)}%. We've found ₹${analysis.summary.totalOpportunityValue.toLocaleString()} in extra profit you can make by fixing ${analysis.summary.critical} critical issues in your stock and pricing.`;
+    const summaryBody = `${tone} Overall health is ${Math.round(health)}%. We've found Rs.${analysis.summary.totalOpportunityValue.toLocaleString()} in extra profit you can make by fixing ${analysis.summary.critical} critical issues in your stock and pricing.`;
     
     const summaryInsight = {
       id: 'health-overview-narrative',

@@ -1,4 +1,4 @@
-export type CollectibleInvoiceStatus = "Pending" | "Paid" | "Overdue" | "Cancelled";
+﻿export type CollectibleInvoiceStatus = "Pending" | "Paid" | "Overdue" | "Cancelled";
 
 export interface ReminderCandidate {
   reminderId: string;

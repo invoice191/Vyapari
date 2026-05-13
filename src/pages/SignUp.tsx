@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "../lib/supabase";
@@ -53,7 +53,7 @@ const SignUp = () => {
     });
     setLoading(false);
     if (error) return toast.error(error.message);
-    toast.success("Account created! Check your email to confirm. ✉️");
+    toast.success("Account created! Check your email to confirm. --");
     navigate("/signin");
   };
 
@@ -78,7 +78,7 @@ const SignUp = () => {
         <div className="flex items-center justify-center animate-scale-in overflow-y-auto lg:overflow-hidden py-4">
           <div className="w-full max-w-md rounded-[2rem] bg-card-glass p-6 shadow-card-soft border border-white/40 md:p-8">
             <Link to="/" className="font-graffiti text-3xl text-gradient">vyapari</Link>
-            <h2 className="mt-4 font-display text-2xl font-bold tracking-tight">Start your hustle 🚀</h2>
+            <h2 className="mt-4 font-display text-2xl font-bold tracking-tight">Start your hustle --</h2>
             <p className="mt-1 text-sm text-muted-foreground">Create an account in under a minute.</p>
 
             <form onSubmit={onSubmit} className="mt-5 space-y-3">

@@ -9,7 +9,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { useGlobalData } from '../../contexts/DataContext';
+import { useGlobalData } from '../../context/DataContext';
 import { Badge, ActionBtn } from '../common/UI';
 
 interface CustomerDetailProps {
@@ -111,7 +111,7 @@ export default function CustomerDetail({ contact, onClose, onNewInvoice }: Custo
                     axisLine={{ stroke: '#E2E8F0', strokeWidth: 1 }} 
                     tickLine={{ stroke: '#E2E8F0' }} 
                     tick={{ fill: '#1E293B', fontSize: 11, fontWeight: 800 }}
-                    tickFormatter={(v) => v >= 1000 ? `₹${(v/1000).toFixed(0)}k` : `₹${v}`}
+                    tickFormatter={(v) => v >= 1000 ? `Rs.${(v/1000).toFixed(0)}k` : `Rs.${v}`}
                     width={60}
                   />
                   <Tooltip 
@@ -217,7 +217,7 @@ export default function CustomerDetail({ contact, onClose, onNewInvoice }: Custo
               <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-8 py-6 text-sm font-black text-slate-900">{inv.invoice_number}</td>
                 <td className="px-8 py-6 text-sm font-bold text-slate-500">{formatDate(inv.created_at)}</td>
-                <td className="px-8 py-6 text-sm font-black text-slate-900">₹{Number(inv.total_amount).toLocaleString('en-IN')}</td>
+                <td className="px-8 py-6 text-sm font-black text-slate-900">Rs.{Number(inv.total_amount).toLocaleString('en-IN')}</td>
                 <td className="px-8 py-6">
                   <Badge 
                     status={inv.status === 'paid' ? 'success' : inv.status === 'pending' ? 'warning' : 'danger'}
@@ -266,7 +266,7 @@ export default function CustomerDetail({ contact, onClose, onNewInvoice }: Custo
                 <td className={`px-8 py-6 text-sm font-black text-right ${
                   entry.type === 'credit' ? 'text-emerald-600' : 'text-rose-600'
                 }`}>
-                  {entry.type === 'credit' ? '+' : '-'} ₹{Number(entry.amount).toLocaleString('en-IN')}
+                  {entry.type === 'credit' ? '+' : '-'} Rs.{Number(entry.amount).toLocaleString('en-IN')}
                 </td>
               </tr>
             ))
@@ -332,7 +332,7 @@ export default function CustomerDetail({ contact, onClose, onNewInvoice }: Custo
           <div className="pt-4 border-t border-slate-50 flex justify-between">
             <div className="text-center">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Late Fees</div>
-              <div className="text-lg font-black text-slate-900">₹0</div>
+              <div className="text-lg font-black text-slate-900">Rs.0</div>
             </div>
             <div className="text-center">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Risk Level</div>
@@ -345,12 +345,12 @@ export default function CustomerDetail({ contact, onClose, onNewInvoice }: Custo
   );
 
   return (
-    <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xl">
+    <div className="fixed inset-0 z-[1100] flex items-start justify-center p-4 bg-slate-900/60 backdrop-blur-xl overflow-y-auto">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="bg-slate-50 w-full max-w-6xl h-[90vh] rounded-[3rem] shadow-2xl overflow-hidden flex flex-col"
+        className="bg-slate-50 w-full max-w-6xl h-[90vh] rounded-[3rem] shadow-2xl overflow-hidden flex flex-col my-auto"
       >
         {/* Header Section */}
         <div className="p-10 bg-white border-b border-slate-100 flex justify-between items-start">
@@ -362,9 +362,9 @@ export default function CustomerDetail({ contact, onClose, onNewInvoice }: Custo
               <h1 className="text-3xl font-black text-slate-900 tracking-tight">{contact.name}</h1>
               <div className="flex items-center gap-2 text-sm font-bold text-slate-400">
                 <span>ID: {contact.id?.slice(0, 6).toUpperCase()}</span>
-                <span>•</span>
+                <span>-</span>
                 <span>Customer since {formatDate(contact.created_at)}</span>
-                <span>•</span>
+                <span>-</span>
                 <span>{contact.city || 'Location N/A'}</span>
               </div>
               <div className="flex gap-2 pt-2">
@@ -392,9 +392,9 @@ export default function CustomerDetail({ contact, onClose, onNewInvoice }: Custo
           {/* KPI Cards Row */}
           <div className="grid grid-cols-4 gap-6">
             {[
-              { label: 'Total Spend', value: `₹${stats.totalSpend.toLocaleString('en-IN')}`, sub: `${stats.orderCount} orders` },
-              { label: 'Avg Order', value: `₹${Math.round(stats.avgOrder).toLocaleString('en-IN')}`, sub: 'per invoice' },
-              { label: 'Outstanding', value: `₹${stats.outstanding.toLocaleString('en-IN')}`, sub: 'unpaid balance', danger: stats.outstanding > 0 },
+              { label: 'Total Spend', value: `Rs.${stats.totalSpend.toLocaleString('en-IN')}`, sub: `${stats.orderCount} orders` },
+              { label: 'Avg Order', value: `Rs.${Math.round(stats.avgOrder).toLocaleString('en-IN')}`, sub: 'per invoice' },
+              { label: 'Outstanding', value: `Rs.${stats.outstanding.toLocaleString('en-IN')}`, sub: 'unpaid balance', danger: stats.outstanding > 0 },
               { label: 'Pays In', value: `${stats.paysIn} days`, sub: 'avg time' }
             ].map((kpi, idx) => (
               <div key={idx} className="p-8 bg-white border border-slate-100 rounded-[2.5rem] space-y-4 shadow-sm hover:shadow-md transition-all">

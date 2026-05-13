@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+﻿import { useRef, useCallback } from 'react';
 
 export function useVANIWakeWord(onWake: () => void) {
   const recognitionRef = useRef<any>(null);

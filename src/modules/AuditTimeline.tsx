@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "motion/react";
 import { Card, SectionHeader, Badge } from "../components/common/UI";
@@ -105,7 +105,7 @@ export default function AuditTimeline() {
 
         {loading && (
           <div className="flex justify-center p-12">
-            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="text-4xl">⚙️</motion.div>
+            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="text-4xl">--</motion.div>
           </div>
         )}
 

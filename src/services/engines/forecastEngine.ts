@@ -1,4 +1,4 @@
-import { EngineInput, DSSRecommendation } from '../dssService';
+﻿import { EngineInput, DSSRecommendation } from '../dssService';
 
 export const forecastEngine = {
   analyze: (input: EngineInput): DSSRecommendation[] => {

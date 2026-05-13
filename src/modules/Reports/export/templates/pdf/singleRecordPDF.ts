@@ -1,5 +1,6 @@
-import jsPDF from 'jspdf';
+﻿import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { downloadPDF } from '../../../../../utils/pdf/downloadPDF';
 
 interface RecordParams {
   businessName: string;
@@ -10,7 +11,7 @@ interface RecordParams {
 
 const normalizeValue = (val: any) => {
   if (typeof val !== 'string') return val;
-  return val.replace(/₹/g, 'INR');
+  return val.replace(/Rs./g, 'INR');
 };
 
 export const generateSingleRecordPDF = async ({
@@ -75,5 +76,7 @@ export const generateSingleRecordPDF = async ({
   doc.setTextColor(150, 150, 150);
   doc.text("This document is a computer-generated record for internal audit purposes.", 105, 285, { align: 'center' });
 
-  doc.save(`${reportTitle.replace(/\s+/g, '_')}_voucher.pdf`);
+  // Safe Blob PDF download trigger to prevent file corruption
+  const filename = `${reportTitle.replace(/\s+/g, '_')}_voucher.pdf`;
+  downloadPDF(doc, filename);
 };

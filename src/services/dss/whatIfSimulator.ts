@@ -1,4 +1,4 @@
-import { SimulationParams, SimulationResult, EngineInput, SimulationSnapshot } from './types';
+﻿import { SimulationParams, SimulationResult, EngineInput, SimulationSnapshot } from './types';
 import rules from './rules.json';
 
 export const SCENARIO_PRESETS: Record<string, Partial<SimulationParams>> = {
@@ -76,7 +76,7 @@ export function runSimulation(
   const rippleEffects: SimulationResult['rippleEffects'] = [];
   if (Math.abs(params.priceChangePct) > 0) {
     rippleEffects.push({
-      description: `${params.priceChangePct > 0 ? '+' : ''}${params.priceChangePct}% price → ${volumeChangePct.toFixed(1)}% volume change (elasticity: ${rules.pricing.priceElasticity})`,
+      description: `${params.priceChangePct > 0 ? '+' : ''}${params.priceChangePct}% price - ${volumeChangePct.toFixed(1)}% volume change (elasticity: ${rules.pricing.priceElasticity})`,
       severity: Math.abs(volumeChangePct) > 15 ? 'warning' : 'positive',
     });
   }

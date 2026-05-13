@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Palette, Eye, Zap, Layers, Maximize, Box } from 'lucide-react';
 import { ToggleRow, SelectRow } from '../SettingRows';
 

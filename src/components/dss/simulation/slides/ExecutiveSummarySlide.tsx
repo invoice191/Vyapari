@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'motion/react';
 import { Brain, CheckCircle2, AlertTriangle, Sparkles, ShieldAlert } from 'lucide-react';
 import { Theme } from '../PresentationMode';

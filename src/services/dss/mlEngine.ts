@@ -1,4 +1,4 @@
-import { Product, Invoice } from "../types";
+﻿import { Product, Invoice } from "../types";
 
 export const mlEngine = {
   // Detect Anomalies (Stock or Sales)

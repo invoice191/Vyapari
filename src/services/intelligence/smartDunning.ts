@@ -1,4 +1,4 @@
-import { supabase } from "../../lib/supabase";
+﻿import { supabase } from "../../lib/supabase";
 
 export type DunningTone = 'gentle' | 'professional' | 'firm' | 'urgent';
 
@@ -28,10 +28,10 @@ export const smartDunningService = {
     const customerName = invoice.contacts?.name || 'Customer';
 
     const templates: Record<DunningTone, string> = {
-      gentle: `Hi ${customerName}, hope you're doing well! Just a friendly nudge regarding invoice #${invoice.invoice_number} for ₹${amount}. If you've already paid, please ignore this. Thanks!`,
-      professional: `Dear ${customerName}, this is a reminder that payment for Invoice #${invoice.invoice_number} (₹${amount}) was due on ${dueDate.toLocaleDateString()}. We would appreciate a prompt settlement. Regards, Team Vyapari.`,
-      firm: `Hello ${customerName}, Invoice #${invoice.invoice_number} is now significantly overdue. Please ensure the payment of ₹${amount} is cleared by end of day to avoid any service interruptions.`,
-      urgent: `URGENT: ${customerName}, your payment of ₹${amount} for Invoice #${invoice.invoice_number} is critically overdue. This is our final reminder before we proceed with further collection actions. Please pay immediately.`
+      gentle: `Hi ${customerName}, hope you're doing well! Just a friendly nudge regarding invoice #${invoice.invoice_number} for Rs.${amount}. If you've already paid, please ignore this. Thanks!`,
+      professional: `Dear ${customerName}, this is a reminder that payment for Invoice #${invoice.invoice_number} (Rs.${amount}) was due on ${dueDate.toLocaleDateString()}. We would appreciate a prompt settlement. Regards, Team Vyapari.`,
+      firm: `Hello ${customerName}, Invoice #${invoice.invoice_number} is now significantly overdue. Please ensure the payment of Rs.${amount} is cleared by end of day to avoid any service interruptions.`,
+      urgent: `URGENT: ${customerName}, your payment of Rs.${amount} for Invoice #${invoice.invoice_number} is critically overdue. This is our final reminder before we proceed with further collection actions. Please pay immediately.`
     };
 
     let message = templates[params.tone];

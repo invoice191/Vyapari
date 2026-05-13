@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Info, Play, Download, CheckCircle2, AlertTriangle, 
@@ -61,7 +61,7 @@ export default function EnginePanel({
          <Cpu size={120} />
       </div>
 
-      {/* ── HEADER ── */}
+      {/* -- HEADER -- */}
       <div className="p-8 flex justify-between items-start border-b border-white/5 relative z-10">
         <div className="flex gap-6">
           <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
@@ -88,7 +88,7 @@ export default function EnginePanel({
         </div>
       </div>
 
-      {/* ── SUMMARY STATS ── */}
+      {/* -- SUMMARY STATS -- */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/5 border-b border-white/5 relative z-10">
         {summaryData.map((stat, i) => (
           <div key={i} className="p-6 bg-slate-900/40 text-center group hover:bg-slate-900/60 transition-all border-r border-white/5 last:border-r-0">
@@ -100,7 +100,7 @@ export default function EnginePanel({
         ))}
       </div>
 
-      {/* ── VISUALIZATION ── */}
+      {/* -- VISUALIZATION -- */}
       <div className="flex-1 p-8 min-h-[400px] flex flex-col relative z-10">
         <div className="flex justify-between items-center mb-10">
           <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 shadow-inner">
@@ -133,7 +133,7 @@ export default function EnginePanel({
         </div>
       </div>
 
-      {/* ── INSIGHTS ── */}
+      {/* -- INSIGHTS -- */}
       <div className="p-8 bg-black/20 border-t border-white/5 relative z-10">
         <h4 className="text-[9px] font-black uppercase tracking-[0.4em] text-indigo-400 mb-6 flex items-center gap-2">
            <Zap size={12} fill="currentColor" /> Neural_Deductions
@@ -153,7 +153,7 @@ export default function EnginePanel({
                 <p className="text-[10px] font-bold text-slate-500 leading-relaxed italic line-clamp-2">"{insight.detail}"</p>
                 {insight.rupee_impact && (
                   <div className="mt-4 text-[9px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
-                     <TrendingUp size={12} /> Projected_Gain: +₹{insight.rupee_impact.toLocaleString()}
+                     <TrendingUp size={12} /> Projected_Gain: +Rs.{insight.rupee_impact.toLocaleString()}
                   </div>
                 )}
               </div>
@@ -162,7 +162,7 @@ export default function EnginePanel({
         </div>
       </div>
 
-      {/* ── FOOTER ACTIONS ── */}
+      {/* -- FOOTER ACTIONS -- */}
       <div className="p-8 flex justify-between items-center border-t border-white/5 bg-slate-950/40 relative z-10">
         <button onClick={onExport} className="px-6 py-4 bg-white/5 hover:bg-white/10 text-slate-300 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border border-white/10 flex items-center gap-3 transition-all">
           <FileDown size={16} /> Export_Report
@@ -330,7 +330,7 @@ function EngineDataTable({ type, data }: { type: string, data: any[] }) {
               <tr key={i} className="hover:bg-indigo-500/5 transition-colors group">
                 {headers.map(h => (
                   <td key={h} className="p-6 font-bold text-slate-400 group-hover:text-white transition-colors">
-                    {typeof row[h] === 'number' && (h.includes('price') || h.includes('impact')) ? `₹${row[h].toLocaleString()}` : row[h]}
+                    {typeof row[h] === 'number' && (h.includes('price') || h.includes('impact')) ? `Rs.${row[h].toLocaleString()}` : row[h]}
                   </td>
                 ))}
               </tr>

@@ -1,4 +1,4 @@
-export type CSVFormat = 'comma' | 'tab' | 'semicolon';
+﻿export type CSVFormat = 'comma' | 'tab' | 'semicolon';
 
 export function exportToCSV(
   reportTitle: string,
@@ -48,5 +48,5 @@ function getRowValue(row: any, col: string, colIndex: number) {
   if (row[col.replace(/\s+/g, '_').toLowerCase()]) return row[col.replace(/\s+/g, '_').toLowerCase()];
   const keys = Object.keys(row);
   if (keys[colIndex]) return row[keys[colIndex]];
-  return '—';
+  return '-';
 }

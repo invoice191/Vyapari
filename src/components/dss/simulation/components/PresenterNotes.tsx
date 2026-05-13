@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'motion/react';
 import { X, MessageSquare, Edit3 } from 'lucide-react';
 import { Theme } from '../PresentationMode';
@@ -15,11 +15,11 @@ export default function PresenterNotes({ slideIndex, onClose, theme }: Presenter
     "AI analyzed your last 90 days of transactions to create this executive summary.",
     "These are conservative estimates. Actual results may be higher based on implementation quality.",
     "Each bar shows current vs projected revenue for that product. Note the growth potential.",
-    "Green means the change is profitable. No red items — all products remain in the safety zone.",
-    "The shaded area is our confidence band — 87% confidence based on historical variance.",
+    "Green means the change is profitable. No red items - all products remain in the safety zone.",
+    "The shaded area is our confidence band - 87% confidence based on historical variance.",
     "Break-even in 21 days means you see net profit from day 22. Highly achievable timeline.",
     "These are AI recommendations. You decide which to implement today or in the next week.",
-    "Closing thought: ₹1.5 lakhs per year additional revenue from just 2 price adjustments."
+    "Closing thought: Rs.1.5 lakhs per year additional revenue from just 2 price adjustments."
   ];
 
   const bgColor = theme === 'dark' ? 'bg-[#0F172A]/90' : 'bg-white/90';

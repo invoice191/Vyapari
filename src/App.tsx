@@ -15,6 +15,9 @@ import UserManagement from "./components/users/UserManagement";
 import ContactsList from "./components/contacts/ContactsList";
 import CommandCenter from "./modules/CommandCenter";
 import BankersView from "./modules/BankersView";
+import PurchaseHub from "./components/purchases/PurchaseHub";
+import AccountingHub from "./components/accounting/AccountingHub";
+import POSCounterMode from "./components/pos/CounterMode";
 import Background3D from "./components/common/Background3D";
 import GatewayLanding from "./pages/Index";
 import SignIn from "./pages/SignIn";
@@ -40,22 +43,22 @@ import { Sidebar } from "./components/layout/Sidebar";
 import { Navbar } from "./components/layout/Navbar";
 
 const MODULES = [
-  { key: "dashboard", label: "Dashboard", icon: "📊" },
-  { key: "command", label: "Command Center", icon: "🎮" },
-  { key: "reports", label: "Reports", icon: "📈" },
-  { key: "dss", label: "DSS", icon: "🧠" },
-  { key: "prediction", label: "Simulation", icon: "🔮" },
-  { key: "ocr", label: "OCR", icon: "📄" },
-  { key: "invoices", label: "Invoices", icon: "🧾" },
-  { key: "inventory", label: "Inventory", icon: "📦" },
-  { key: "ledger", label: "Financial Ledger", icon: "📒" },
-  { key: "banker", label: "Bankers View", icon: "🏦" },
+  { key: "dashboard", label: "Dashboard", icon: "--" },
+  { key: "command", label: "Command Center", icon: "--" },
+  { key: "reports", label: "Reports", icon: "--" },
+  { key: "dss", label: "DSS", icon: "--" },
+  { key: "prediction", label: "Simulation", icon: "--" },
+  { key: "ocr", label: "OCR", icon: "--" },
+  { key: "invoices", label: "Invoices", icon: "--" },
+  { key: "inventory", label: "Inventory", icon: "--" },
+  { key: "ledger", label: "Financial Ledger", icon: "--" },
+  { key: "banker", label: "Bankers View", icon: "--" },
 ];
 
 const SYSTEM_MODULES = [
-  { key: "settings", label: "Settings", icon: "⚙️" },
-  { key: "users", label: "User Management", icon: "🛡️" },
-  { key: "audit", label: "Audit Logs", icon: "📋" },
+  { key: "settings", label: "Settings", icon: "--" },
+  { key: "users", label: "User Management", icon: "---" },
+  { key: "audit", label: "Audit Logs", icon: "--" },
 ];
 
 function App() {
@@ -103,7 +106,7 @@ function App() {
           transition={{ repeat: Infinity, duration: 1, ease: "linear" }} 
           className="text-4xl"
         >
-          ⚙️
+          --
         </motion.div>
       </div>
     );
@@ -147,9 +150,12 @@ function App() {
       case "prediction":return <ModuleErrorBoundary moduleName="What-If Calculator"><RoleGuard module="Simulation"><Prediction /></RoleGuard></ModuleErrorBoundary>;
       case "ocr":       return <ModuleErrorBoundary moduleName="What I Bought"><OCR /></ModuleErrorBoundary>;
       case "invoices":  return <ModuleErrorBoundary moduleName="Bills & Orders"><Invoices /></ModuleErrorBoundary>;
+      case "pos":       return <ModuleErrorBoundary moduleName="POS Counter Mode"><POSCounterMode /></ModuleErrorBoundary>;
       case "inventory": return <ModuleErrorBoundary moduleName="My Stock"><Inventory /></ModuleErrorBoundary>;
+      case "purchases": return <ModuleErrorBoundary moduleName="Vendor Orders"><PurchaseHub /></ModuleErrorBoundary>;
       case "contacts":  return <ModuleErrorBoundary moduleName="My Customers & Suppliers"><ContactsList /></ModuleErrorBoundary>;
       case "ledger":    return <ModuleErrorBoundary moduleName="Money In & Out"><Ledger /></ModuleErrorBoundary>;
+      case "accounting": return <ModuleErrorBoundary moduleName="Financial Audit"><AccountingHub /></ModuleErrorBoundary>;
       case "banker":    return <ModuleErrorBoundary moduleName="Loan Readiness Report"><RoleGuard module="Bankers View"><BankersView /></RoleGuard></ModuleErrorBoundary>;
       case "settings":  return <ModuleErrorBoundary moduleName="Settings"><Settings /></ModuleErrorBoundary>;
       case "users":     return <ModuleErrorBoundary moduleName="Users"><RoleGuard module="Settings"><UserManagement /></RoleGuard></ModuleErrorBoundary>;
@@ -261,7 +267,7 @@ function App() {
         onCommand={setActive} 
       />
 
-      {/* Global Command Palette (⌘K) */}
+      {/* Global Command Palette (-K) */}
       <CommandPalette 
         active={active} 
         onSelect={setActive} 
@@ -270,7 +276,7 @@ function App() {
   );
 }
 
-import { DataProvider as GlobalDataProvider } from "./contexts/DataContext";
+import { DataProvider as GlobalDataProvider } from "./context/DataContext";
 import { DataProvider as SyncProvider } from "./context/DataProvider";
 import { BrowserRouter } from "react-router-dom";
 import { ToastProvider } from "./components/common/Toast";

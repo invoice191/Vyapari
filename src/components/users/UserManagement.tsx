@@ -252,13 +252,13 @@ export default function UserManagement() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[1000] flex items-center justify-center p-6"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[1000] flex items-start justify-center overflow-y-auto p-6"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="bg-white w-full max-w-xl rounded-[3rem] p-12 shadow-2xl relative overflow-hidden"
+              className="bg-white w-full max-w-xl rounded-[3rem] p-12 shadow-2xl relative overflow-hidden my-auto"
             >
               <div className="text-center mb-10">
                 <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
@@ -412,13 +412,13 @@ export default function UserManagement() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[1000] flex items-center justify-center p-6"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[1000] flex items-start justify-center overflow-y-auto p-6"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="bg-white w-full max-w-lg rounded-[3rem] p-12 shadow-2xl relative"
+              className="bg-white w-full max-w-lg rounded-[3rem] p-12 shadow-2xl relative my-auto"
             >
               <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-4">Elevate <span className="text-indigo-600">Permissions</span></h2>
               <p className="text-[11px] font-bold text-slate-400 uppercase mb-8">User: {showEditModal.full_name}</p>
@@ -461,13 +461,13 @@ export default function UserManagement() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[1000] flex items-center justify-center p-6"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[1000] flex items-start justify-center overflow-y-auto p-6"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="bg-white w-full max-w-md rounded-[3rem] p-10 shadow-2xl relative border-4 border-rose-500/20 text-center"
+              className="bg-white w-full max-w-md rounded-[3rem] p-10 shadow-2xl relative border-4 border-rose-500/20 text-center my-auto"
             >
               <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <ShieldAlert size={40} />

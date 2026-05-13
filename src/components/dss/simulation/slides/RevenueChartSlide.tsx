@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'motion/react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
 import { Theme } from '../PresentationMode';
@@ -36,11 +36,11 @@ export default function RevenueChartSlide({ data, theme }: SlideProps) {
           <div className="space-y-2">
             <div className="flex justify-between gap-8 items-center">
               <span className="text-[10px] font-bold text-slate-500 uppercase">Current</span>
-              <span className={`text-xs font-black ${textColor}`}>₹{payload[0].value.toLocaleString()}</span>
+              <span className={`text-xs font-black ${textColor}`}>Rs.{payload[0].value.toLocaleString()}</span>
             </div>
             <div className="flex justify-between gap-8 items-center">
               <span className="text-[10px] font-bold text-indigo-400 uppercase">Projected</span>
-              <span className="text-xs font-black text-indigo-400">₹{payload[1].value.toLocaleString()}</span>
+              <span className="text-xs font-black text-indigo-400">Rs.{payload[1].value.toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -84,7 +84,7 @@ export default function RevenueChartSlide({ data, theme }: SlideProps) {
                 tickLine={false} 
                 tick={{ fill: theme === 'dark' ? '#94a3b8' : '#475569', fontSize: 10, fontWeight: 900 }}
                 dx={-10}
-                tickFormatter={(val) => `₹${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`}
+                tickFormatter={(val) => `Rs.${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99,102,241,0.05)' }} />
               <Legend 
@@ -132,7 +132,7 @@ export default function RevenueChartSlide({ data, theme }: SlideProps) {
              >
                 <h4 className={`text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2`}>{p.name}</h4>
                 <div className="flex items-center gap-6">
-                   <div className={`text-2xl font-black ${textColor} italic tracking-tighter`}>₹{p.current_revenue?.toLocaleString()} → ₹{p.projected_revenue?.toLocaleString()}</div>
+                   <div className={`text-2xl font-black ${textColor} italic tracking-tighter`}>Rs.{p.current_revenue?.toLocaleString()} - Rs.{p.projected_revenue?.toLocaleString()}</div>
                    <div className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-500 text-[10px] font-black uppercase">
                       +{(((p.projected_revenue - p.current_revenue) / p.current_revenue) * 100).toFixed(0)}%
                    </div>

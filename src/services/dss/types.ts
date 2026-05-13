@@ -1,4 +1,4 @@
-import { Product as InventoryItem, Invoice, AuditLog as StockLog } from '../types';
+﻿import { Product as InventoryItem, Invoice, AuditLog as StockLog } from '../types';
 
 export interface Sale {
   id: string;
@@ -15,7 +15,7 @@ export interface LedgerEntry {
   description: string;
 }
 
-// ── Priority & Scoring ─────────────────────────────────────────
+// -- Priority & Scoring -----------------------------------------
 export type RecommendationPriority = 'critical' | 'high' | 'medium' | 'low';
 export type EngineCategory = 
   | 'pricing' 
@@ -32,20 +32,20 @@ export type EngineCategory =
   | 'bundle';
 export type ActionType = 'restock' | 'reprice' | 'liquidate' | 'investigate' | 'monitor' | 'simulate';
 
-// ── The core recommendation atom ──────────────────────────────
+// -- The core recommendation atom ------------------------------
 export interface DSSRecommendation {
   id: string;                         // deterministic: `${engine}-${itemId}-${hash}`
   engine: EngineCategory;
   priority: RecommendationPriority;
-  score: number;                      // 0–100 composite urgency score
-  confidence: number;                 // 0–1 data quality confidence
+  score: number;                      // 0-100 composite urgency score
+  confidence: number;                 // 0-1 data quality confidence
   title: string;                      // "Critical: Basmati Rice will stock out in 4 days"
   headline: string;                   // one-line business impact
-  detail: string;                     // 2–3 sentence explanation with numbers
+  detail: string;                     // 2-3 sentence explanation with numbers
   impactEstimate: {
     metric: string;                   // "Revenue at risk"
     value: number;                    // 45000
-    unit: string;                     // "₹" | "units" | "days" | "%"
+    unit: string;                     // "Rs." | "units" | "days" | "%"
     direction: 'positive' | 'negative' | 'neutral';
   };
   action: {
@@ -68,7 +68,7 @@ export interface DSSRecommendation {
   expiresAt: Date;                    // recommendation is stale after this
 }
 
-// ── Insight (AI narrative layer) ──────────────────────────────
+// -- Insight (AI narrative layer) ------------------------------
 export interface DSSInsight {
   id: string;
   type: 'ai_narrative' | 'rule_summary' | 'trend_alert' | 'festival_warning';
@@ -83,7 +83,7 @@ export interface DSSInsight {
   streamedText?: string;
 }
 
-// ── Simulation ────────────────────────────────────────────────
+// -- Simulation ------------------------------------------------
 export interface SimulationParams {
   label: string;                      // "Festive Season Boost Scenario"
   priceChangePct: number;
@@ -132,7 +132,7 @@ export interface SimulationResult {
   executionMs: number;
 }
 
-// ── Forecast ──────────────────────────────────────────────────
+// -- Forecast --------------------------------------------------
 export interface ForecastResult {
   itemId: string;
   itemName: string;
@@ -150,7 +150,7 @@ export interface ForecastResult {
   accuracy?: number;                  // MAE against last known period if available
 }
 
-// ── Engine I/O ────────────────────────────────────────────────
+// -- Engine I/O ------------------------------------------------
 export interface EngineInput {
   inventory: InventoryItem[];
   stockLogs: StockLog[];
@@ -167,11 +167,11 @@ export interface EngineOutput {
   insights: DSSInsight[];
   metrics?: { label: string; value: number; unit?: string }[];
   executionMs: number;
-  dataQuality: number;                // 0–1, affects confidence scoring
+  dataQuality: number;                // 0-1, affects confidence scoring
   forecasts?: ForecastResult[];
 }
 
-// ── Full Analysis Result ──────────────────────────────────────
+// -- Full Analysis Result --------------------------------------
 export interface DSSAnalysisResult {
   id: string;
   engineOutputs: EngineOutput[];
@@ -186,7 +186,7 @@ export interface DSSAnalysisResult {
     low: number;
     totalRevenueAtRisk: number;
     totalOpportunityValue: number;
-    healthScore: number;              // 0–100 overall business health
+    healthScore: number;              // 0-100 overall business health
     healthComponents: {
       cashRunway: number;             // 0-25
       revenueGrowth: number;          // 0-20

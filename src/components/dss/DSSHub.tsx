@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Zap, Target, ShieldCheck, Flag, TrendingUp, 
@@ -66,7 +66,7 @@ export default function DSSHub() {
 
   return (
     <div className="space-y-12 pb-20">
-      {/* ── Futuristic HUD Header ── */}
+      {/* -- Futuristic HUD Header -- */}
       <div className="relative overflow-hidden bg-slate-950 rounded-2xl p-8 border border-white/5 shadow-2xl">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4" />
         
@@ -93,8 +93,8 @@ export default function DSSHub() {
             </p>
             
             <div className="grid grid-cols-3 gap-6 mt-8">
-              <SummaryPill label="Revenue at Risk" value={`₹${(analysis?.summary.totalRevenueAtRisk || 0).toLocaleString()}`} color="text-rose-400" />
-              <SummaryPill label="Opportunity Pool" value={`₹${(analysis?.summary.totalOpportunityValue || 0).toLocaleString()}`} color="text-emerald-400" />
+              <SummaryPill label="Revenue at Risk" value={`Rs.${(analysis?.summary.totalRevenueAtRisk || 0).toLocaleString()}`} color="text-rose-400" />
+              <SummaryPill label="Opportunity Pool" value={`Rs.${(analysis?.summary.totalOpportunityValue || 0).toLocaleString()}`} color="text-emerald-400" />
               <SummaryPill label="System Confidence" value={`${(analysis?.executionMs || 0) < 1000 ? '98.4%' : '94.2%'}`} color="text-indigo-400" />
             </div>
           </div>
@@ -102,7 +102,7 @@ export default function DSSHub() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* ── Recommendation Stream ── */}
+        {/* -- Recommendation Stream -- */}
         <div className="lg:col-span-8 space-y-10">
            <div className="flex justify-between items-end">
               <SectionHeader title="Important Smart Tips" subtitle="Sorted by importance" />
@@ -128,7 +128,7 @@ export default function DSSHub() {
            </div>
         </div>
 
-        {/* ── Sidebar Intelligence ── */}
+        {/* -- Sidebar Intelligence -- */}
         <div className="lg:col-span-4 space-y-8">
            <Card className="!bg-slate-950 !border-white/5 !p-8 relative overflow-hidden group">
               <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
@@ -247,7 +247,7 @@ function RecommendationCard({ rec, index }: { rec: DSSRecommendation, index: num
                   rec.priority === 'high' ? '!bg-amber-500 !text-white' : '!bg-indigo-500 !text-white'
                 } />
                 <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{rec.engine} Engine</span>
-                <span className="text-[9px] font-bold text-slate-300">•</span>
+                <span className="text-[9px] font-bold text-slate-300">-</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{Math.round(rec.confidence * 100)}% Match</span>
               </div>
               <h3 className="text-2xl font-black tracking-tight text-slate-900 leading-tight uppercase mb-2">{rec.title}</h3>
@@ -258,7 +258,7 @@ function RecommendationCard({ rec, index }: { rec: DSSRecommendation, index: num
           <div className="text-right flex flex-col items-end">
             <div className={`text-3xl font-black tracking-tighter ${(rec.impactEstimate?.direction || 'positive') === 'negative' ? 'text-rose-500' : 'text-emerald-500'}`}>
               {(rec.impactEstimate?.direction || 'positive') === 'negative' ? '-' : '+'}
-              {rec.impactEstimate?.unit || '₹'}{(rec.impactEstimate?.value || 0).toLocaleString()}
+              {rec.impactEstimate?.unit || 'Rs.'}{(rec.impactEstimate?.value || 0).toLocaleString()}
             </div>
             <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-6">{rec.impactEstimate?.metric || 'Financial Impact'}</div>
             <Button 

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+﻿import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
@@ -32,7 +32,7 @@ const Index = () => {
           className="my-6 h-auto w-56 md:w-72 drop-shadow-2xl animate-float-slow" />
 
         <p className="max-w-xl text-md text-muted-foreground animate-fade-in" style={{ animationDelay: "0.2s" }}>
-          {loading ? "Loading…" : user ? `Hey ${user.email?.split("@")[0]} 👋 You're signed in.` : "Sign in to start tracking sales, stock, and growth — all in one bold place."}
+          {loading ? "Loading-" : user ? `Hey ${user.email?.split("@")[0]} -- You're signed in.` : "Sign in to start tracking sales, stock, and growth - all in one bold place."}
         </p>
 
         <div className="mt-6 flex flex-wrap justify-center gap-3 animate-fade-in" style={{ animationDelay: "0.3s" }}>

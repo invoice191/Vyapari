@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Save, AlertCircle, RefreshCw, Layers } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { ledgerService } from '../../services/ledgerService';
-import { useGlobalData } from '../../contexts/DataContext';
+import { useGlobalData } from '../../context/DataContext';
 
 interface Props {
   isOpen: boolean;
@@ -109,7 +109,7 @@ export default function LedgerEntryModal({ isOpen, onClose, onCreated, businessI
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md"
+        className="fixed inset-0 z-[1200] flex items-start justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto"
         onClick={onClose}
       >
         <motion.div
@@ -117,7 +117,7 @@ export default function LedgerEntryModal({ isOpen, onClose, onCreated, businessI
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.95, y: 20 }}
           onClick={e => e.stopPropagation()}
-          className="w-full max-w-lg max-h-[90vh] flex flex-col bg-slate-900 border-4 border-[#FF5500] shadow-[0_0_40px_rgba(255,85,0,0.25)] rounded-[2rem] overflow-hidden text-white relative"
+          className="w-full max-w-lg max-h-[90vh] flex flex-col bg-slate-900 border-4 border-[#FF5500] shadow-[0_0_40px_rgba(255,85,0,0.25)] rounded-[2rem] overflow-hidden text-white relative my-auto"
         >
           {/* Header */}
           <div className="flex justify-between items-center px-8 py-6 bg-slate-950/60 border-b border-slate-800">
@@ -160,7 +160,7 @@ export default function LedgerEntryModal({ isOpen, onClose, onCreated, businessI
                   }}
                   className="w-full bg-slate-950 border-2 border-slate-800 focus:border-[#FF5500] p-4 font-black text-xs uppercase tracking-widest rounded-2xl outline-none text-white transition-all"
                 >
-                  <option value="">— Select Customer/Supplier —</option>
+                  <option value="">- Select Customer/Supplier -</option>
                   {contacts.map(c => (
                     <option key={c.id} value={c.id}>
                       {c.name} ({c.type})
@@ -200,7 +200,7 @@ export default function LedgerEntryModal({ isOpen, onClose, onCreated, businessI
                       : 'border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700'
                   }`}
                 >
-                  🟢 Credit (Inflow)
+                  -- Credit (Inflow)
                 </button>
                 <button
                   type="button"
@@ -211,7 +211,7 @@ export default function LedgerEntryModal({ isOpen, onClose, onCreated, businessI
                       : 'border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700'
                   }`}
                 >
-                  🔴 Debit (Outflow)
+                  -- Debit (Outflow)
                 </button>
               </div>
             </div>
@@ -228,7 +228,7 @@ export default function LedgerEntryModal({ isOpen, onClose, onCreated, businessI
               </div>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-xs">
-                  ₹
+                  Rs.
                 </span>
                 <input
                   type="number"

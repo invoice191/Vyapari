@@ -30,7 +30,7 @@ export default function ShareModal({ data, onClose, theme }: ShareModalProps) {
   ];
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-[110] flex items-start justify-center p-6 overflow-y-auto">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -43,7 +43,7 @@ export default function ShareModal({ data, onClose, theme }: ShareModalProps) {
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className={`relative w-full max-w-md ${bgColor} border ${borderColor} rounded-[2.5rem] p-10 shadow-2xl overflow-hidden`}
+        className={`relative w-full max-w-md ${bgColor} border ${borderColor} rounded-[2.5rem] p-10 shadow-2xl overflow-hidden my-auto`}
       >
         <div className="absolute top-0 right-0 p-8">
           <button onClick={onClose} className={`p-2 rounded-lg hover:bg-white/10 ${textColor}`}>

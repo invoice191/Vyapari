@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+﻿import { motion } from "motion/react";
 import { Share2, Brain, Zap, TrendingUp, AlertCircle } from "lucide-react";
 
 interface Insight {
@@ -43,9 +43,9 @@ export function DailyBriefing({ insights = [], loading = false }: { insights?: a
   if (safeInsights.length === 0) return null;
 
   const getIcon = (iconStr: string) => {
-    if (iconStr?.includes('📈') || iconStr?.includes('Trending')) return <TrendingUp size={18} />;
-    if (iconStr?.includes('⚠️') || iconStr?.includes('Alert')) return <AlertCircle size={18} />;
-    if (iconStr?.includes('⚡') || iconStr?.includes('Zap')) return <Zap size={18} />;
+    if (iconStr?.includes('--') || iconStr?.includes('Trending')) return <TrendingUp size={18} />;
+    if (iconStr?.includes('--') || iconStr?.includes('Alert')) return <AlertCircle size={18} />;
+    if (iconStr?.includes('-') || iconStr?.includes('Zap')) return <Zap size={18} />;
     return <Brain size={18} />;
   };
 
@@ -86,8 +86,8 @@ export function DailyBriefing({ insights = [], loading = false }: { insights?: a
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => {
-              const text = safeInsights.map(i => `📍 *${i.title.toUpperCase()}*\n${i.insight}`).join('\n\n');
-              const header = `💎 *VYAPARI EXECUTIVE BRIEFING*\n_Neural insights for your business growth_\n\n`;
+              const text = safeInsights.map(i => `-- *${i.title.toUpperCase()}*\n${i.insight}`).join('\n\n');
+              const header = `-- *VYAPARI EXECUTIVE BRIEFING*\n_Neural insights for your business growth_\n\n`;
               window.open(`https://wa.me/?text=${encodeURIComponent(header + text)}`, '_blank');
             }}
             className="px-8 py-4 bg-indigo-600 text-white text-xs font-bold uppercase tracking-widest rounded-2xl flex items-center gap-3 shadow-xl shadow-indigo-600/20 hover:bg-indigo-500"

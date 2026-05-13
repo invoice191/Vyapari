@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { 
   Document, Page, Text, View, StyleSheet, 
   Image, Font, PDFDownloadLink, 
@@ -166,12 +166,12 @@ export const DSSReportPDF = ({ business, aiResult, scope = 'full', engineId }: D
             {aiResult?.top_3_urgent_actions?.map((action: any, i: number) => (
               <View key={i} style={{ marginBottom: 15, padding: 10, backgroundColor: '#f8fafc', borderRadius: 8 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <Text style={{ fontSize: 10, fontWeight: 'bold' }}>RANK #{action.rank} — {action.engine.toUpperCase()}</Text>
+                  <Text style={{ fontSize: 10, fontWeight: 'bold' }}>RANK #{action.rank} - {action.engine.toUpperCase()}</Text>
                   <Text style={styles.urgencyBadge}>{action.urgency}</Text>
                 </View>
                 <Text style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 5 }}>{action.title}</Text>
                 <Text style={{ fontSize: 10, color: '#475569' }}>{action.action}</Text>
-                <Text style={{ fontSize: 10, color: '#059669', marginTop: 5, fontWeight: 'bold' }}>EST. IMPACT: ₹{action.rupee_impact.toLocaleString()}</Text>
+                <Text style={{ fontSize: 10, color: '#059669', marginTop: 5, fontWeight: 'bold' }}>EST. IMPACT: Rs.{action.rupee_impact.toLocaleString()}</Text>
               </View>
             ))}
           </View>
@@ -233,9 +233,9 @@ export const DSSReportPDF = ({ business, aiResult, scope = 'full', engineId }: D
               {(aiResult?.engines?.pricing?.recommendations || []).slice(0, 10).map((r: any, i: number) => (
                 <View key={i} style={styles.tableRow}>
                   <Text style={styles.tableCell}>{r.product_name}</Text>
-                  <Text style={styles.tableCell}>₹{r.current_price}</Text>
-                  <Text style={styles.tableCell}>₹{r.recommended_price}</Text>
-                  <Text style={[styles.tableCell, { color: '#059669' }]}>+₹{r.expected_monthly_profit_change}</Text>
+                  <Text style={styles.tableCell}>Rs.{r.current_price}</Text>
+                  <Text style={styles.tableCell}>Rs.{r.recommended_price}</Text>
+                  <Text style={[styles.tableCell, { color: '#059669' }]}>+Rs.{r.expected_monthly_profit_change}</Text>
                   <Text style={styles.tableCell}>{r.verdict}</Text>
                 </View>
               ))}
@@ -267,7 +267,7 @@ export const DSSReportPDF = ({ business, aiResult, scope = 'full', engineId }: D
               </View>
               <View style={styles.metricCard}>
                 <Text style={{ fontSize: 8 }}>OVERDUE AR</Text>
-                <Text style={{ fontSize: 14, color: '#e11d48' }}>₹{aiResult?.engines?.cashflow?.summary?.ar_overdue_total.toLocaleString()}</Text>
+                <Text style={{ fontSize: 14, color: '#e11d48' }}>Rs.{aiResult?.engines?.cashflow?.summary?.ar_overdue_total.toLocaleString()}</Text>
               </View>
             </View>
           </View>
@@ -284,9 +284,9 @@ export const DSSReportPDF = ({ business, aiResult, scope = 'full', engineId }: D
                {(aiResult?.engines?.cashflow?.waterfall_forecast || []).map((f: any, i: number) => (
                  <View key={i} style={styles.tableRow}>
                    <Text style={styles.tableCell}>{f.month}</Text>
-                   <Text style={styles.tableCell}>+₹{f.expected_collections.toLocaleString()}</Text>
-                   <Text style={styles.tableCell}>-₹{f.estimated_fixed_costs.toLocaleString()}</Text>
-                   <Text style={[styles.tableCell, { fontWeight: 'bold' }]}>₹{f.projected_closing_cash.toLocaleString()}</Text>
+                   <Text style={styles.tableCell}>+Rs.{f.expected_collections.toLocaleString()}</Text>
+                   <Text style={styles.tableCell}>-Rs.{f.estimated_fixed_costs.toLocaleString()}</Text>
+                   <Text style={[styles.tableCell, { fontWeight: 'bold' }]}>Rs.{f.projected_closing_cash.toLocaleString()}</Text>
                  </View>
                ))}
              </View>
@@ -311,7 +311,7 @@ export const DSSReportPDF = ({ business, aiResult, scope = 'full', engineId }: D
                 <Text style={[styles.tableCell, { flex: 0.5 }]}>Prio</Text>
                 <Text style={[styles.tableCell, { flex: 3 }]}>Strategic Initiative</Text>
                 <Text style={styles.tableCell}>Engine</Text>
-                <Text style={styles.tableCell}>₹ Impact</Text>
+                <Text style={styles.tableCell}>Rs. Impact</Text>
               </View>
               {(aiResult?.consolidated_recommendations || []).map((rec: any, i: number) => (
                 <View key={i} style={styles.tableRow}>
@@ -321,7 +321,7 @@ export const DSSReportPDF = ({ business, aiResult, scope = 'full', engineId }: D
                     {"\n"}{rec.action}
                   </Text>
                   <Text style={styles.tableCell}>{rec.engine}</Text>
-                  <Text style={[styles.tableCell, { color: '#059669', fontWeight: 'bold' }]}>₹{rec.rupee_impact.toLocaleString()}</Text>
+                  <Text style={[styles.tableCell, { color: '#059669', fontWeight: 'bold' }]}>Rs.{rec.rupee_impact.toLocaleString()}</Text>
                 </View>
               ))}
             </View>
@@ -334,7 +334,7 @@ export const DSSReportPDF = ({ business, aiResult, scope = 'full', engineId }: D
              </Text>
           </View>
 
-          <Text style={styles.footer}>© 2026 Vyapari AI - All Rights Reserved</Text>
+          <Text style={styles.footer}>- 2026 Vyapari AI - All Rights Reserved</Text>
         </Page>
       )}
     </Document>

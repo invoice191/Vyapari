@@ -1,5 +1,6 @@
-import jsPDF from 'jspdf';
+﻿import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { downloadPDF } from '../../../../../utils/pdf/downloadPDF';
 
 interface DetailedPDFProps {
   businessName: string;
@@ -19,7 +20,7 @@ interface DetailedPDFProps {
 // Helper to normalize currency symbols for jsPDF compatibility
 const normalizeValue = (val: any) => {
   if (typeof val !== 'string') return val;
-  return val.replace(/₹/g, 'INR');
+  return val.replace(/Rs./g, 'INR');
 };
 
 export async function generateDetailedPDF({
@@ -41,14 +42,14 @@ export async function generateDetailedPDF({
   const drawHeader = () => {
     // Top Watermark (Mirrored from UI)
     doc.setFontSize(8); doc.setTextColor(...SLATE_500); doc.setFont('helvetica', 'bold');
-    doc.text(`${businessName.toUpperCase()} · OFFICIAL BUSINESS INTELLIGENCE`, w - margin, 12, { align: 'right' });
+    doc.text(`${businessName.toUpperCase()}  OFFICIAL BUSINESS INTELLIGENCE`, w - margin, 12, { align: 'right' });
 
     // Main Navy Header Box
     doc.setFillColor(...NAVY);
     doc.roundedRect(margin, 18, w - (margin * 2), 35, 1, 1, 'F');
     
     doc.setFontSize(8); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
-    doc.text(`${(category || 'BUSINESS ANALYTICS').toUpperCase()} · ${reportTitle.toUpperCase()}`, margin + 8, 28);
+    doc.text(`${(category || 'BUSINESS ANALYTICS').toUpperCase()}  ${reportTitle.toUpperCase()}`, margin + 8, 28);
     
     doc.setFontSize(22); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold');
     doc.text(reportTitle.toUpperCase(), margin + 8, 40);
@@ -60,7 +61,7 @@ export async function generateDetailedPDF({
 
   const drawFooter = (page: number, total: number) => {
     doc.setFontSize(7); doc.setTextColor(...SLATE_500); doc.setFont('helvetica', 'normal');
-    doc.text(`Vyapari Intelligence Core · Official Registry`, margin, h - 8);
+    doc.text(`Vyapari Intelligence Core  Official Registry`, margin, h - 8);
     doc.text(`Page ${page} of ${total} | Generated: ${new Date().toLocaleString()}`, w - margin, h - 8, { align: 'right' });
   };
 
@@ -111,13 +112,32 @@ export async function generateDetailedPDF({
   autoTable(doc, {
     startY: nextY,
     head: [columns.map(c => c.toUpperCase())],
-    body: tableData.map(row => columns.map(col => {
-      const val = row[col.toLowerCase().replace(/\s+/g, '_')] ?? row[col] ?? '—';
-      const formatted = typeof val === 'number' ? val.toLocaleString('en-IN') : String(val);
-      return normalizeValue(formatted);
+    body: (tableData || []).map(row => (columns || []).map(col => {
+      try {
+        if (!row || !col) return '-';
+        const colIndex = columns.indexOf(col);
+        const key1 = String(col).toLowerCase().replace(/\s+/g, '_');
+        
+        // Multi-layer fallback logic to ensure absolute parity with visual screen rendering
+        let val = row[key1] !== undefined ? row[key1] : 
+                 (row[col] !== undefined ? row[col] : 
+                 Object.values(row || {})[colIndex]);
+
+        const formatted = typeof val === 'number' ? val.toLocaleString('en-IN') : String(val ?? '');
+        return normalizeValue(formatted);
+      } catch (err) {
+        console.warn('[PDF] Cell render error:', err);
+        return '';
+      }
     })),
     theme: 'grid',
-    styles: { fontSize: 8, cellPadding: 3, textColor: [55, 65, 81] as any },
+    styles: { 
+      fontSize: 7.5, 
+      cellPadding: 2.5, 
+      textColor: [55, 65, 81] as any, 
+      overflow: 'linebreak',
+      cellWidth: 'wrap'
+    },
     headStyles: { fillColor: GRAY_BG as any, textColor: SLATE_500 as any, fontStyle: 'bold', lineWidth: 0.1, lineColor: BORDER as any },
     alternateRowStyles: { fillColor: [249, 250, 251] as any },
     margin: { left: margin, right: margin },
@@ -127,7 +147,7 @@ export async function generateDetailedPDF({
     }
   });
 
-  // ─── Executive Summary & Insights (FINAL SECTION) ─────────────────────────
+  //  Executive Summary & Insights (FINAL SECTION) 
   nextY = (doc as any).lastAutoTable.finalY + 12;
   const summaryText = (aiAdvisory?.[0] || description || "Strategic analysis complete.").trim();
   const summaryLines = doc.splitTextToSize(summaryText, w - 50);
@@ -180,6 +200,7 @@ export async function generateDetailedPDF({
   });
 
   // Save the PDF
+  // Safe Blob PDF download trigger to prevent extension corruption
   const filename = `${reportTitle.replace(/\s+/g, '_')}_Detailed.pdf`;
-  doc.save(filename);
+  downloadPDF(doc, filename);
 }

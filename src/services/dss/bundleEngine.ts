@@ -1,4 +1,4 @@
-import { DSSRecommendation, EngineInput, EngineOutput } from './types';
+﻿import { DSSRecommendation, EngineInput, EngineOutput } from './types';
 import rules from './rules.json';
 
 /**
@@ -63,11 +63,11 @@ export function runBundleEngine(input: EngineInput): EngineOutput {
           confidence: 0.75,
           title: `Smart Bundle: ${itemA.name} + ${itemB.name}`,
           headline: `Strong affinity detected (Lift: ${lift.toFixed(1)}x)`,
-          detail: `These products are bought together frequently. Create a bundle for ₹${Math.round(bundlePrice).toLocaleString()} to increase average order value.`,
+          detail: `These products are bought together frequently. Create a bundle for Rs.${Math.round(bundlePrice).toLocaleString()} to increase average order value.`,
           impactEstimate: {
             metric: 'Potential Revenue Uplift',
             value: Math.round(revenueUplift),
-            unit: '₹',
+            unit: 'Rs.',
             direction: 'positive',
           },
           action: {

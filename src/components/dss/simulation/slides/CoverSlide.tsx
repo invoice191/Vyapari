@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, ShieldCheck, Target } from 'lucide-react';
 import { Theme } from '../PresentationMode';

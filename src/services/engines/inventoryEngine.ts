@@ -1,4 +1,4 @@
-import { EngineInput, DSSRecommendation } from '../dssService';
+﻿import { EngineInput, DSSRecommendation } from '../dssService';
 
 export const inventoryEngine = {
   analyze: (input: EngineInput): DSSRecommendation[] => {
@@ -12,7 +12,7 @@ export const inventoryEngine = {
         title: 'Critical Stock Shortage',
         body: `${critical.length} items are below the reorder point (threshold).`,
         score: 95,
-        impact: `Potential revenue risk of ₹${(critical.length * 5000).toLocaleString()}`,
+        impact: `Potential revenue risk of Rs.${(critical.length * 5000).toLocaleString()}`,
         action: 'Generate procurement request for replenishment',
         metadata: { items: critical.map(i => i.name) }
       });

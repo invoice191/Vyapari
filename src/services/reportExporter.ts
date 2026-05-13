@@ -1,10 +1,11 @@
-import jsPDF from 'jspdf';
+﻿import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
+import { downloadPDF as coreDownloadPDF } from '../utils/pdf/downloadPDF';
 import type { ReportPayload, SheetConfig, ColumnDef } from '../types/reports';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// --- Helpers -----------------------------------------------------------------
 
 const INDIGO: [number, number, number] = [79, 70, 229];
 const INDIGO_LIGHT: [number, number, number] = [238, 242, 255];
@@ -18,15 +19,15 @@ const formatDate = (d: string | Date): string => {
 };
 
 const formatCurrency = (v: number): string => {
-  if (v === 0) return '—';
-  return '₹' + v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (v === 0) return '-';
+  return 'Rs.' + v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 const formatValue = (val: unknown, col: ColumnDef): string => {
-  if (val === null || val === undefined || val === '' || val === 0 && col.type === 'currency') return '—';
+  if (val === null || val === undefined || val === '' || val === 0 && col.type === 'currency') return '-';
   switch (col.type) {
     case 'currency': return formatCurrency(Number(val));
-    case 'number': return Number(val) === 0 ? '—' : Number(val).toLocaleString('en-IN');
+    case 'number': return Number(val) === 0 ? '-' : Number(val).toLocaleString('en-IN');
     case 'date': return formatDate(String(val));
     case 'percent': return Number(val).toFixed(2) + '%';
     default: return String(val);
@@ -36,24 +37,29 @@ const formatValue = (val: unknown, col: ColumnDef): string => {
 const generateFilename = (type: string, ext: string): string => {
   const now = new Date();
   const d = now.toISOString().slice(0, 10);
-  const t = now.toTimeString().slice(0, 5).replace(':', '-');
-  return `vyapari_${type.replace(/\s+/g, '_').toLowerCase()}_${d}_${t}.${ext}`;
+  const safeType = type.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+  return `vyapari-${safeType}-${d}.${ext}`;
 };
 
 /** Trigger browser download safely across all browsers */
 const triggerDownload = (blob: Blob, filename: string): void => {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.style.display = 'none';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  import('file-saver').then(({ saveAs }) => {
+    saveAs(blob, filename);
+  }).catch(() => {
+    // Minimal fallback if dynamic import fails
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
 };
 
-/** Capture a DOM element as PNG — strips dark-mode before capture */
+/** Capture a DOM element as PNG - strips dark-mode before capture */
 const captureElement = async (el: HTMLElement): Promise<string> => {
   const clone = el.cloneNode(true) as HTMLElement;
   clone.style.cssText = `
@@ -78,7 +84,7 @@ const captureElement = async (el: HTMLElement): Promise<string> => {
   return canvas.toDataURL('image/png');
 };
 
-// ─── PDF Header / Footer helpers ─────────────────────────────────────────────
+// --- PDF Header / Footer helpers ---------------------------------------------
 
 const drawPDFHeader = (doc: any, payload: ReportPayload, pageNumber: number, totalPages: number) => {
   const w = doc.internal.pageSize.getWidth();
@@ -99,7 +105,7 @@ const drawPDFHeader = (doc: any, payload: ReportPayload, pageNumber: number, tot
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
   doc.setFont('helvetica', 'normal');
-  const meta = [payload.gstin && `GSTIN: ${payload.gstin}`, payload.phone, payload.email].filter(Boolean).join('  ·  ');
+  const meta = [payload.gstin && `GSTIN: ${payload.gstin}`, payload.phone, payload.email].filter(Boolean).join('  -  ');
   if (meta) doc.text(meta, 38, 21);
 
   // Report title (right-aligned)
@@ -110,7 +116,7 @@ const drawPDFHeader = (doc: any, payload: ReportPayload, pageNumber: number, tot
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
   doc.setFont('helvetica', 'normal');
-  const dateStr = `${formatDate(payload.dateRange.from)} – ${formatDate(payload.dateRange.to)}`;
+  const dateStr = `${formatDate(payload.dateRange.from)} - ${formatDate(payload.dateRange.to)}`;
   doc.text(dateStr, w - 15, 21, { align: 'right' });
 
   // Horizontal rule
@@ -133,7 +139,7 @@ const drawPDFFooter = (doc: any, payload: ReportPayload, pageNumber: number, tot
   doc.setFontSize(7);
   doc.setTextColor(148, 163, 184);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Confidential — Generated by Vyapari | ${payload.businessName}`, 15, h - 6);
+  doc.text(`Confidential - Generated by Vyapari | ${payload.businessName}`, 15, h - 6);
   const ts = new Date().toLocaleString('en-IN');
   doc.text(`Page ${pageNumber} of ${totalPages} | ${ts}`, w - 15, h - 6, { align: 'right' });
 };
@@ -160,7 +166,7 @@ const drawKPIRow = (doc: any, kpis: ReportPayload['kpis'], startY: number): numb
   return startY + 26;
 };
 
-// ─── PDF DOWNLOAD ─────────────────────────────────────────────────────────────
+// --- PDF DOWNLOAD -------------------------------------------------------------
 
 export async function downloadPDF(
   payload: ReportPayload,
@@ -239,7 +245,7 @@ export async function downloadPDF(
     },
   });
 
-  // ─── Post-Table Summary & Insights (The "Last" Part) ───────────────────────
+  // --- Post-Table Summary & Insights (The "Last" Part) -----------------------
   if (payload.advisory?.length || payload.summary?.length) {
     const finalY = (doc as any).lastAutoTable.finalY + 15;
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -289,11 +295,10 @@ export async function downloadPDF(
   }
 
   const filename = generateFilename(payload.title, 'pdf');
-  const pdfOutput = doc.output('arraybuffer');
-  triggerDownload(new Blob([pdfOutput], { type: 'application/pdf' }), filename);
+  coreDownloadPDF(doc, filename);
 }
 
-// ─── EXCEL DOWNLOAD ───────────────────────────────────────────────────────────
+// --- EXCEL DOWNLOAD -----------------------------------------------------------
 
 export function downloadExcel(payload: ReportPayload, extraSheets?: SheetConfig[]): void {
   const wb = XLSX.utils.book_new();
@@ -304,7 +309,7 @@ export function downloadExcel(payload: ReportPayload, extraSheets?: SheetConfig[
     // Row 1: Business Name
     wsData.push([payload.businessName]);
     // Row 2: Title + date range
-    wsData.push([`${payload.title} | ${formatDate(payload.dateRange.from)} – ${formatDate(payload.dateRange.to)}`]);
+    wsData.push([`${payload.title} | ${formatDate(payload.dateRange.from)} - ${formatDate(payload.dateRange.to)}`]);
     // Row 3: GSTIN / meta
     wsData.push([`GSTIN: ${payload.gstin || 'N/A'}  |  Generated by: ${payload.generatedBy}`]);
     // Row 4: blank
@@ -352,7 +357,7 @@ export function downloadExcel(payload: ReportPayload, extraSheets?: SheetConfig[
       cfg.rows.forEach((_, ri) => {
         const cellRef = `${colLetter}${startRow + ri + 1}`;
         if (!ws[cellRef]) return;
-        if (col.type === 'currency') ws[cellRef].z = '"₹"#,##0.00';
+        if (col.type === 'currency') ws[cellRef].z = '"Rs."#,##0.00';
         else if (col.type === 'number') ws[cellRef].z = '#,##0';
         else if (col.type === 'percent') ws[cellRef].z = '0.00%';
         else if (col.type === 'date' && ws[cellRef].v) {
@@ -410,7 +415,7 @@ export function downloadExcel(payload: ReportPayload, extraSheets?: SheetConfig[
   );
 }
 
-// ─── CSV DOWNLOAD ─────────────────────────────────────────────────────────────
+// --- CSV DOWNLOAD -------------------------------------------------------------
 
 export function downloadCSV(payload: ReportPayload): void {
   const quoteCSV = (v: unknown): string => {
@@ -432,7 +437,7 @@ export function downloadCSV(payload: ReportPayload): void {
   triggerDownload(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), filename);
 }
 
-// ─── PRINT PREVIEW ────────────────────────────────────────────────────────────
+// --- PRINT PREVIEW ------------------------------------------------------------
 
 export function openPrintPreview(containerEl: HTMLElement, payload: ReportPayload): void {
   const popup = window.open('', '_blank', 'width=900,height=700');
@@ -447,7 +452,7 @@ export function openPrintPreview(containerEl: HTMLElement, payload: ReportPayloa
     <html lang="en">
     <head>
       <meta charset="UTF-8">
-      <title>${payload.title} — Vyapari ERP</title>
+      <title>${payload.title} - Vyapari ERP</title>
       <style>
         @page { size: A4; margin: 15mm; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -565,7 +570,7 @@ export function openPrintPreview(containerEl: HTMLElement, payload: ReportPayloa
         </div>
       </div>
 
-      <div class="footer">Confidential — System Generated Document — Vyapari ERP v4.0</div>
+      <div class="footer">Confidential - System Generated Document - Vyapari ERP v4.0</div>
 
       <script>
         window.onload = function() {

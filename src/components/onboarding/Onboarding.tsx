@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Rocket, Building2, Package, Users, ArrowRight, CheckCircle2, 
@@ -76,7 +76,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         onClick={() => signOut()}
         className="absolute top-6 right-6 z-20 px-5 py-2.5 bg-slate-800 text-white hover:bg-neon hover:text-slate-900 font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
       >
-        Sign Out 🚪
+        Sign Out --
       </button>
 
       <motion.div 
@@ -452,7 +452,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                   <div key={i} className={`w-20 h-24 rounded-3xl border-4 flex items-center justify-center text-4xl font-black transition-all duration-500 ${
                     formData.ownerPin.length > i ? 'bg-slate-900 text-neon border-neon shadow-2xl shadow-neon/30 scale-110' : 'bg-slate-50 border-slate-100 text-slate-200'
                   }`}>
-                    {formData.ownerPin[i] ? '●' : ''}
+                    {formData.ownerPin[i] ? '-' : ''}
                   </div>
                 ))}
               </div>

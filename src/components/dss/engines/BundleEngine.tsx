@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Layers, Package, ArrowRight, Zap, Info, Lightbulb, ShoppingCart, Plus, TrendingUp, Target, Loader2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
@@ -83,8 +83,8 @@ export const BundleEngine: React.FC = () => {
 
              <div className="mt-auto space-y-6">
                 <div className="flex items-baseline gap-3">
-                   <span className="text-2xl font-bold text-white tracking-tight">₹{bundle.price}</span>
-                   <span className="text-sm text-slate-500 line-through font-bold tracking-tight">₹{bundle.oldPrice}</span>
+                   <span className="text-2xl font-bold text-white tracking-tight">Rs.{bundle.price}</span>
+                   <span className="text-sm text-slate-500 line-through font-bold tracking-tight">Rs.{bundle.oldPrice}</span>
                 </div>
                 <button className="w-full py-4 border border-slate-700 rounded-2xl text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all shadow-lg flex items-center justify-center gap-2">
                    <Plus size={14} />

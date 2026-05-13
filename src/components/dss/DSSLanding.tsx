@@ -8,15 +8,16 @@ import {
   MousePointer2, Target, Target as TargetIcon, ShieldAlert, Cpu, RefreshCw, BarChart2,
   Package, FileDown, BrainCircuit, MessageSquare, ListFilter, Search,
   Lightbulb, Gauge, Info, ChevronRight, Monitor, Trophy, Rocket, Bell,
-  Radar as RadarIcon, Radio
+  Radar as RadarIcon, Radio, Loader2
 } from 'lucide-react';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
-import { useGlobalData } from "../../contexts/DataContext";
+import { useGlobalData } from "../../context/DataContext";
 import { useAuth } from "../../context/AuthContext";
 import { dssService } from "../../services/dss/dssService";
 import { generateInsights } from "../../services/dss/insightGenerator";
 import { Badge, ActionBtn as Button } from '../common/UI';
 import { useToast } from '../common/Toast';
+import { generateDSSReport } from '../../utils/pdf/dssReportPDF';
 import EnginePanel from './EnginePanel';
 import PresentationMode from './simulation/PresentationMode';
 
@@ -30,6 +31,7 @@ export default function DSSLanding() {
   const [vaniSpeaking, setVaniSpeaking] = useState(false);
   const [aiInsights, setAiInsights] = useState<any[]>([]);
   const [showPresentation, setShowPresentation] = useState(false);
+  const [downloadingReport, setDownloadingReport] = useState<'download' | 'open' | null>(null);
 
   useEffect(() => {
     const runAnalysis = async () => {
@@ -39,21 +41,27 @@ export default function DSSLanding() {
       }
       setLoading(true);
       try {
+        // Step 1: Run local DB matrix and static briefing instantly
         const res = await dssService.runFullDSSAnalysis(products, invoices);
         const briefing = await dssService.generateBusinessBriefing(res);
         res.vani_narrative = briefing?.[0]?.body || "No immediate threats detected. Proceed with expansion.";
-        setAnalysis(res);
         
-        const ruleInsights = await generateInsights(res.engineOutputs, {
+        // Step 2: Instantly mount local insights & dashboard so UI is immediate (under 100ms)
+        setAnalysis(res);
+        setLoading(false);
+        
+        // Step 3: Trigger the dynamic Gemini AI invocation in background (non-blocking)
+        generateInsights(res.engineOutputs, {
           type: business?.category || 'Retail',
           city: business?.city || 'Mumbai',
           monthlyRevenue: res.summary.totalOpportunityValue
-        });
-        setAiInsights(ruleInsights);
+        })
+        .then(ruleInsights => setAiInsights(ruleInsights))
+        .catch(e => console.error("Async AI insights failed:", e));
+
       } catch (err) {
         console.error("DSS Analysis Failed:", err);
         toast("Neural link failed.", "error");
-      } finally {
         setLoading(false);
       }
     };
@@ -68,6 +76,31 @@ export default function DSSLanding() {
     utterance.onend = () => setVaniSpeaking(false);
     window.speechSynthesis.speak(utterance);
   };
+  
+  const handleExportBriefing = async (action: 'download' | 'open') => {
+    if (!analysis) return;
+    setDownloadingReport(action);
+    try {
+      const mappedData = {
+        estImpact: analysis.summary?.totalOpportunityValue || 0,
+        confidence: Math.round(analysis.summary?.healthScore || 92),
+        aiSummary: analysis.vani_narrative || "Business health audit successfully processed.",
+        tableHeaders: ["Strategy Module", "Findings", "Estimated Impact"],
+        tableData: (analysis.recommendations || []).map((rec: any) => [
+          rec.title || "Optimization",
+          rec.headline || "System action proposed",
+          `+Rs.${(rec.impactEstimate?.value || 0).toLocaleString()}`
+        ])
+      };
+      
+      await generateDSSReport("Neural Intelligence Briefing", mappedData, business?.name || "Vyapari Enterprise", action);
+      toast(`Briefing ${action === 'open' ? 'viewed' : 'downloaded'}`, "success");
+    } catch (error) {
+      toast("Generation failed", "error");
+    } finally {
+      setDownloadingReport(null);
+    }
+  };
 
   if (loading) return <DSSLoadingSkeleton />;
 
@@ -81,7 +114,7 @@ export default function DSSLanding() {
 
   return (
     <div className="space-y-8 pb-20">
-      {/* ── TOP SECTION: BRIEFING & STATUS ── */}
+      {/* -- TOP SECTION: BRIEFING & STATUS -- */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Analysis Status */}
@@ -108,7 +141,7 @@ export default function DSSLanding() {
                  </button>
                  <div>
                     <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 italic">Global Briefing</h2>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Link Status: Secure • AI Sync Active</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Link Status: Secure - AI Sync Active</p>
                  </div>
               </div>
               <div className="flex gap-3">
@@ -118,8 +151,13 @@ export default function DSSLanding() {
                 >
                   <Monitor size={14} /> Present Mode
                 </button>
-                <button className="p-2.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 transition-all">
-                   <Share2 size={16} />
+                <button 
+                  disabled={!!downloadingReport}
+                  onClick={() => handleExportBriefing('download')}
+                  className="p-2.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 transition-all disabled:opacity-50 flex items-center justify-center"
+                  title="Download PDF"
+                >
+                   {downloadingReport === 'download' ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
                 </button>
               </div>
            </div>
@@ -131,8 +169,8 @@ export default function DSSLanding() {
            </div>
 
            <div className="grid grid-cols-3 gap-6 pt-6 border-t border-white/5">
-              <KPICard label="Risk Value" value={`₹${(analysis.summary?.totalRevenueAtRisk || 0).toLocaleString()}`} color="text-rose-400" />
-              <KPICard label="Opportunity" value={`₹${(analysis.summary?.totalOpportunityValue || 0).toLocaleString()}`} color="text-emerald-400" />
+              <KPICard label="Risk Value" value={`Rs.${(analysis.summary?.totalRevenueAtRisk || 0).toLocaleString()}`} color="text-rose-400" />
+              <KPICard label="Opportunity" value={`Rs.${(analysis.summary?.totalOpportunityValue || 0).toLocaleString()}`} color="text-emerald-400" />
               <KPICard label="Accuracy" value={`${(analysis.summary?.healthScore || 92).toFixed(1)}%`} color="text-indigo-400" />
            </div>
         </div>
@@ -167,7 +205,7 @@ export default function DSSLanding() {
                   <div className="pt-4 border-t border-slate-800 flex justify-between items-center mt-auto">
                      <div>
                         <span className="text-[9px] font-bold text-slate-500 uppercase block tracking-widest mb-1">Potential Impact</span>
-                        <span className="text-base font-bold text-emerald-400 italic">+₹{(tip.impactEstimate?.value || 0).toLocaleString()}</span>
+                        <span className="text-base font-bold text-emerald-400 italic">+Rs.{(tip.impactEstimate?.value || 0).toLocaleString()}</span>
                      </div>
                      <div className="p-2 rounded-lg bg-slate-800 text-slate-400 group-hover:text-white group-hover:bg-indigo-600 transition-all">
                         <ArrowRight size={14} />
@@ -178,7 +216,7 @@ export default function DSSLanding() {
          </div>
       </div>
 
-      {/* ── LOWER SECTION: MISSIONS & KNOWLEDGE ── */}
+      {/* -- LOWER SECTION: MISSIONS & KNOWLEDGE -- */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
          {/* Mission Tracker */}
          <div className="lg:col-span-7 bg-[#1E293B]/50 border border-slate-800 p-8 rounded-3xl relative overflow-hidden group">
@@ -193,7 +231,7 @@ export default function DSSLanding() {
                   <div>
                      <h3 className="text-base font-bold text-white tracking-tight uppercase mb-1">Growth Mission</h3>
                      <p className="text-xs text-slate-400 font-medium max-w-sm leading-relaxed">
-                        Complete your pricing updates today to reach your monthly goal of ₹8,000 extra profit.
+                        Complete your pricing updates today to reach your monthly goal of Rs.8,000 extra profit.
                      </p>
                   </div>
                   <div className="space-y-2">
@@ -244,7 +282,7 @@ export default function DSSLanding() {
          </div>
       </div>
 
-      {/* ── LIVE FEED: REFINED TICKER ── */}
+      {/* -- LIVE FEED: REFINED TICKER -- */}
       <div className="bg-[#1E293B]/30 border border-white/5 p-4 rounded-3xl flex items-center gap-6 overflow-hidden relative shadow-2xl backdrop-blur-xl">
          <div className="flex items-center gap-3 shrink-0 text-indigo-400 px-4 border-r border-white/5">
             <Radio size={14} className="animate-pulse" />
@@ -252,10 +290,10 @@ export default function DSSLanding() {
          </div>
          <div className="flex-1 overflow-hidden whitespace-nowrap">
             <div className="animate-scroll-text flex gap-20 text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">
-               <span>• AI detected high demand for "{products[0]?.name || 'Top Products'}" locally</span>
-               <span className="text-rose-400">• Revenue velocity dropped 12% in the last hour</span>
-               <span className="text-indigo-400">• Neural Link suggests {topTips[0]?.title || 'New Actions'}</span>
-               <span className="text-emerald-400">• New market opportunity detected in Stationery category</span>
+               <span>- AI detected high demand for "{products[0]?.name || 'Top Products'}" locally</span>
+               <span className="text-rose-400">- Revenue velocity dropped 12% in the last hour</span>
+               <span className="text-indigo-400">- Neural Link suggests {topTips[0]?.title || 'New Actions'}</span>
+               <span className="text-emerald-400">- New market opportunity detected in Stationery category</span>
             </div>
          </div>
          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-[#0F172A] to-transparent pointer-events-none" />
@@ -264,12 +302,12 @@ export default function DSSLanding() {
       {/* MODAL OVERLAY */}
       <AnimatePresence>
         {activeEngine && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-10 bg-black/80 backdrop-blur-md overflow-y-auto">
+          <div className="fixed inset-0 z-[1000] flex items-start justify-center p-10 bg-black/80 backdrop-blur-md overflow-y-auto">
              <motion.div 
                initial={{ opacity: 0, scale: 0.98, y: 20 }}
                animate={{ opacity: 1, scale: 1, y: 0 }}
                exit={{ opacity: 0, scale: 0.98, y: 20 }}
-               className="w-full max-w-6xl relative"
+               className="w-full max-w-6xl relative my-auto"
              >
                 <button 
                   onClick={() => setActiveEngine(null)}

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'motion/react';
 import { X, Moon, Sun, Type, Zap, Clock, Hash } from 'lucide-react';
 import { Theme, AnimationSpeed } from '../PresentationMode';

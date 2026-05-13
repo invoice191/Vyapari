@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import { REPORT_TREE } from './reportConfig';
@@ -11,7 +11,7 @@ interface SidebarProps {
 }
 
 export default function ReportsSidebar({ activeReportId, onSelectReport }: SidebarProps) {
-  const [expandedCats, setExpandedCats] = useState<string[]>(['📊 Sales Reports']);
+  const [expandedCats, setExpandedCats] = useState<string[]>(['-- Sales Reports']);
 
   const toggleCat = (cat: string) => {
     setExpandedCats(prev => 

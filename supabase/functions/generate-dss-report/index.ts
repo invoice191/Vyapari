@@ -108,8 +108,9 @@ serve(async (req) => {
     return new Response(pdfBytes, {
       headers: {
         ...corsHeaders,
-        "Content-Type": "application/json",
-        "Content-Disposition": `attachment; filename="Vyapari_DSS_Report.pdf"`
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="vyapari-dss-report.pdf"`,
+        "Cache-Control": "no-store"
       },
     });
 

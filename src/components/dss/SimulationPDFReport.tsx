@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Font, Image, Link } from '@react-pdf/renderer';
 
 // Font Registration
@@ -261,7 +261,7 @@ const SimulationPDFReport = ({ data, business }: SimulationPDFReportProps) => {
           )}
           
           <Text style={styles.coverTitle}>Simulation Analysis Report</Text>
-          <Text style={styles.coverSubBranding}>─────── vyapari ───────</Text>
+          <Text style={styles.coverSubBranding}>------- vyapari -------</Text>
           
           <View style={{ marginTop: 40 }}>
             <DetailRow label="Business:" value={business.name} />
@@ -279,8 +279,8 @@ const SimulationPDFReport = ({ data, business }: SimulationPDFReportProps) => {
             </Text>
           </View>
           
-          <Text style={{ color: '#555868', fontSize: 8, marginTop: 100 }}>CONFIDENTIAL — For internal use only</Text>
-          <Text style={{ color: '#FF6B35', fontSize: 8, marginTop: 5 }}>Powered by Vyapari AI · vyapari.in</Text>
+          <Text style={{ color: '#555868', fontSize: 8, marginTop: 100 }}>CONFIDENTIAL - For internal use only</Text>
+          <Text style={{ color: '#FF6B35', fontSize: 8, marginTop: 5 }}>Powered by Vyapari AI - vyapari.in</Text>
         </View>
       </Page>
 
@@ -293,21 +293,21 @@ const SimulationPDFReport = ({ data, business }: SimulationPDFReportProps) => {
         
         <View style={{ marginBottom: 20 }}>
           <Text style={{ fontSize: 9, marginBottom: 5 }}>Simulation Parameters:</Text>
-          <Text style={{ fontSize: 9, color: '#555868' }}>• Time Horizon: {data.market_benchmarks.time_horizon || 60} days</Text>
-          <Text style={{ fontSize: 9, color: '#555868' }}>• Market Condition: {data.market_benchmarks.market_condition_adjustment} (Seasonal Factor: {data.market_benchmarks.seasonal_factor}x)</Text>
-          <Text style={{ fontSize: 9, color: '#555868' }}>• Products: {data.per_product_analysis.map((p: any) => p.product_name).join(' | ')}</Text>
+          <Text style={{ fontSize: 9, color: '#555868' }}>- Time Horizon: {data.market_benchmarks.time_horizon || 60} days</Text>
+          <Text style={{ fontSize: 9, color: '#555868' }}>- Market Condition: {data.market_benchmarks.market_condition_adjustment} (Seasonal Factor: {data.market_benchmarks.seasonal_factor}x)</Text>
+          <Text style={{ fontSize: 9, color: '#555868' }}>- Products: {data.per_product_analysis.map((p: any) => p.product_name).join(' | ')}</Text>
         </View>
 
         <View style={styles.kpiGrid}>
           <KPIBox 
             label="Revenue Impact" 
-            value={`+₹${(data.simulated_scenario.total_revenue_projected - data.current_scenario.total_revenue_projected).toLocaleString()}`} 
+            value={`+Rs.${(data.simulated_scenario.total_revenue_projected - data.current_scenario.total_revenue_projected).toLocaleString()}`} 
             change={`${data.summary.potential_revenue_change_percent}%`} 
             positive={data.summary.potential_revenue_change_percent >= 0}
           />
           <KPIBox 
             label="Profit Impact" 
-            value={`+₹${(data.simulated_scenario.total_profit_projected - data.current_scenario.total_profit_projected).toLocaleString()}`} 
+            value={`+Rs.${(data.simulated_scenario.total_profit_projected - data.current_scenario.total_profit_projected).toLocaleString()}`} 
             change={`${data.summary.potential_profit_change_percent}%`} 
             positive={data.summary.potential_profit_change_percent >= 0}
           />
@@ -343,7 +343,7 @@ const SimulationPDFReport = ({ data, business }: SimulationPDFReportProps) => {
             <Text style={[styles.tableCell, { width: '40%', fontWeight: 'bold' }]}>Metric</Text>
             <Text style={[styles.tableCell, { width: '20%', fontWeight: 'bold' }]}>Current</Text>
             <Text style={[styles.tableCell, { width: '20%', fontWeight: 'bold' }]}>Simulated</Text>
-            <Text style={[styles.tableCell, { width: '20%', fontWeight: 'bold' }]}>Δ Change</Text>
+            <Text style={[styles.tableCell, { width: '20%', fontWeight: 'bold' }]}>- Change</Text>
           </View>
           {data.scenario_comparison_table.map((row: any, i: number) => (
             <View key={i} style={[styles.tableRow, { backgroundColor: i % 2 === 0 ? '#FFFFFF' : '#FBFBFC' }]}>
@@ -370,7 +370,7 @@ const SimulationPDFReport = ({ data, business }: SimulationPDFReportProps) => {
              </View>
              <View style={{ flex: 1, justifyContent: 'center' }}>
                 <Text style={{ fontSize: 9, color: '#555868' }}>
-                  The simulated strategy increases liquid cash availability by ₹{(data.simulated_scenario.total_revenue_projected - data.current_scenario.total_revenue_projected).toLocaleString()} over the next 60 days.
+                  The simulated strategy increases liquid cash availability by Rs.{(data.simulated_scenario.total_revenue_projected - data.current_scenario.total_revenue_projected).toLocaleString()} over the next 60 days.
                 </Text>
              </View>
           </View>
@@ -415,10 +415,10 @@ const SimulationPDFReport = ({ data, business }: SimulationPDFReportProps) => {
               <View style={{ flex: 1 }}>
                 <Text style={styles.productSubTitle}>Price Analysis</Text>
                 <View style={{ gap: 4 }}>
-                  <InfoRow label="Current Price" value={`₹${(p.recommended_price - 3000).toLocaleString()}`} />
-                  <InfoRow label="Simulated Price" value={`₹${p.recommended_price.toLocaleString()}`} bold />
-                  <InfoRow label="Elasticity (ε)" value={`${p.price_elasticity} (${p.elasticity_interpretation})`} />
-                  <InfoRow label="Status" value="✅ RECOMMENDED" />
+                  <InfoRow label="Current Price" value={`Rs.${(p.recommended_price - 3000).toLocaleString()}`} />
+                  <InfoRow label="Simulated Price" value={`Rs.${p.recommended_price.toLocaleString()}`} bold />
+                  <InfoRow label="Elasticity (-)" value={`${p.price_elasticity} (${p.elasticity_interpretation})`} />
+                  <InfoRow label="Status" value="- RECOMMENDED" />
                 </View>
               </View>
               
@@ -445,8 +445,8 @@ const SimulationPDFReport = ({ data, business }: SimulationPDFReportProps) => {
               <View style={{ flex: 1 }}>
                 <Text style={styles.productSubTitle}>Risk & Opportunities</Text>
                 <View style={{ gap: 4 }}>
-                  {p.risk_flags.slice(0, 1).map((f: string, i: number) => <Text key={i} style={{ fontSize: 8, color: '#FF4757' }}>⚠ {f}</Text>)}
-                  {p.opportunity_flags.slice(0, 1).map((f: string, i: number) => <Text key={i} style={{ fontSize: 8, color: '#2EC4B6' }}>✅ {f}</Text>)}
+                  {p.risk_flags.slice(0, 1).map((f: string, i: number) => <Text key={i} style={{ fontSize: 8, color: '#FF4757' }}>- {f}</Text>)}
+                  {p.opportunity_flags.slice(0, 1).map((f: string, i: number) => <Text key={i} style={{ fontSize: 8, color: '#2EC4B6' }}>- {f}</Text>)}
                 </View>
               </View>
             </View>
@@ -464,7 +464,7 @@ const SimulationPDFReport = ({ data, business }: SimulationPDFReportProps) => {
         {data.recommendations.map((rec: any) => (
           <View key={rec.rank} style={{ marginBottom: 20 }}>
             <Text style={{ fontSize: 11, fontWeight: 'bold', marginBottom: 5 }}>
-              #{rec.rank} {rec.title.toUpperCase()} — [{rec.implementation_effort.toUpperCase()}] [{rec.timeline.toUpperCase()}]
+              #{rec.rank} {rec.title.toUpperCase()} - [{rec.implementation_effort.toUpperCase()}] [{rec.timeline.toUpperCase()}]
             </Text>
             <Text style={{ fontSize: 10, color: '#555868', lineHeight: 1.4, marginBottom: 5 }}>
               {rec.description}
@@ -508,9 +508,9 @@ const SimulationPDFReport = ({ data, business }: SimulationPDFReportProps) => {
         <View style={{ marginBottom: 30 }}>
           <Text style={styles.productSubTitle}>Market Condition: {data.market_benchmarks.market_condition_adjustment}</Text>
           <Text style={{ fontSize: 9, lineHeight: 1.6, color: '#555868' }}>
-            • Demand multiplier: {data.market_benchmarks.seasonal_factor}x ({((data.market_benchmarks.seasonal_factor - 1) * 100).toFixed(0)}% above normal){"\n"}
-            • Festival proximity: {data.market_benchmarks.festival_proximity_days} days away{"\n"}
-            • Category: {data.market_benchmarks.category || 'Consumer Electronics'}
+            - Demand multiplier: {data.market_benchmarks.seasonal_factor}x ({((data.market_benchmarks.seasonal_factor - 1) * 100).toFixed(0)}% above normal){"\n"}
+            - Festival proximity: {data.market_benchmarks.festival_proximity_days} days away{"\n"}
+            - Category: {data.market_benchmarks.category || 'Consumer Electronics'}
           </Text>
         </View>
 
@@ -519,7 +519,7 @@ const SimulationPDFReport = ({ data, business }: SimulationPDFReportProps) => {
           <View style={styles.kpiGrid}>
             <View style={[styles.kpiBox, { width: '100%', borderBottomWidth: 0 }]}>
               <Text style={styles.kpiLabel}>Average Gross Margin</Text>
-              <Text style={styles.kpiValue}>{data.market_benchmarks.category_avg_margin_percent}% (Your projected: {data.simulated_scenario.gross_margin_percent}% ✅)</Text>
+              <Text style={styles.kpiValue}>{data.market_benchmarks.category_avg_margin_percent}% (Your projected: {data.simulated_scenario.gross_margin_percent}% -)</Text>
             </View>
             <View style={[styles.kpiBox, { width: '100%' }]}>
               <Text style={styles.kpiLabel}>Price Positioning</Text>
@@ -534,7 +534,7 @@ const SimulationPDFReport = ({ data, business }: SimulationPDFReportProps) => {
           - Price elasticity calculated from historical price-quantity pairs{"\n"}
           - Market benchmarks based on India SME retail category averages{"\n"}
           - Market share model: Multinomial Logit (Brand Equity = 1.2){"\n"}
-          - All values in INR (₹) including applicable GST at declared rates{"\n"}
+          - All values in INR (Rs.) including applicable GST at declared rates{"\n"}
           - Simulation confidence: {data.summary.overall_confidence}% overall
         </Text>
 
@@ -556,7 +556,7 @@ const SimulationPDFReport = ({ data, business }: SimulationPDFReportProps) => {
                <View style={{ marginTop: 60, alignItems: 'center' }}>
                  <Text style={{ fontSize: 10, fontWeight: 'bold' }}>For support:</Text>
                  <Text style={{ fontSize: 10, color: '#FF6B35' }}>support@vyapari.in | vyapari.in</Text>
-                 <Text style={{ fontSize: 10, color: '#94a3b8', marginTop: 10 }}>© 2025 Vyapari. All rights reserved.</Text>
+                 <Text style={{ fontSize: 10, color: '#94a3b8', marginTop: 10 }}>- 2025 Vyapari. All rights reserved.</Text>
                </View>
             </View>
          </View>
@@ -590,7 +590,7 @@ const KPIBox = ({ label, value, change, positive }: { label: string; value: stri
     <Text style={styles.kpiLabel}>{label}</Text>
     <Text style={styles.kpiValue}>{value}</Text>
     <Text style={[styles.kpiChange, { color: positive ? '#2EC4B6' : '#FF4757' }]}>
-      {positive ? '↑' : '↓'} {change}
+      {positive ? '-' : '-'} {change}
     </Text>
   </View>
 );

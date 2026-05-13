@@ -1,3 +1,3 @@
-export function printReport() {
+﻿export function printReport() {
   window.print();
 }

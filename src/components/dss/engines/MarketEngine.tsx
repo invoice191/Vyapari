@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Globe, MapPin, TrendingUp, ArrowRight, Zap, Info, Lightbulb, Users, Target, Search, BarChart2, Loader2 } from 'lucide-react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip } from 'recharts';
 import { supabase } from '../../../lib/supabase';

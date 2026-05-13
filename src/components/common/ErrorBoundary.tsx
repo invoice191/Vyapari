@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from "react";
+﻿import React, { Component, ErrorInfo, ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
@@ -44,7 +44,7 @@ class ErrorBoundary extends Component<Props, State> {
         <div className="min-h-screen bg-ink flex items-center justify-center p-4 font-mono">
           <div className="max-w-2xl w-full bg-white border-4 border-ink p-8 shadow-[16px_16px_0px_rgba(0,0,0,0.2)]">
             <div className="flex items-center gap-4 mb-6 border-b-4 border-ink pb-4">
-              <span className="text-4xl">⚠️</span>
+              <span className="text-4xl">--</span>
               <h1 className="text-2xl font-black uppercase tracking-tighter">System_Exception_Detected</h1>
             </div>
             

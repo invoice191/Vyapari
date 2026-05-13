@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, ArrowUpRight, Zap } from 'lucide-react';
 import CountUp from '../components/CountUpNumber';

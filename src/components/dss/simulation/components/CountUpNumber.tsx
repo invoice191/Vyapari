@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 
 interface CountUpProps {
   target: number;
@@ -10,7 +10,7 @@ interface CountUpProps {
 export default function CountUp({ 
   target, 
   duration = 1500,
-  prefix = "₹",
+  prefix = "Rs.",
   suffix = ""
 }: CountUpProps) {
   const [current, setCurrent] = useState(0);

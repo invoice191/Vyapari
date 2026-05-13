@@ -1,4 +1,4 @@
-import { EngineOutput, DSSInsight } from './types';
+﻿import { EngineOutput, DSSInsight } from './types';
 import rules from './rules.json';
 import { supabase } from '../../lib/supabase';
 
@@ -67,7 +67,7 @@ function buildRuleInsights(outputs: EngineOutput[]): DSSInsight[] {
       id: 'rule-critical-summary',
       type: 'rule_summary',
       title: `${criticals.length} critical issues require immediate attention`,
-      body: `Total revenue at risk: ₹${totalRisk.toLocaleString('en-IN')}. Most urgent: ${criticals[0].title}.`,
+      body: `Total revenue at risk: Rs.${totalRisk.toLocaleString('en-IN')}. Most urgent: ${criticals[0].title}.`,
       relatedRecommendationIds: criticals.map(r => r.id),
       confidence: 0.95,
       source: 'rules_engine',
@@ -80,7 +80,7 @@ function buildRuleInsights(outputs: EngineOutput[]): DSSInsight[] {
     insights.push({
       id: 'rule-festival-warning',
       type: 'festival_warning',
-      title: `Festival season approaching — stock up now`,
+      title: `Festival season approaching - stock up now`,
       body: `Demand historically rises ${Math.round((rules.forecast.festivalBoostFactor - 1) * 100)}% in ${new Date(Date.now() + 30 * 86400000).toLocaleString('default', { month: 'long' })}. Review your fast-mover restock recommendations before stock runs out.`,
       relatedRecommendationIds: [],
       confidence: 0.85,

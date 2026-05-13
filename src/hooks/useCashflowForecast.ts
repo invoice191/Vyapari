@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { useGlobalData } from '../contexts/DataContext';
+import { useGlobalData } from '../context/DataContext';
 
 export interface ForecastRow {
   forecast_date: string;

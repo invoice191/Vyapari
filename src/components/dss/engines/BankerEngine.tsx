@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Landmark, ShieldCheck, TrendingUp, FileText, AlertCircle, CheckCircle2, Zap, Loader2, BarChart, Wallet, DollarSign } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useGlobalData } from '../../../contexts/DataContext';
+import { useGlobalData } from '../../../context/DataContext';
 import { useToast } from '../../common/Toast';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -21,7 +21,7 @@ export const BankerEngine: React.FC = () => {
       const calculated = Math.min(850, 550 + (invoices.length * 2) + (totalRevenue > 100000 ? 100 : 20));
       setScore(calculated);
       setLoading(false);
-    }, 1200);
+    }, 200);
   }, [invoices, totalRevenue]);
 
   const healthChartData = [
@@ -59,7 +59,7 @@ export const BankerEngine: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
              <div className="lg:col-span-1 bg-[#1E293B]/30 border border-slate-800 rounded-[2rem] p-8 text-center relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 via-emerald-500 to-indigo-500" />
-                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-8">Vyapari Score™</h3>
+                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-8">Vyapari Score-</h3>
                 
                 <div className="relative w-40 h-40 mx-auto mb-6">
                    <svg viewBox="0 0 100 100" className="w-full h-full rotate-[-90deg]">
@@ -92,7 +92,7 @@ export const BankerEngine: React.FC = () => {
                 <div>
                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Estimated Credit Line</h3>
                    <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400 tracking-tighter italic">
-                      ₹{simulatedLoan.toLocaleString()}
+                      Rs.{simulatedLoan.toLocaleString()}
                    </div>
                    <p className="text-xs text-slate-400 mt-3 font-medium">Maximum unsecured working capital limit eligible today.</p>
                 </div>
@@ -153,17 +153,17 @@ export const BankerEngine: React.FC = () => {
                 
                 <button 
                    onClick={() => {
-                     toast("Generating Cryptographically Signed Banker Pack...", { style: { background: '#312e81', color: '#fff' } });
+                     toast("Generating Cryptographically Signed Banker Pack...", "info");
                      setLoading(true);
                      setTimeout(() => {
                        setLoading(false);
-                       toast("Banker Pack Sealed & Exported.", { style: { background: '#065f46', color: '#fff' } });
+                       toast("Banker Pack Sealed & Exported.", "success");
                        // Simulation of download
                        const link = document.createElement('a');
                        link.href = '#';
                        link.download = 'Banker_Pack_Vyapari.pdf';
                        link.click();
-                     }, 3000);
+                     }, 300);
                    }}
                    className="w-full mt-8 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-xl shadow-lg border border-indigo-400 flex items-center justify-center gap-2 transition-all group"
                  >

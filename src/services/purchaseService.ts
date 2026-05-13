@@ -154,5 +154,156 @@ export const purchaseService = {
     });
 
     return { success: true, invoiceId: invoice.id };
+  },
+
+  /**
+   * Fetches all purchase orders for the active business
+   */
+  getPurchaseOrders: async (businessId: string) => {
+    const { data, error } = await supabase
+      .from('purchase_orders')
+      .select(`
+        *,
+        supplier:contacts(name, email, phone),
+        items:purchase_order_items(
+          *,
+          product:products(name)
+        )
+      `)
+      .eq('business_id', businessId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  /**
+   * Creates a new Purchase Order with embedded line items
+   */
+  createPurchaseOrder: async (businessId: string, userId: string, data: {
+    supplierId: string;
+    poNumber: string;
+    expectedDelivery: string;
+    notes?: string;
+    items: Array<{
+      productId: string;
+      quantity: number;
+      unitCost: number;
+    }>;
+  }) => {
+    // Calculate total
+    const total = data.items.reduce((sum, it) => sum + (it.quantity * it.unitCost), 0);
+
+    // 1. Insert Header
+    const { data: po, error: poError } = await supabase
+      .from('purchase_orders')
+      .insert({
+        business_id: businessId,
+        user_id: userId,
+        supplier_id: data.supplierId,
+        po_number: data.poNumber,
+        expected_delivery: data.expectedDelivery,
+        status: 'pending',
+        total_amount: total,
+        notes: data.notes
+      })
+      .select()
+      .single();
+
+    if (poError) throw poError;
+
+    // 2. Insert Items
+    if (data.items.length > 0) {
+      const { error: itemsError } = await supabase
+        .from('purchase_order_items')
+        .insert(
+          data.items.map(it => ({
+            business_id: businessId,
+            user_id: userId,
+            po_id: po.id,
+            product_id: it.productId,
+            quantity: it.quantity,
+            unit_cost: it.unitCost,
+            // database generates total automatically from quantity * unit_cost based on our DDL scan
+          }))
+        );
+      
+      if (itemsError) throw itemsError;
+    }
+
+    return po;
+  },
+
+  /**
+   * Update PO status (e.g., cancel, complete)
+   */
+  updatePOStatus: async (poId: string, status: 'pending' | 'sent' | 'received' | 'cancelled') => {
+    const { data, error } = await supabase
+      .from('purchase_orders')
+      .update({ status })
+      .eq('id', poId)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  /**
+   * Record vendor rating
+   */
+  rateVendor: async (businessId: string, vendorId: string, scores: { delivery: number; quality: number; price: number }) => {
+    const { data, error } = await supabase
+      .from('vendor_ratings')
+      .insert({
+        business_id: businessId,
+        vendor_id: vendorId,
+        delivery_score: scores.delivery,
+        quality_score: scores.quality,
+        price_score: scores.price
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  /**
+   * Record historical price point for vendor + product comparison
+   */
+  recordVendorPrice: async (businessId: string, vendorId: string, productId: string, price: number) => {
+    const { data, error } = await supabase
+      .from('vendor_price_history')
+      .insert({
+        business_id: businessId,
+        vendor_id: vendorId,
+        product_id: productId,
+        price: price
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  /**
+   * Pull price benchmark matrix across vendors for a specific product
+   */
+  getProductPriceBenchmarking: async (businessId: string, productId: string) => {
+    const { data, error } = await supabase
+      .from('vendor_price_history')
+      .select(`
+        price,
+        recorded_at,
+        vendor:contacts(id, name)
+      `)
+      .eq('business_id', businessId)
+      .eq('product_id', productId)
+      .order('recorded_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
   }
 };

@@ -84,7 +84,7 @@ export default function ExportModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md"
+          className="fixed inset-0 z-[1100] flex items-start justify-center p-4 bg-slate-900/60 backdrop-blur-md overflow-y-auto"
           onClick={onClose}
         >
           <motion.div 
@@ -92,7 +92,7 @@ export default function ExportModal({
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.95, y: 15 }}
             onClick={e => e.stopPropagation()}
-            className="w-full max-w-3xl bg-white rounded-[2.5rem] shadow-2xl flex flex-col p-10 max-h-[90vh] overflow-y-auto border border-white"
+            className="w-full max-w-3xl bg-white rounded-[2.5rem] shadow-2xl flex flex-col p-10 max-h-[90vh] overflow-y-auto border border-white my-auto"
           >
             {/* Header */}
             <div className="flex justify-between items-start mb-10">

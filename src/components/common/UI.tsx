@@ -1,9 +1,9 @@
-import React from "react";
+﻿import React from "react";
 import { C } from "../../lib/constants";
 import { ResponsiveContainer, AreaChart, Area } from "recharts";
 import { motion } from "motion/react";
 
-export const formatCurrency = (n: number) => `₹${(n / 1000).toFixed(0)}K`;
+export const formatCurrency = (n: number) => `Rs.${(n / 1000).toFixed(0)}K`;
 export const formatNum = (n: number) => n.toLocaleString("en-IN");
 
 export function Badge({ status, className = "", children }: { status?: string, className?: string, children?: React.ReactNode }) {
@@ -159,7 +159,7 @@ export function KPICard({ title, value, change, changeLabel, icon, color = '#4f4
           </motion.div>
           <div className="flex items-center gap-3">
             <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg border ${isPos ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/10' : 'border-rose-500/20 text-rose-400 bg-rose-500/10'}`}>
-              {isPos ? "↑" : "↓"} {Math.abs(change)}%
+              {isPos ? "-" : "-"} {Math.abs(change)}%
             </span>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{changeLabel}</span>
           </div>

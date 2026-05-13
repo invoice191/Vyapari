@@ -1,5 +1,5 @@
-
-// ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
+﻿
+// --- DESIGN TOKENS -----------------------------------------------------------
 export const C = {
   orange: "#FF5500", // color-neon
   neon: "#FF5500",   // alias for neon
@@ -24,7 +24,7 @@ export const C = {
   purple: "#6C5CE7",
 };
 
-// ─── MOCK DATA ────────────────────────────────────────────────────────────────
+// --- MOCK DATA ----------------------------------------------------------------
 export const salesData = [
   { time: "Mon", revenue: 42000, prev: 38000, target: 45000 },
   { time: "Tue", revenue: 58000, prev: 52000, target: 45000 },
@@ -82,11 +82,11 @@ export const invoices = [
 ];
 
 export const ocrQueue = [
-  { id: 1, name: "invoice_jan_2024.pdf", status: "Completed", confidence: 96, vendor: "TechCorp", amount: "₹45,200" },
-  { id: 2, name: "purchase_order_123.jpg", status: "Processing", confidence: null, vendor: "—", amount: "—" },
-  { id: 3, name: "receipt_store_24.png", status: "Completed", confidence: 89, vendor: "MegaMart", amount: "₹2,340" },
-  { id: 4, name: "bill_supplier_x.pdf", status: "Failed", confidence: null, vendor: "—", amount: "—" },
-  { id: 5, name: "invoice_feb_001.pdf", status: "Pending", confidence: null, vendor: "—", amount: "—" },
+  { id: 1, name: "invoice_jan_2024.pdf", status: "Completed", confidence: 96, vendor: "TechCorp", amount: "Rs.45,200" },
+  { id: 2, name: "purchase_order_123.jpg", status: "Processing", confidence: null, vendor: "-", amount: "-" },
+  { id: 3, name: "receipt_store_24.png", status: "Completed", confidence: 89, vendor: "MegaMart", amount: "Rs.2,340" },
+  { id: 4, name: "bill_supplier_x.pdf", status: "Failed", confidence: null, vendor: "-", amount: "-" },
+  { id: 5, name: "invoice_feb_001.pdf", status: "Pending", confidence: null, vendor: "-", amount: "-" },
 ];
 
 export const R = {
@@ -131,8 +131,8 @@ export const R = {
     { category: "Beverages", taxableAmt: 92000, cgst: 8280, sgst: 8280, igst: 0, cess: 920, total: 17480, rate: "18%+Cess" },
   ],
   promoEffectiveness: [
-    { promo: "Flat 10% Off — Electronics", startDate: "Jan 1", endDate: "Jan 7", unitsBefore: 245, unitsAfter: 389, revBefore: 245000, revAfter: 350100, profitImpact: -18200, roi: "68%", verdict: "Profitable" },
-    { promo: "Buy 2 Get 1 — Clothing", startDate: "Jan 8", endDate: "Jan 14", unitsBefore: 312, unitsAfter: 588, revBefore: 156000, revAfter: 210000, profitImpact: 12400, roi: "142%", verdict: "Highly Profitable" },
+    { promo: "Flat 10% Off - Electronics", startDate: "Jan 1", endDate: "Jan 7", unitsBefore: 245, unitsAfter: 389, revBefore: 245000, revAfter: 350100, profitImpact: -18200, roi: "68%", verdict: "Profitable" },
+    { promo: "Buy 2 Get 1 - Clothing", startDate: "Jan 8", endDate: "Jan 14", unitsBefore: 312, unitsAfter: 588, revBefore: 156000, revAfter: 210000, profitImpact: 12400, roi: "142%", verdict: "Highly Profitable" },
     { promo: "Weekend Flash Sale 20%", startDate: "Jan 13", endDate: "Jan 14", unitsBefore: 180, unitsAfter: 290, revBefore: 90000, revAfter: 116000, profitImpact: -4200, roi: "52%", verdict: "Marginal" },
     { promo: "Loyalty Points 2x", startDate: "Jan 15", endDate: "Jan 31", unitsBefore: 890, unitsAfter: 1020, revBefore: 445000, revAfter: 510000, profitImpact: 38000, roi: "187%", verdict: "Highly Profitable" },
   ],
@@ -166,11 +166,11 @@ export const R = {
     { category: "Beverages", skus: 34, units: 5400, fifo: 432000, lifo: 418000, wac: 425000, pctOfTotal: 1.6 },
   ],
   supplierPerformance: [
-    { supplier: "TechCorp Dist.", orders: 24, onTime: 22, lateDeliveries: 2, qualityRejections: 0, avgLeadDays: 6.2, totalValue: 4200000, rating: 9.2, trend: "↑" },
-    { supplier: "Fashion Hub", orders: 38, onTime: 34, lateDeliveries: 4, qualityRejections: 2, avgLeadDays: 4.8, totalValue: 2100000, rating: 8.4, trend: "→" },
-    { supplier: "Agro Pvt Ltd", orders: 56, onTime: 50, lateDeliveries: 6, qualityRejections: 1, avgLeadDays: 2.4, totalValue: 890000, rating: 8.0, trend: "↓" },
-    { supplier: "GadgetZ", orders: 18, onTime: 15, lateDeliveries: 3, qualityRejections: 3, avgLeadDays: 5.6, totalValue: 680000, rating: 7.1, trend: "↓" },
-    { supplier: "FoodMart", orders: 72, onTime: 69, lateDeliveries: 3, qualityRejections: 0, avgLeadDays: 1.8, totalValue: 1240000, rating: 9.6, trend: "↑" },
+    { supplier: "TechCorp Dist.", orders: 24, onTime: 22, lateDeliveries: 2, qualityRejections: 0, avgLeadDays: 6.2, totalValue: 4200000, rating: 9.2, trend: "-" },
+    { supplier: "Fashion Hub", orders: 38, onTime: 34, lateDeliveries: 4, qualityRejections: 2, avgLeadDays: 4.8, totalValue: 2100000, rating: 8.4, trend: "-" },
+    { supplier: "Agro Pvt Ltd", orders: 56, onTime: 50, lateDeliveries: 6, qualityRejections: 1, avgLeadDays: 2.4, totalValue: 890000, rating: 8.0, trend: "-" },
+    { supplier: "GadgetZ", orders: 18, onTime: 15, lateDeliveries: 3, qualityRejections: 3, avgLeadDays: 5.6, totalValue: 680000, rating: 7.1, trend: "-" },
+    { supplier: "FoodMart", orders: 72, onTime: 69, lateDeliveries: 3, qualityRejections: 0, avgLeadDays: 1.8, totalValue: 1240000, rating: 9.6, trend: "-" },
   ],
   plStatement: [
     { item: "Gross Revenue", jan: 1095300, feb: 980200, mar: 1240500, qTotal: 3316000, type: "revenue" },
@@ -213,17 +213,17 @@ export const R = {
     { month: "Mar", newCustomers: 412, returningCustomers: 1748, churnedCustomers: 102, netGrowth: 310, retentionRate: "94.1%", acqCost: 172, ltv: 4600 },
   ],
   clvAnalysis: [
-    { segment: "VIP (>₹50K spent)", customers: 124, avgSpend: 78400, visitFreq: 8.2, avgLTV: 628000, churnRisk: "Very Low", action: "Loyalty Rewards" },
-    { segment: "Regular (₹10K–50K)", customers: 892, avgSpend: 24600, visitFreq: 4.1, avgLTV: 156800, churnRisk: "Low", action: "Upsell Campaign" },
-    { segment: "Occasional (<₹10K)", customers: 1840, avgSpend: 5400, visitFreq: 1.8, avgLTV: 32400, churnRisk: "Medium", action: "Re-engagement" },
+    { segment: "VIP (>Rs.50K spent)", customers: 124, avgSpend: 78400, visitFreq: 8.2, avgLTV: 628000, churnRisk: "Very Low", action: "Loyalty Rewards" },
+    { segment: "Regular (Rs.10K-50K)", customers: 892, avgSpend: 24600, visitFreq: 4.1, avgLTV: 156800, churnRisk: "Low", action: "Upsell Campaign" },
+    { segment: "Occasional (<Rs.10K)", customers: 1840, avgSpend: 5400, visitFreq: 1.8, avgLTV: 32400, churnRisk: "Medium", action: "Re-engagement" },
     { segment: "One-time Buyer", customers: 648, avgSpend: 1200, visitFreq: 1.0, avgLTV: 4800, churnRisk: "High", action: "Win-back Offer" },
   ],
   rfmSegmentation: [
-    { segment: "Champions", customers: 186, recency: "< 7 days", frequency: "> 10 orders", monetary: "> ₹50K", rfmScore: "555", action: "Reward & Retain", color: C.green },
-    { segment: "Loyal Customers", customers: 412, recency: "< 30 days", frequency: "5–10 orders", monetary: "₹15K–50K", rfmScore: "445", action: "Upsell Premium", color: C.blue },
-    { segment: "Potential Loyalists", customers: 634, recency: "< 45 days", frequency: "2–5 orders", monetary: "₹5K–15K", rfmScore: "334", action: "Loyalty Program", color: C.orange },
-    { segment: "At Risk", customers: 298, recency: "60–90 days", frequency: "2–4 orders", monetary: "₹8K–20K", rfmScore: "223", action: "Re-activation Email", color: C.yellow },
-    { segment: "Lost Customers", customers: 174, recency: "> 90 days", frequency: "< 2 orders", monetary: "< ₹5K", rfmScore: "111", action: "Win-back Offer", color: C.red },
+    { segment: "Champions", customers: 186, recency: "< 7 days", frequency: "> 10 orders", monetary: "> Rs.50K", rfmScore: "555", action: "Reward & Retain", color: C.green },
+    { segment: "Loyal Customers", customers: 412, recency: "< 30 days", frequency: "5-10 orders", monetary: "Rs.15K-50K", rfmScore: "445", action: "Upsell Premium", color: C.blue },
+    { segment: "Potential Loyalists", customers: 634, recency: "< 45 days", frequency: "2-5 orders", monetary: "Rs.5K-15K", rfmScore: "334", action: "Loyalty Program", color: C.orange },
+    { segment: "At Risk", customers: 298, recency: "60-90 days", frequency: "2-4 orders", monetary: "Rs.8K-20K", rfmScore: "223", action: "Re-activation Email", color: C.yellow },
+    { segment: "Lost Customers", customers: 174, recency: "> 90 days", frequency: "< 2 orders", monetary: "< Rs.5K", rfmScore: "111", action: "Win-back Offer", color: C.red },
   ],
   staffSales: [
     { name: "Ravi Sharma", role: "Sr. Cashier", transactions: 412, revenue: 520800, avgTicket: 1264, targetAchieved: "104%", commission: 15624, rating: 4.8 },
@@ -261,18 +261,18 @@ export const REGISTERED_SHOPS = [
 ];
 
 export const auditLogsData = [
-  { id: "AUD-5892", user: "Arjun Sharma", avatar: "AS", role: "Super Admin", action: "User Created", module: "User Management", target: "sneha@vyapari.in", oldVal: "—", newVal: "Analyst role", ip: "103.24.56.78", timestamp: "2024-01-21 14:32:05", severity: "Info" },
-  { id: "AUD-5891", user: "Priya Patel", avatar: "PP", role: "Admin", action: "Invoice Voided", module: "Invoices", target: "INV-2024-007", oldVal: "Paid ₹1,56,000", newVal: "Voided", ip: "103.24.56.79", timestamp: "2024-01-21 13:17:42", severity: "Warning" },
-  { id: "AUD-5890", user: "Rahul Gupta", avatar: "RG", role: "Manager", action: "Price Changed", module: "Inventory", target: "iPhone 15 Pro", oldVal: "₹1,00,000", newVal: "₹95,000", ip: "192.168.1.12", timestamp: "2024-01-21 11:55:20", severity: "Warning" },
+  { id: "AUD-5892", user: "Arjun Sharma", avatar: "AS", role: "Super Admin", action: "User Created", module: "User Management", target: "sneha@vyapari.in", oldVal: "-", newVal: "Analyst role", ip: "103.24.56.78", timestamp: "2024-01-21 14:32:05", severity: "Info" },
+  { id: "AUD-5891", user: "Priya Patel", avatar: "PP", role: "Admin", action: "Invoice Voided", module: "Invoices", target: "INV-2024-007", oldVal: "Paid Rs.1,56,000", newVal: "Voided", ip: "103.24.56.79", timestamp: "2024-01-21 13:17:42", severity: "Warning" },
+  { id: "AUD-5890", user: "Rahul Gupta", avatar: "RG", role: "Manager", action: "Price Changed", module: "Inventory", target: "iPhone 15 Pro", oldVal: "Rs.1,00,000", newVal: "Rs.95,000", ip: "192.168.1.12", timestamp: "2024-01-21 11:55:20", severity: "Warning" },
   { id: "AUD-5889", user: "Arjun Sharma", avatar: "AS", role: "Super Admin", action: "Settings Updated", module: "Settings", target: "GST Rate", oldVal: "12%", newVal: "18%", ip: "103.24.56.78", timestamp: "2024-01-21 10:30:00", severity: "Info" },
-  { id: "AUD-5888", user: "Kiran Desai", avatar: "KD", role: "Cashier", action: "Login Failed", module: "Authentication", target: "kiran@vyapari.in", oldVal: "—", newVal: "3 failed attempts", ip: "45.67.89.10", timestamp: "2024-01-21 09:45:33", severity: "Critical" },
-  { id: "AUD-5887", user: "Sneha Iyer", avatar: "SI", role: "Analyst", action: "Report Exported", module: "Reports", target: "Sales Summary Jan 2024", oldVal: "—", newVal: "PDF downloaded", ip: "103.24.56.80", timestamp: "2024-01-21 09:12:15", severity: "Info" },
+  { id: "AUD-5888", user: "Kiran Desai", avatar: "KD", role: "Cashier", action: "Login Failed", module: "Authentication", target: "kiran@vyapari.in", oldVal: "-", newVal: "3 failed attempts", ip: "45.67.89.10", timestamp: "2024-01-21 09:45:33", severity: "Critical" },
+  { id: "AUD-5887", user: "Sneha Iyer", avatar: "SI", role: "Analyst", action: "Report Exported", module: "Reports", target: "Sales Summary Jan 2024", oldVal: "-", newVal: "PDF downloaded", ip: "103.24.56.80", timestamp: "2024-01-21 09:12:15", severity: "Info" },
   { id: "AUD-5886", user: "Priya Patel", avatar: "PP", role: "Admin", action: "User Suspended", module: "User Management", target: "kiran@vyapari.in", oldVal: "Active", newVal: "Suspended", ip: "103.24.56.79", timestamp: "2024-01-21 08:58:44", severity: "Warning" },
   { id: "AUD-5885", user: "Rahul Gupta", avatar: "RG", role: "Manager", action: "Inventory Adjusted", module: "Inventory", target: "Rice 5kg (GR-089)", oldVal: "500 units", newVal: "480 units", ip: "192.168.1.12", timestamp: "2024-01-20 18:22:10", severity: "Info" },
-  { id: "AUD-5884", user: "System", avatar: "SY", role: "System", action: "Backup Completed", module: "System", target: "Daily Backup", oldVal: "—", newVal: "vyapari_backup_20240120.zip", ip: "Internal", timestamp: "2024-01-20 02:00:01", severity: "Info" },
+  { id: "AUD-5884", user: "System", avatar: "SY", role: "System", action: "Backup Completed", module: "System", target: "Daily Backup", oldVal: "-", newVal: "vyapari_backup_20240120.zip", ip: "Internal", timestamp: "2024-01-20 02:00:01", severity: "Info" },
   { id: "AUD-5883", user: "Arjun Sharma", avatar: "AS", role: "Super Admin", action: "Integration Connected", module: "Settings", target: "Razorpay", oldVal: "Not Connected", newVal: "Connected", ip: "103.24.56.78", timestamp: "2024-01-19 16:44:30", severity: "Info" },
 ];
-// ─── INTELLIGENCE CONSTANTS ──────────────────────────────────────────────────
+// --- INTELLIGENCE CONSTANTS --------------------------------------------------
 
 export const FESTIVAL_CALENDAR = [
   { name: "Eid-ul-Fitr", month: 3, day: 10, season: "Post-Ramadan" },

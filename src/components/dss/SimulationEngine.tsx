@@ -7,7 +7,7 @@ import {
   MousePointer2, Target, Sparkles, BrainCircuit, Presentation, RefreshCw, Package
 } from 'lucide-react';
 import PresentationMode from './simulation/PresentationMode';
-import { useGlobalData } from '../../contexts/DataContext';
+import { useGlobalData } from '../../context/DataContext';
 import { dssService } from '../../services/dss/dssService';
 import { useAuth } from '../../context/AuthContext';
 import { Badge, ActionBtn as Button } from '../common/UI';
@@ -66,7 +66,7 @@ export default function SimulationEngine({ onComplete, onBack }: SimulationEngin
   useEffect(() => {
     if (currentStep !== 'LAUNCH' || showResultsBtn) return;
     const interval = setInterval(() => {
-      const examples = ["₹4,78,000", "ε=0.42", "31 units", "87%", "₹1,240", "ROI: 14%"];
+      const examples = ["Rs.4,78,000", "-=0.42", "31 units", "87%", "Rs.1,240", "ROI: 14%"];
       const newGhost = {
         id: Date.now(),
         text: examples[Math.floor(Math.random() * examples.length)],
@@ -109,7 +109,7 @@ export default function SimulationEngine({ onComplete, onBack }: SimulationEngin
     setStatusIndex(0);
     setShowResultsBtn(false);
     
-    const minDuration = 4000;
+    const minDuration = 1000;
     const startTime = Date.now();
 
     const progressTimer = setInterval(() => {
@@ -135,7 +135,7 @@ export default function SimulationEngine({ onComplete, onBack }: SimulationEngin
         clearInterval(statusTimer);
         setProgress(100);
         setShowResultsBtn(true);
-      }, 1000);
+      }, 200);
     } catch (err) {
       setCurrentStep('CONFIGURE');
     }
@@ -208,7 +208,7 @@ export default function SimulationEngine({ onComplete, onBack }: SimulationEngin
                        </div>
                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-500">
                           <span>{p.quantity || 0} Stock</span>
-                          <span className="text-indigo-400">₹{p.selling_price?.toLocaleString()}</span>
+                          <span className="text-indigo-400">Rs.{p.selling_price?.toLocaleString()}</span>
                        </div>
                     </div>
                   ))}
@@ -262,8 +262,8 @@ export default function SimulationEngine({ onComplete, onBack }: SimulationEngin
                         <div>
                            <h4 className="text-lg font-bold text-white tracking-tight">{p.name}</h4>
                            <div className="flex gap-4 mt-1 text-[10px] font-bold uppercase text-slate-500 tracking-widest">
-                              <span>Base: ₹{p.price}</span>
-                              <span className="text-rose-400">Cost: ₹{p.costPrice}</span>
+                              <span>Base: Rs.{p.price}</span>
+                              <span className="text-rose-400">Cost: Rs.{p.costPrice}</span>
                            </div>
                         </div>
                         <button onClick={() => handleToggleProduct(p)} className="text-slate-600 hover:text-rose-400 transition-colors">
@@ -275,7 +275,7 @@ export default function SimulationEngine({ onComplete, onBack }: SimulationEngin
                         <div className="space-y-6">
                            <div className="flex justify-between items-center">
                               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Simulated Price</label>
-                              <span className="text-sm font-bold text-indigo-400">₹{p.newPrice?.toLocaleString()}</span>
+                              <span className="text-sm font-bold text-indigo-400">Rs.{p.newPrice?.toLocaleString()}</span>
                            </div>
                            <input 
                               type="range" 

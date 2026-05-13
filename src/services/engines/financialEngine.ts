@@ -1,4 +1,4 @@
-import { EngineInput, DSSRecommendation } from '../dssService';
+﻿import { EngineInput, DSSRecommendation } from '../dssService';
 
 export const financialEngine = {
   analyze: (input: EngineInput): DSSRecommendation[] => {
@@ -14,7 +14,7 @@ export const financialEngine = {
         id: 'FIN-001',
         type: 'financial',
         title: 'Cash Flow Optimization',
-        body: `₹${(pendingAmount/1000).toFixed(1)}K is currently tied up in pending invoices.`,
+        body: `Rs.${(pendingAmount/1000).toFixed(1)}K is currently tied up in pending invoices.`,
         score: 82,
         impact: 'Improve liquidity by 20%',
         action: 'Trigger automated WhatsApp reminders for overdue payments',

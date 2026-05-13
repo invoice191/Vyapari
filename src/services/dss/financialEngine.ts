@@ -1,4 +1,4 @@
-import { DSSRecommendation, EngineInput, EngineOutput, LedgerEntry } from './types';
+﻿import { DSSRecommendation, EngineInput, EngineOutput, LedgerEntry } from './types';
 import rules from './rules.json';
 import { Invoice } from '../types';
 
@@ -10,7 +10,7 @@ export function runFinancialEngine(input: EngineInput): EngineOutput {
   const recommendations: DSSRecommendation[] = [];
   const metrics: { label: string; value: number; unit?: string }[] = [];
 
-  // ── CASH FLOW CALCULATIONS ───────────────────────────────────
+  // -- CASH FLOW CALCULATIONS -----------------------------------
   const totalCredits = input.ledgerEntries
     .filter(e => e.type === 'credit')
     .reduce((s, e) => s + (Number(e.amount) || 0), 0);
@@ -29,9 +29,9 @@ export function runFinancialEngine(input: EngineInput): EngineOutput {
     .filter(i => i.payment_status?.toLowerCase() !== 'paid')
     .reduce((s, i) => s + (Number(i.total_amount) || 0), 0);
 
-  metrics.push({ label: 'Current Cash', value: currentCash, unit: '₹' });
+  metrics.push({ label: 'Current Cash', value: currentCash, unit: 'Rs.' });
   metrics.push({ label: 'Runway', value: Math.max(0, Number(runwayMonths.toFixed(1))), unit: 'mo' });
-  metrics.push({ label: 'Receivables', value: receivables, unit: '₹' });
+  metrics.push({ label: 'Receivables', value: receivables, unit: 'Rs.' });
 
   // 1. Cash Flow Alert
   if (runwayMonths < 1.5 && currentCash > 0) {
@@ -43,11 +43,11 @@ export function runFinancialEngine(input: EngineInput): EngineOutput {
       confidence: 0.95,
       title: 'Critical: Low Cash Runway',
       headline: `Only ${runwayMonths.toFixed(1)} months of cash left at current burn rate`,
-      detail: `Your current cash (₹${currentCash.toLocaleString()}) won't cover expenses for long. Recover ₹${receivables.toLocaleString()} in pending invoices immediately.`,
+      detail: `Your current cash (Rs.${currentCash.toLocaleString()}) won't cover expenses for long. Recover Rs.${receivables.toLocaleString()} in pending invoices immediately.`,
       impactEstimate: {
         metric: 'Net Cash Risk',
         value: currentCash,
-        unit: '₹',
+        unit: 'Rs.',
         direction: 'negative',
       },
       action: {
@@ -56,16 +56,16 @@ export function runFinancialEngine(input: EngineInput): EngineOutput {
         deepLink: '/invoices?filter=unpaid',
       },
       evidence: [
-        `Monthly Burn: ₹${Math.round(monthlyBurn).toLocaleString()}`,
-        `Current Cash: ₹${currentCash.toLocaleString()}`,
-        `Pending Collections: ₹${receivables.toLocaleString()}`
+        `Monthly Burn: Rs.${Math.round(monthlyBurn).toLocaleString()}`,
+        `Current Cash: Rs.${currentCash.toLocaleString()}`,
+        `Pending Collections: Rs.${receivables.toLocaleString()}`
       ],
       createdAt: new Date(),
       expiresAt: new Date(Date.now() + 7 * 86400000),
     });
   }
 
-  // ── GST OPTIMIZATION ─────────────────────────────────────────
+  // -- GST OPTIMIZATION -----------------------------------------
   // Net GST = Output GST (Sales) - Input Tax Credit (Purchases/Expenses)
   const outputGST = input.invoices.reduce((s, i) => s + (Number(i.tax_amount) || 0), 0);
   
@@ -74,7 +74,7 @@ export function runFinancialEngine(input: EngineInput): EngineOutput {
   const estimatedITC = totalDebits * 0.05; 
   const netGSTPayable = outputGST - estimatedITC;
 
-  metrics.push({ label: 'Net GST', value: Math.max(0, netGSTPayable), unit: '₹' });
+  metrics.push({ label: 'Net GST', value: Math.max(0, netGSTPayable), unit: 'Rs.' });
 
   if (netGSTPayable > 10000) {
     recommendations.push({
@@ -84,12 +84,12 @@ export function runFinancialEngine(input: EngineInput): EngineOutput {
       score: 70,
       confidence: 0.8,
       title: 'GST Optimization: Unclaimed ITC',
-      headline: `Estimated ₹${Math.round(estimatedITC).toLocaleString()} in unclaimed Input Tax Credit`,
-      detail: `Ensure all purchase invoices are uploaded to claim full ITC and reduce your ₹${Math.round(outputGST).toLocaleString()} tax liability.`,
+      headline: `Estimated Rs.${Math.round(estimatedITC).toLocaleString()} in unclaimed Input Tax Credit`,
+      detail: `Ensure all purchase invoices are uploaded to claim full ITC and reduce your Rs.${Math.round(outputGST).toLocaleString()} tax liability.`,
       impactEstimate: {
         metric: 'Tax Savings',
         value: Math.round(estimatedITC),
-        unit: '₹',
+        unit: 'Rs.',
         direction: 'positive',
       },
       action: {
@@ -98,9 +98,9 @@ export function runFinancialEngine(input: EngineInput): EngineOutput {
         deepLink: '/expenses',
       },
       evidence: [
-        `Output GST: ₹${Math.round(outputGST).toLocaleString()}`,
-        `Est. ITC: ₹${Math.round(estimatedITC).toLocaleString()}`,
-        `Net Payable: ₹${Math.round(netGSTPayable).toLocaleString()}`
+        `Output GST: Rs.${Math.round(outputGST).toLocaleString()}`,
+        `Est. ITC: Rs.${Math.round(estimatedITC).toLocaleString()}`,
+        `Net Payable: Rs.${Math.round(netGSTPayable).toLocaleString()}`
       ],
       createdAt: new Date(),
       expiresAt: new Date(Date.now() + 30 * 86400000),

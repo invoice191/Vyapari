@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Mic, Zap, Cpu, Search, Activity, Volume2 } from 'lucide-react';
 import { ToggleRow, SelectRow, SliderRow, BadgeRow } from '../SettingRows';
 

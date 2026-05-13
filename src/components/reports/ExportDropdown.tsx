@@ -79,7 +79,7 @@ export default function ExportDropdown({
         filtersApplied: filtersApplied || 'None',
         chartRef
       });
-      toast.success(`✓ Downloaded as ${reportTitle.toLowerCase().replace(/\s+/g, '_')}`, { id });
+      toast.success(`- Downloaded as ${reportTitle.toLowerCase().replace(/\s+/g, '_')}`, { id });
       
       const historyKey = 'vyapari_report_history';
       const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
@@ -93,7 +93,7 @@ export default function ExportDropdown({
       window.dispatchEvent(new Event('report_history_updated'));
 
     } catch (err: any) {
-      toast.error(`✗ Export failed: ${err?.message || 'Server error'}`, {
+      toast.error(`- Export failed: ${err?.message || 'Server error'}`, {
         id,
         action: {
           label: 'Retry',
@@ -106,13 +106,13 @@ export default function ExportDropdown({
   const handleShareLink = () => {
     const mockShareLink = `https://vyapari.co/share/report/${businessId}/${crypto.randomUUID().slice(0, 8)}?exp=24h`;
     navigator.clipboard.writeText(mockShareLink);
-    toast.success('✓ Generated 24hr shareable link & copied to clipboard!');
+    toast.success('- Generated 24hr shareable link & copied to clipboard!');
   };
 
   const handleScheduleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!scheduleEmail) return;
-    toast.success(`✓ Scheduled ${scheduleFreq} reports for ${scheduleEmail}!`);
+    toast.success(`- Scheduled ${scheduleFreq} reports for ${scheduleEmail}!`);
     setIsScheduleOpen(false);
   };
 
@@ -148,21 +148,21 @@ export default function ExportDropdown({
                   onClick={() => onExecuteExport('pdf_executive')}
                   className="w-full text-left px-3 py-2.5 text-[11px] font-black uppercase tracking-wider bg-white/[0.02] hover:bg-indigo-600/20 rounded-xl hover:text-white transition-all duration-300 border border-white/5 hover:border-indigo-500/30 flex items-center justify-between group"
                 >
-                  <span>📄 PDF — Executive</span>
+                  <span>-- PDF - Executive</span>
                   <span className="text-[7px] bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded-full font-black tracking-widest group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300">AI INSIGHTS</span>
                 </button>
                 <button
                   onClick={() => onExecuteExport('pdf_detailed')}
                   className="w-full text-left px-3 py-2.5 text-[11px] font-black uppercase tracking-wider bg-white/[0.02] hover:bg-indigo-600/20 rounded-xl hover:text-white transition-all duration-300 border border-white/5 hover:border-indigo-500/30 flex items-center justify-between"
                 >
-                  <span>📄 PDF — Detailed</span>
+                  <span>-- PDF - Detailed</span>
                   <span className="text-[7px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-black tracking-widest">ALL COLS</span>
                 </button>
                 <button
                   onClick={() => onExecuteExport('pdf_simple')}
                   className="w-full text-left px-3 py-2.5 text-[11px] font-black uppercase tracking-wider bg-white/[0.02] hover:bg-indigo-600/20 rounded-xl hover:text-white transition-all duration-300 border border-white/5 hover:border-indigo-500/30"
                 >
-                  <span>📄 PDF — Print-Ready (Simple)</span>
+                  <span>-- PDF - Print-Ready (Simple)</span>
                 </button>
               </div>
             </div>
@@ -178,14 +178,14 @@ export default function ExportDropdown({
                   onClick={() => onExecuteExport('excel_formatted')}
                   className="w-full text-left px-3 py-2.5 text-[11px] font-black uppercase tracking-wider bg-white/[0.02] hover:bg-emerald-600/20 rounded-xl hover:text-white transition-all duration-300 border border-white/5 hover:border-emerald-500/30 flex items-center justify-between group"
                 >
-                  <span>📊 Excel Workbook (.xlsx)</span>
+                  <span>-- Excel Workbook (.xlsx)</span>
                   <span className="text-[7px] bg-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded-full font-black tracking-widest group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">EXCEL</span>
                 </button>
                 <button
                   onClick={() => onExecuteExport('csv')}
                   className="w-full text-left px-3 py-2.5 text-[11px] font-black uppercase tracking-wider bg-white/[0.02] hover:bg-emerald-600/20 rounded-xl hover:text-white transition-all duration-300 border border-white/5 hover:border-emerald-500/30"
                 >
-                  <span>📋 CSV Extract (UTF-8 BOM)</span>
+                  <span>-- CSV Extract (UTF-8 BOM)</span>
                 </button>
               </div>
             </div>
@@ -202,28 +202,28 @@ export default function ExportDropdown({
                   className="w-full text-left px-3 py-2.5 text-[11px] font-black uppercase tracking-wider bg-white/[0.02] hover:bg-amber-600/20 rounded-xl hover:text-white transition-all duration-300 border border-white/5 hover:border-amber-500/30 flex items-center gap-2"
                 >
                   <Printer size={12} className="text-neon" />
-                  <span>🖨️ Open Print Preview</span>
+                  <span>--- Open Print Preview</span>
                 </button>
                 <button
                   onClick={() => setIsColumnChooserOpen(true)}
                   className="w-full text-left px-3 py-2.5 text-[11px] font-black uppercase tracking-wider bg-white/[0.02] hover:bg-indigo-600/20 rounded-xl hover:text-white transition-all duration-300 border border-white/5 hover:border-indigo-500/30 flex items-center gap-2"
                 >
                   <Columns size={12} className="text-blue-400" />
-                  <span>⚙️ Column Chooser</span>
+                  <span>-- Column Chooser</span>
                 </button>
                 <button
                   onClick={handleShareLink}
                   className="w-full text-left px-3 py-2.5 text-[11px] font-black uppercase tracking-wider bg-white/[0.02] hover:bg-purple-600/20 rounded-xl hover:text-white transition-all duration-300 border border-white/5 hover:border-purple-500/30 flex items-center gap-2"
                 >
                   <Share2 size={12} className="text-purple-400" />
-                  <span>🔗 Shareable Link (24hr)</span>
+                  <span>-- Shareable Link (24hr)</span>
                 </button>
                 <button
                   onClick={() => setIsScheduleOpen(true)}
                   className="w-full text-left px-3 py-2.5 text-[11px] font-black uppercase tracking-wider bg-white/[0.02] hover:bg-amber-600/20 rounded-xl hover:text-white transition-all duration-300 border border-white/5 hover:border-amber-500/30 flex items-center gap-2"
                 >
                   <Mail size={12} className="text-amber-400" />
-                  <span>📅 Schedule Dispatch</span>
+                  <span>-- Schedule Dispatch</span>
                 </button>
               </div>
             </div>
@@ -234,8 +234,8 @@ export default function ExportDropdown({
 
       {/* COLUMN CHOOSER MODAL with Premium Details */}
       {isColumnChooserOpen && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="w-full max-w-md bg-slate-900 border-2 border-white/10 rounded-[2.5rem] p-8 shadow-[0_25px_60px_rgba(0,0,0,0.6)] text-slate-200 relative overflow-hidden">
+        <div className="fixed inset-0 z-[1200] flex items-start justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="w-full max-w-md bg-slate-900 border-2 border-white/10 rounded-[2.5rem] p-8 shadow-[0_25px_60px_rgba(0,0,0,0.6)] text-slate-200 relative overflow-hidden my-auto">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-neon" />
             
             <div className="flex justify-between items-start mb-6">
@@ -274,8 +274,8 @@ export default function ExportDropdown({
 
       {/* SCHEDULE MODAL with Premium Details */}
       {isScheduleOpen && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <form onSubmit={handleScheduleSubmit} className="w-full max-w-md bg-slate-900 border-2 border-white/10 rounded-[2.5rem] p-8 shadow-[0_25px_60px_rgba(0,0,0,0.6)] text-slate-200 relative overflow-hidden">
+        <div className="fixed inset-0 z-[1200] flex items-start justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <form onSubmit={handleScheduleSubmit} className="w-full max-w-md bg-slate-900 border-2 border-white/10 rounded-[2.5rem] p-8 shadow-[0_25px_60px_rgba(0,0,0,0.6)] text-slate-200 relative overflow-hidden my-auto">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-500 via-orange-500 to-indigo-500" />
             
             <div className="flex justify-between items-start mb-6">

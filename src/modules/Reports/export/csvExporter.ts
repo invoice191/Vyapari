@@ -1,5 +1,5 @@
-export function exportToCSV(reportTitle: string, data: any[], columns: string[]) {
-  // UTF-8 BOM required for Excel to show symbols like ₹ correctly
+﻿export function exportToCSV(reportTitle: string, data: any[], columns: string[]) {
+  // UTF-8 BOM required for Excel to show symbols like Rs. correctly
   const BOM = '\uFEFF';
   
   const headers = columns.join(',');

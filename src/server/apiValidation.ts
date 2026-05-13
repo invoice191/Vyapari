@@ -1,4 +1,4 @@
-// ─── Types ───────────────────────────────────────────────────────────────────
+﻿// --- Types -------------------------------------------------------------------
 
 export interface SimulationParameters {
   price: number;
@@ -86,7 +86,7 @@ export interface OCRRequest {
   imageUrl: string;
 }
 
-// ─── Validators ──────────────────────────────────────────────────────────────
+// --- Validators --------------------------------------------------------------
 
 export function validateOCRRequest(body: unknown) {
   const errors: string[] = [];
@@ -128,7 +128,7 @@ export function validateSimulationRequest(body: unknown) {
   return errors;
 }
 
-// ─── Rich simulation result builder ──────────────────────────────────────────
+// --- Rich simulation result builder ------------------------------------------
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -192,7 +192,7 @@ export function buildSimulationResult(request: any): SimulationResult {
   const revenueChangePct = Math.round(((predictedRevenue - currentRevenue) / currentRevenue) * 100);
   const unitsChangePctResult = Math.round(unitChangePct * 100);
 
-  // ── Timeline chart data ──
+  // -- Timeline chart data --
   const now = new Date();
   const currentMonth = now.getMonth();
   const chartData: ChartPoint[] = MONTHS.map((m, i) => {
@@ -234,7 +234,7 @@ export function buildSimulationResult(request: any): SimulationResult {
     analysis: {
       primaryFactor: selectedFactor,
       factorImpact: "High",
-      explanation: `The neural engine identified ${selectedFactor} as the primary variance driver. Current price adjustment of ₹${(price - currentPrice).toFixed(0)} will likely trigger a ${(unitChangePct * 100).toFixed(1)}% volume response.`
+      explanation: `The neural engine identified ${selectedFactor} as the primary variance driver. Current price adjustment of Rs.${(price - currentPrice).toFixed(0)} will likely trigger a ${(unitChangePct * 100).toFixed(1)}% volume response.`
     },
     actions: [
       { category: "Inventory", action: `Adjust safety stock by ${Math.abs(unitsChangePctResult)}% to align with new demand vector.`, impact: "Optimizes working capital vs fulfillment rate." },

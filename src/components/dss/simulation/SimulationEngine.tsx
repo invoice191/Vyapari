@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, Sliders, Play, ChevronLeft, ChevronRight, 
   BarChart3, PieChart, FileDown, Save, Zap, AlertTriangle, 
-  Package, Info, CheckCircle, TrendingUp, HelpCircle
+  Package, Info, CheckCircle, TrendingUp, HelpCircle, Eye, Loader2
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { runSimulation, SimProduct, SimConfig, SimResult } from '../../../utils/simulationCalculations';
-import { generateSimulationReport } from '../../../utils/generateSimulationReport';
+import { generateSimulationPDF } from '../../../utils/pdf/simulationReportPDF';
+import { useToast } from '../../../components/common/Toast';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, Legend, LineChart, Line 
@@ -18,6 +19,8 @@ export const SimulationEngine: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const { toast } = useToast();
+  const [downloading, setDownloading] = useState<'download' | 'open' | null>(null);
   
   // Simulation Config
   const [config, setConfig] = useState<SimConfig>({
@@ -77,18 +80,42 @@ export const SimulationEngine: React.FC = () => {
       setResults(simResult);
       setStep(3);
       setLoading(false);
-    }, 1500);
+    }, 200);
   };
 
-  const handleDownloadReport = async () => {
+  const handleDownloadReport = async (action: 'download' | 'open' = 'download') => {
     if (!results) return;
-    await generateSimulationReport({
-      ...results,
-      businessName: "Vyapari Retailer",
-      scenarioName: "Pricing Strategy Analysis",
-      aiSummary: "We checked your plan. Increasing the price of " + results.products[0].productName + " will help you make more money. The risk is low because people need this item every day.",
-      risk: results.overallRisk
-    });
+    setDownloading(action);
+    try {
+      // Map older SimResult format to SimulationData structure
+      const mappedData: any = {
+        ...results,
+        horizon: config.horizon || 30,
+        marketCondition: config.marketCondition || 'Normal',
+        overallRisk: results.overallRisk || 'LOW',
+        confidence: 85,
+        aiSummary: "Based on this scenario, the platform forecasts a positive revenue adjustment with managed velocity fluctuations.",
+        products: results.products.map((p: any) => ({
+          productName: p.productName,
+          currentPrice: p.currentPrice,
+          newPrice: p.newPrice,
+          costPrice: p.costPrice || p.currentPrice * 0.7,
+          revenueChange: p.revenueChange,
+          risk: p.impact === 'Negative' ? 'HIGH' : 'LOW'
+        })),
+        recommendations: [
+          { title: "Monitor closely for 7 days", description: "Review daily sales data to check customer response.", priority: 'MEDIUM' },
+          { title: "Ready rollback strategy", description: "Prepare legacy SKU labels if velocity dips 20%+.", priority: 'HIGH' }
+        ]
+      };
+      
+      await generateSimulationPDF(mappedData, "Vyapari Retailer", action);
+      toast(`Report ${action === 'open' ? 'opened' : 'downloaded'} successfully!`, "success");
+    } catch (error) {
+      toast("Failed to generate premium report", "error");
+    } finally {
+      setDownloading(null);
+    }
   };
 
   const filteredProducts = products.filter(p => 
@@ -144,7 +171,7 @@ export const SimulationEngine: React.FC = () => {
                   {selectedProductIds.includes(product.id) && <CheckCircle className="w-5 h-5 text-neon" />}
                 </div>
                 <h4 className="font-bold text-white mb-1">{product.name}</h4>
-                <p className="text-2xl font-black text-white mb-4 italic">₹{product.selling_price}</p>
+                <p className="text-2xl font-black text-white mb-4 italic">Rs.{product.selling_price}</p>
                 <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                   <span>In Stock: {product.stock_quantity}</span>
                 </div>
@@ -194,7 +221,7 @@ export const SimulationEngine: React.FC = () => {
                       <div>
                         <div className="flex justify-between mb-4 items-end">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">What is the new price?</label>
-                          <span className="text-3xl font-black text-neon italic">₹{config.newPrice}</span>
+                          <span className="text-3xl font-black text-neon italic">Rs.{config.newPrice}</span>
                         </div>
                         <input 
                           type="range" min={Math.round(p.cost_price * 0.8)} max={p.selling_price * 2} step="1"
@@ -293,8 +320,8 @@ export const SimulationEngine: React.FC = () => {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 pb-12">
           {/* Simple Result Summary */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <ResultCard label="EXTRA SALES MONEY" value={`₹${results.revenueChange.toLocaleString()}`} sub={`+${results.revenueChangePct}% compared to now`} positive={results.revenueChange >= 0} />
-            <ResultCard label="EXTRA PROFIT MONEY" value={`₹${results.profitChange.toLocaleString()}`} sub={`+${results.profitChangePct}% total profit`} positive={results.profitChange >= 0} />
+            <ResultCard label="EXTRA SALES MONEY" value={`Rs.${results.revenueChange.toLocaleString()}`} sub={`+${results.revenueChangePct}% compared to now`} positive={results.revenueChange >= 0} />
+            <ResultCard label="EXTRA PROFIT MONEY" value={`Rs.${results.profitChange.toLocaleString()}`} sub={`+${results.profitChangePct}% total profit`} positive={results.profitChange >= 0} />
             <ResultCard label="DANGER LEVEL" value={results.overallRisk === 'LOW' ? 'SAFE' : 'RISKY'} sub={`${results.confidence}% sure about this`} positive={results.overallRisk === 'LOW'} />
           </div>
 
@@ -310,7 +337,7 @@ export const SimulationEngine: React.FC = () => {
                 <div className="w-12 h-12 bg-brand text-white rounded-2xl flex items-center justify-center shrink-0 font-black text-xl shadow-xl">1</div>
                 <div className="flex-1">
                   <h4 className="text-white font-bold text-lg mb-2">You should do this!</h4>
-                  <p className="text-slate-300 leading-relaxed italic">Increasing the price to <span className="text-neon font-bold">₹{config.newPrice}</span> is a great idea. You will make <span className="text-neon font-bold">₹{results.revenueChange.toLocaleString()}</span> more money and customers won't complain much.</p>
+                  <p className="text-slate-300 leading-relaxed italic">Increasing the price to <span className="text-neon font-bold">Rs.{config.newPrice}</span> is a great idea. You will make <span className="text-neon font-bold">Rs.{results.revenueChange.toLocaleString()}</span> more money and customers won't complain much.</p>
                 </div>
               </div>
               <div className="flex gap-6">
@@ -326,11 +353,20 @@ export const SimulationEngine: React.FC = () => {
           {/* Final Simple Actions */}
           <div className="flex flex-col sm:flex-row gap-6 pt-10 border-t border-white/5">
             <button 
-              onClick={handleDownloadReport}
-              className="flex-1 bg-white text-slate-900 font-black py-6 rounded-[2rem] flex items-center justify-center gap-3 hover:bg-neon transition-all shadow-2xl uppercase tracking-widest text-xs"
+              onClick={() => handleDownloadReport('download')}
+              disabled={!!downloading}
+              className="flex-[2] bg-white text-slate-900 font-black py-6 rounded-[2rem] flex items-center justify-center gap-3 hover:bg-neon transition-all shadow-2xl uppercase tracking-widest text-xs disabled:opacity-70"
             >
-              <FileDown className="w-6 h-6" />
-              Get Paper Report (PDF)
+              {downloading === 'download' ? <Loader2 className="w-6 h-6 animate-spin" /> : <FileDown className="w-6 h-6" />}
+              {downloading === 'download' ? 'Preparing PDF...' : 'Get Paper Report (PDF)'}
+            </button>
+            <button 
+              onClick={() => handleDownloadReport('open')}
+              disabled={!!downloading}
+              className="flex-1 bg-slate-900 text-white font-black py-6 rounded-[2rem] border border-white/20 flex items-center justify-center gap-3 hover:bg-slate-800 transition-all shadow-2xl uppercase tracking-widest text-xs disabled:opacity-70"
+            >
+              {downloading === 'open' ? <Loader2 className="w-6 h-6 animate-spin" /> : <Eye className="w-6 h-6" />}
+              View PDF
             </button>
             <button 
               onClick={() => setStep(1)}

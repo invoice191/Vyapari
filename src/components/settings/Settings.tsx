@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { C } from "../../lib/constants";
 import { useBreakpoint, rv } from "../../hooks/useBreakpoint";
 import { Card, SectionHeader, Badge, ActionBtn, KPICard } from "../common/UI";
@@ -219,7 +219,7 @@ export default function Settings() {
     try {
       await smsService.sendMessage({
         phone: bizInfo.phone,
-        message: `Vyapari Enterprise Alert: This is a diagnostic test of your messaging pipeline. If you are reading this, your system is production-ready! 🚀`,
+        message: `Vyapari Enterprise Alert: This is a diagnostic test of your messaging pipeline. If you are reading this, your system is production-ready! --`,
         type: 'sms'
       });
       toast("Test signal dispatched successfully.", "success");
@@ -533,7 +533,7 @@ export default function Settings() {
                               value={apiKeys.twilioAuthToken}
                               onChange={(e: any) => setApiKeys({ ...apiKeys, twilioAuthToken: e.target.value })}
                               type="password"
-                              placeholder="••••••••••••••••••••••••••••••••"
+                              placeholder="--------------------------------"
                             />
                             <InputField
                               label="Twilio From Phone Number"
@@ -646,7 +646,7 @@ export default function Settings() {
                   {/* Stripe, Razorpay and UPI Gateway Credentials */}
                   <div className="pt-10 mt-10 border-t border-slate-100 space-y-10">
                     <div>
-                      <h4 className="font-black text-xs uppercase tracking-wider text-slate-900 mb-2">💳 Stripe Gateway Configuration</h4>
+                      <h4 className="font-black text-xs uppercase tracking-wider text-slate-900 mb-2">-- Stripe Gateway Configuration</h4>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed mb-6">
                         Configure Stripe payment credentials for processing international and domestic credit cards in test or live modes.
                       </p>
@@ -668,7 +668,7 @@ export default function Settings() {
                     </div>
 
                     <div className="pt-8 border-t border-slate-100">
-                      <h4 className="font-black text-xs uppercase tracking-wider text-slate-900 mb-2">💳 Razorpay Gateway Configuration</h4>
+                      <h4 className="font-black text-xs uppercase tracking-wider text-slate-900 mb-2">-- Razorpay Gateway Configuration</h4>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed mb-6">
                         Configure Razorpay payment credentials for domestic card payments, Netbanking, and UPI wallets in India.
                       </p>
@@ -684,13 +684,13 @@ export default function Settings() {
                           value={apiKeys.razorpayKeySecret}
                           onChange={(e: any) => setApiKeys({ ...apiKeys, razorpayKeySecret: e.target.value })}
                           type="password"
-                          placeholder="••••••••••••••••••••••••"
+                          placeholder="------------------------"
                         />
                       </div>
                     </div>
 
                     <div className="pt-8 border-t border-slate-100">
-                      <h4 className="font-black text-xs uppercase tracking-wider text-slate-900 mb-2">📱 Instant UPI QR Configuration</h4>
+                      <h4 className="font-black text-xs uppercase tracking-wider text-slate-900 mb-2">-- Instant UPI QR Configuration</h4>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed mb-6">
                         Specify the standard VPA address to automatically generate interactive dynamic payment QR codes for fast checkout.
                       </p>
@@ -777,8 +777,8 @@ export default function Settings() {
                   </div>
                   <div className="space-y-4">
                     {[
-                      { id: "TXN_2026_001", amount: "₹14,999", date: "JAN 15, 2026", status: "Settled" },
-                      { id: "TXN_2025_120", amount: "₹1,299", date: "DEC 15, 2025", status: "Settled" }
+                      { id: "TXN_2026_001", amount: "Rs.14,999", date: "JAN 15, 2026", status: "Settled" },
+                      { id: "TXN_2025_120", amount: "Rs.1,299", date: "DEC 15, 2025", status: "Settled" }
                     ].map(inv => (
                       <div key={inv.id} className="flex justify-between items-center p-6 rounded-3xl bg-slate-50 border border-slate-100 hover:border-neon/30 transition-all duration-500">
                         <div className="flex items-center gap-6">
@@ -787,7 +787,7 @@ export default function Settings() {
                            </div>
                            <div>
                               <div className="font-black text-xs uppercase tracking-tight text-slate-900">{inv.id}</div>
-                              <div className="text-[9px] text-slate-400 mt-1 font-bold uppercase tracking-widest">{inv.date} • {inv.status}</div>
+                              <div className="text-[9px] text-slate-400 mt-1 font-bold uppercase tracking-widest">{inv.date} - {inv.status}</div>
                            </div>
                         </div>
                         <div className="flex items-center gap-8">

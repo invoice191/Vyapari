@@ -3,7 +3,7 @@ import rules from './rules.json';
 import { Product as InventoryItem } from '../types';
 
 /**
- * 1. PRICING ENGINE — Realistic Implementation
+ * 1. PRICING ENGINE - Realistic Implementation
  */
 export function runPricingEngine(input: EngineInput): EngineOutput {
   const start = Date.now();
@@ -55,24 +55,24 @@ export function runPricingEngine(input: EngineInput): EngineOutput {
           score: Math.min(95, 40 + (monthlyLeakage / 500)),
           confidence: 0.9,
           title: `Revenue Leakage: ${item.name}`,
-          headline: `₹${Math.round(monthlyLeakage).toLocaleString('en-IN')}/mo lost to sub-optimal margin`,
-          detail: `${item.name} is selling well (${stats.qty} units/mo) but at ${margin.toFixed(1)}% margin. Increasing price to ₹${Math.round(targetPrice)} reaches your ${targetMargin}% goal.`,
+          headline: `Rs.${Math.round(monthlyLeakage).toLocaleString('en-IN')}/mo lost to sub-optimal margin`,
+          detail: `${item.name} is selling well (${stats.qty} units/mo) but at ${margin.toFixed(1)}% margin. Increasing price to Rs.${Math.round(targetPrice)} reaches your ${targetMargin}% goal.`,
           impactEstimate: {
             metric: 'Monthly Recovery',
             value: Math.round(monthlyLeakage),
-            unit: '₹',
+            unit: 'Rs.',
             direction: 'positive',
           },
           action: {
             type: 'reprice',
-            label: `Optimize to ₹${Math.round(targetPrice)}`,
+            label: `Optimize to Rs.${Math.round(targetPrice)}`,
             deepLink: `/inventory/${item.id}?action=reprice&price=${Math.round(targetPrice)}`,
           },
           evidence: [
             `Units sold: ${stats.qty}`,
             `Current Margin: ${margin.toFixed(1)}%`,
             `Target Margin: ${targetMargin}%`,
-            `Cost Floor: ₹${cost}`
+            `Cost Floor: Rs.${cost}`
           ],
           affectedItemId: item.id,
           affectedItemName: item.name,
@@ -89,8 +89,17 @@ export function runPricingEngine(input: EngineInput): EngineOutput {
     }
   }
 
-  metrics.push({ label: 'Avg Margin', value: 18, unit: '%' }); // Placeholder for calculated avg
-  metrics.push({ label: 'Revenue Leakage', value: totalLeakage, unit: '₹' });
+  // Calculate dynamic weighted or simple average margin across active products
+  const pricedItems = input.inventory.filter(i => Number(i.selling_price) > 0);
+  const totalMarginSum = pricedItems.reduce((sum, item) => {
+    const cost = Number(item.cost_price) || 0;
+    const price = Number(item.selling_price) || 0;
+    return sum + (((price - cost) / price) * 100);
+  }, 0);
+  const calculatedAvgMargin = pricedItems.length > 0 ? Math.round(totalMarginSum / pricedItems.length) : 20;
+
+  metrics.push({ label: 'Avg Margin', value: calculatedAvgMargin, unit: '%' });
+  metrics.push({ label: 'Revenue Leakage', value: totalLeakage, unit: 'Rs.' });
 
   return {
     engine: 'pricing',

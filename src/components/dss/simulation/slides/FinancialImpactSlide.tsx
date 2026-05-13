@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'motion/react';
 import { TrendingUp, ArrowRight, Zap, Target } from 'lucide-react';
 import CountUp from '../components/CountUpNumber';
@@ -56,7 +56,7 @@ export default function FinancialImpactSlide({ data, theme }: SlideProps) {
             </div>
             <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-4 inline-block">Operational Baseline</span>
             <div className={`text-4xl lg:text-5xl font-black ${textColor} tracking-tighter mb-2 italic tabular-nums`}>
-              ₹{data.current_scenario?.total_revenue?.toLocaleString() || '52,000'}
+              Rs.{data.current_scenario?.total_revenue?.toLocaleString() || '52,000'}
             </div>
             <div className="flex items-center justify-center gap-2">
                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full" />
@@ -120,7 +120,7 @@ export default function FinancialImpactSlide({ data, theme }: SlideProps) {
             </div>
             
             <div className={`text-6xl lg:text-7xl font-black ${textColor} tracking-tighter mb-4 italic tabular-nums`}>
-              +₹{((data.simulated_scenario?.total_revenue_projected || 64800) - (data.current_scenario?.total_revenue || 52000)).toLocaleString()}
+              +Rs.{((data.simulated_scenario?.total_revenue_projected || 64800) - (data.current_scenario?.total_revenue || 52000)).toLocaleString()}
             </div>
             
             <div className="flex flex-wrap items-center justify-center gap-4 mt-4">

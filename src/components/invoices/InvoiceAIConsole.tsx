@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   Sparkles, Terminal, ChevronRight, Check, AlertTriangle, AlertCircle, 
@@ -40,7 +40,7 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
       id: '1',
       role: 'ai',
       type: 'text',
-      content: "Hi! I'm your InvoiceAI assistant. Ask me anything about your invoices — I'll check payment risks, match payments, send reminders, or create new invoices for you. Try one of the quick actions above or type your question below.",
+      content: "Hi! I'm your InvoiceAI assistant. Ask me anything about your invoices - I'll check payment risks, match payments, send reminders, or create new invoices for you. Try one of the quick actions above or type your question below.",
       timestamp: new Date()
     }
   ]);
@@ -139,7 +139,7 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
 
       case 'APPLY_TAX':
         toast("Tax Strategy Applied to your profile", "success");
-        addMessage({ role: 'ai', type: 'text', content: "Optimization applied! Your estimated savings of ₹" + data.savings.toLocaleString() + " will be reflected in your next GST filing draft." });
+        addMessage({ role: 'ai', type: 'text', content: "Optimization applied! Your estimated savings of Rs." + data.savings.toLocaleString() + " will be reflected in your next GST filing draft." });
         break;
 
       case 'EXPORT_FORECAST':
@@ -198,7 +198,7 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
                   </div>
                   <div class="amount-highlight">
                     <div class="stat-label">Total Amount Settled</div>
-                    <div class="stat-value">₹${(data.payment_received || 0).toLocaleString('en-IN')}</div>
+                    <div class="stat-value">Rs.${(data.payment_received || 0).toLocaleString('en-IN')}</div>
                   </div>
                 </div>
 
@@ -331,12 +331,12 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
            result: {
              client_name: isCustomer ? clientName : "Selected Group",
              client_phone: clientPhone || "919876543210",
-             message: `Hi, checking in regarding ${count} pending invoices (Total: ₹${totalAmount.toLocaleString()}). Can we discuss payment?`,
+             message: `Hi, checking in regarding ${count} pending invoices (Total: Rs.${totalAmount.toLocaleString()}). Can we discuss payment?`,
              due_date: "Multiple"
            }
          };
       } else {
-         result = { action: 'TEXT', result: { content: `I've analyzed ${count} invoices for ${isCustomer ? clientName : 'this group'}. Total exposure is ₹${totalAmount.toLocaleString()}. What's our next step?` } };
+         result = { action: 'TEXT', result: { content: `I've analyzed ${count} invoices for ${isCustomer ? clientName : 'this group'}. Total exposure is Rs.${totalAmount.toLocaleString()}. What's our next step?` } };
       }
     } else {
       // Single Invoice Logic (Existing)
@@ -358,7 +358,7 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
               risk_tier: tier,
               top_reasons: [
                 isLate ? "Invoice is already past the due date" : "Based on historical payment patterns for this client",
-                `₹${(amount/1000).toFixed(0)}K is higher than this client's typical purchase`,
+                `Rs.${(amount/1000).toFixed(0)}K is higher than this client's typical purchase`,
                 "Industry-wide delays observed in the last 14 days"
               ],
               recommended_action: tier === "High" ? "Call + send reminder" : "Send nudge",
@@ -389,7 +389,7 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
             result: {
               invoice_id: selectedInvoice.id,
               client_phone: clientPhone,
-              message: `Hi ${clientName}, this is a gentle reminder regarding Invoice #${selectedInvoice.invoice_number} for ₹${(selectedInvoice.total_amount || 0).toLocaleString("en-IN")}. It is currently outstanding. You can pay via the portal link. Thanks!`,
+              message: `Hi ${clientName}, this is a gentle reminder regarding Invoice #${selectedInvoice.invoice_number} for Rs.${(selectedInvoice.total_amount || 0).toLocaleString("en-IN")}. It is currently outstanding. You can pay via the portal link. Thanks!`,
               channel: "whatsapp"
             }
           };
@@ -399,7 +399,7 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
           result = {
             action: "INVOICE_WRITER",
             result: {
-              summary: `Draft invoice prepared for ${clientName} based on your recent order notes. Total including taxes: ₹${((selectedInvoice.total_amount || 0) * 1.18).toLocaleString("en-IN")}.`,
+              summary: `Draft invoice prepared for ${clientName} based on your recent order notes. Total including taxes: Rs.${((selectedInvoice.total_amount || 0) * 1.18).toLocaleString("en-IN")}.`,
               invoice_id: selectedInvoice.id
             }
           };
@@ -430,7 +430,7 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
               final_amount: amount * 0.975,
               expiry_days: 3,
               client_phone: clientPhone || "919876543210",
-              message: `Early Payment Offer: Pay Invoice #${selectedInvoice?.invoice_number} within 48 hours to get a 2.5% discount (₹${(amount * 0.025).toLocaleString()} off!)`
+              message: `Early Payment Offer: Pay Invoice #${selectedInvoice?.invoice_number} within 48 hours to get a 2.5% discount (Rs.${(amount * 0.025).toLocaleString()} off!)`
             }
           };
           break;
@@ -546,7 +546,7 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
       addMessage({
         role: 'ai',
         type: 'text',
-        content: `**Detailed Analysis:** Based on your current pattern, you have a projected inflow of ₹${(result.result.next_30_days/100000).toFixed(1)}L over the next 30 days. Most of this is concentrated in Week 4. Your liquidity remains strong with a 95% confidence score. No immediate funding gaps detected.`
+        content: `**Detailed Analysis:** Based on your current pattern, you have a projected inflow of Rs.${(result.result.next_30_days/100000).toFixed(1)}L over the next 30 days. Most of this is concentrated in Week 4. Your liquidity remains strong with a 95% confidence score. No immediate funding gaps detected.`
       });
     }
     setLoading(false);
@@ -599,17 +599,17 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
   };
 
   const quickActions = [
-    { id: 1, name: "Payment Risk", icon: "⏰", desc: "Predict late payers" },
-    { id: 2, name: "Match Payment", icon: "💳", desc: "Reconcile bank entries" },
-    { id: 11, name: "Forecast", icon: "📊", desc: "30-day cash projections" },
-    { id: 10, name: "Tax Savvy", icon: "💼", desc: "Optimize GST/Taxes" },
-    { id: 5, name: "Fraud Guard", icon: "🛡️", desc: "Verify transaction safety" },
-    { id: 12, name: "Early Offer", icon: "🎁", desc: "Dynamic settlement deals" },
-    { id: 3, name: "Auto Nudge", icon: "📢", desc: "Smart WhatsApp reminders" },
-    { id: 7, name: "Instalments", icon: "🗓️", desc: "Split large bills" },
-    { id: 4, name: "AI Draft", icon: "✍️", desc: "Natural language billing" },
-    { id: 13, name: "Stock Audit", icon: "📦", desc: "Festival strategy command" },
-    { id: 9, name: "Currency", icon: "🌍", desc: "Live FX conversion" },
+    { id: 1, name: "Payment Risk", icon: "-", desc: "Predict late payers" },
+    { id: 2, name: "Match Payment", icon: "--", desc: "Reconcile bank entries" },
+    { id: 11, name: "Forecast", icon: "--", desc: "30-day cash projections" },
+    { id: 10, name: "Tax Savvy", icon: "--", desc: "Optimize GST/Taxes" },
+    { id: 5, name: "Fraud Guard", icon: "---", desc: "Verify transaction safety" },
+    { id: 12, name: "Early Offer", icon: "--", desc: "Dynamic settlement deals" },
+    { id: 3, name: "Auto Nudge", icon: "--", desc: "Smart WhatsApp reminders" },
+    { id: 7, name: "Instalments", icon: "---", desc: "Split large bills" },
+    { id: 4, name: "AI Draft", icon: "--", desc: "Natural language billing" },
+    { id: 13, name: "Stock Audit", icon: "--", desc: "Festival strategy command" },
+    { id: 9, name: "Currency", icon: "--", desc: "Live FX conversion" },
   ];
 
   return (
@@ -625,7 +625,7 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
             <div className="flex items-center gap-1.5 mt-0.5">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <p className="text-[11px] font-bold text-emerald-600 tracking-wide uppercase">Active</p>
-              <span className="text-slate-300 mx-1">•</span>
+              <span className="text-slate-300 mx-1">-</span>
               <p className="text-[11px] font-medium text-slate-400">Your billing assistant</p>
             </div>
           </div>
@@ -851,7 +851,7 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
                               {targetCategory === 'invoice' ? (item as any).invoice_number : (item as any).name}
                             </div>
                             <div className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
-                              {targetCategory === 'invoice' ? `₹${(item as any).total_amount?.toLocaleString()}` : (item as any).phone || "No Phone"}
+                              {targetCategory === 'invoice' ? `Rs.${(item as any).total_amount?.toLocaleString()}` : (item as any).phone || "No Phone"}
                             </div>
                           </div>
                         </div>
@@ -917,7 +917,7 @@ function LatePaymentRiskWidget({ data, onAction }: { data: any, onAction: (a: st
             <div className="w-9 h-9 bg-rose-50 rounded-xl flex items-center justify-center text-rose-500">
               <AlertTriangle size={20} />
             </div>
-            <span className="text-sm font-bold text-slate-900">Late payment risk — {data.client_name}</span>
+            <span className="text-sm font-bold text-slate-900">Late payment risk - {data.client_name}</span>
           </div>
           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
             data.risk_tier === 'High' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'
@@ -969,7 +969,7 @@ function LatePaymentRiskWidget({ data, onAction }: { data: any, onAction: (a: st
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Predicted payment date</div>
             <div className="text-sm font-bold text-slate-900">
               Expected around <span className="text-indigo-600 underline underline-offset-4">{data.predicted_payment_date}</span> 
-              <span className="text-slate-400 font-medium ml-2">— about 9 days after due date</span>
+              <span className="text-slate-400 font-medium ml-2">- about 9 days after due date</span>
             </div>
           </div>
           
@@ -1018,7 +1018,7 @@ function CashFlowForecastWidget({ data, onAction }: { data: any, onAction: (a: s
         <div className="flex justify-between items-end">
           <div>
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Forecasted Inflow</div>
-            <div className="text-3xl font-black text-slate-900 tracking-tighter">₹{(data.inflow || 0).toLocaleString()}</div>
+            <div className="text-3xl font-black text-slate-900 tracking-tighter">Rs.{(data.inflow || 0).toLocaleString()}</div>
           </div>
           <div className="text-right">
              <div className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Growth</div>
@@ -1063,7 +1063,7 @@ function ReconciliationWidget({ data, onAction }: { data: any, onAction: (a: str
         <div className="grid grid-cols-2 gap-4">
           <div className="p-5 bg-[#F9FAFB] rounded-[1.8rem] border border-slate-100 shadow-sm">
             <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2.5">Payment Received</div>
-            <div className="text-2xl font-black text-slate-900">₹{(data?.payment_received || 0).toLocaleString()}</div>
+            <div className="text-2xl font-black text-slate-900">Rs.{(data?.payment_received || 0).toLocaleString()}</div>
             <div className="text-[11px] font-bold text-slate-500 mt-1">from {data?.client_name || "Customer"}</div>
           </div>
           <div className="p-5 bg-[#F9FAFB] rounded-[1.8rem] border border-slate-100 shadow-sm">
@@ -1152,7 +1152,7 @@ function InstallmentWidget({ data, onAction }: { data: any, onAction: (a: string
             className="p-5 bg-[#F9FAFB] rounded-[2rem] border border-slate-100 text-center space-y-1.5 hover:border-indigo-300 hover:bg-white transition-all cursor-pointer group shadow-sm"
           >
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-indigo-500">{opt?.plan || "Plan"}</div>
-            <div className="text-2xl font-black text-slate-900 tracking-tight">₹{(opt?.amount || 0).toLocaleString()}</div>
+            <div className="text-2xl font-black text-slate-900 tracking-tight">Rs.{(opt?.amount || 0).toLocaleString()}</div>
             <div className="text-[10px] font-bold text-slate-400">per month</div>
           </div>
         ))}
@@ -1351,7 +1351,7 @@ function TaxOptimizationWidget({ data, onAction }: { data: any, onAction: (a: st
       </div>
       <div className="p-5 bg-[#1A1A2E] rounded-[2rem] text-center space-y-1 shadow-xl">
          <div className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Potential Savings</div>
-         <div className="text-3xl font-black text-white">₹{(data?.potential_savings || 0).toLocaleString()}</div>
+         <div className="text-3xl font-black text-white">Rs.{(data?.potential_savings || 0).toLocaleString()}</div>
       </div>
       <div className="space-y-2.5">
          {(data?.tips || []).map((tip: string, i: number) => (
@@ -1389,7 +1389,7 @@ function FestivalStockAuditWidget({ data, onAction }: { data: any, onAction: (a:
 
       <div className="p-5 bg-[#1A1A2E] rounded-[2rem] text-center space-y-1 shadow-xl">
          <div className="text-[9px] font-black text-orange-400 uppercase tracking-widest">Revenue Goal</div>
-         <div className="text-3xl font-black text-white">₹{(data?.revenue_goal || 0).toLocaleString()}</div>
+         <div className="text-3xl font-black text-white">Rs.{(data?.revenue_goal || 0).toLocaleString()}</div>
       </div>
 
       <div className="space-y-3">
@@ -1435,16 +1435,16 @@ function DynamicDiscountingWidget({ data, onAction }: { data: any, onAction: (a:
       <div className="p-5 bg-[#FDF2F2] rounded-[2rem] border border-rose-100 space-y-4 text-center">
          <div className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Early Settlement Reward</div>
          <div className="text-4xl font-black text-rose-600 tracking-tight">{data.discount_offer}% OFF</div>
-         <p className="text-[11px] font-bold text-rose-400">Save ₹{(data?.discount_amount || 0).toLocaleString()} if paid in {data.expiry_days} days</p>
+         <p className="text-[11px] font-bold text-rose-400">Save Rs.{(data?.discount_amount || 0).toLocaleString()} if paid in {data.expiry_days} days</p>
       </div>
       <div className="space-y-3">
          <div className="flex justify-between text-xs font-bold text-slate-500 px-1">
             <span>Original</span>
-            <span className="line-through">₹{(data?.original_amount || 0).toLocaleString()}</span>
+            <span className="line-through">Rs.{(data?.original_amount || 0).toLocaleString()}</span>
          </div>
          <div className="flex justify-between text-sm font-black text-slate-900 bg-slate-50 p-4 rounded-2xl border border-slate-100">
             <span>Final Amount</span>
-            <span className="text-emerald-600">₹{(data?.final_amount || 0).toLocaleString()}</span>
+            <span className="text-emerald-600">Rs.{(data?.final_amount || 0).toLocaleString()}</span>
          </div>
       </div>
       <button 

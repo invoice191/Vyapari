@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase";
+﻿import { supabase } from "../lib/supabase";
 
 export const ledgerService = {
   getLedgerEntries: async (businessId: string, page = 1, pageSize = 10, search = "") => {

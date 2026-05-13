@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useAutomationRules } from "../../hooks/useAutomationRules";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -333,7 +333,7 @@ export default function AutomationRules() {
                           {log.rule_name || "Trigger Executed"}
                         </div>
                         <div className="text-[9px] text-slate-400 mt-1 font-bold uppercase tracking-widest">
-                          Event: {log.trigger_event} • {new Date(log.executed_at).toLocaleString()}
+                          Event: {log.trigger_event} - {new Date(log.executed_at).toLocaleString()}
                         </div>
                         {log.ai_decision && (
                           <div className="text-[9px] text-purple-600 mt-2 font-black uppercase tracking-widest bg-purple-50 border border-purple-100 px-2 py-1 rounded-md inline-block">

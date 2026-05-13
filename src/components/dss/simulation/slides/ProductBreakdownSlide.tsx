@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'motion/react';
 import { Box, TrendingUp, ShieldCheck } from 'lucide-react';
 import { Theme } from '../PresentationMode';
@@ -29,8 +29,8 @@ export default function ProductBreakdownSlide({ data, theme }: SlideProps) {
       <div className={`flex-1 rounded-[2.5rem] border ${borderColor} ${cardBg} backdrop-blur-xl overflow-hidden flex flex-col min-h-0`}>
         <div className="p-6 border-b border-white/5 bg-black/10 grid grid-cols-6 gap-6 shrink-0">
           <div className="col-span-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">Product Node</div>
-          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Baseline ₹</div>
-          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Simulated ₹</div>
+          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Baseline Rs.</div>
+          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Simulated Rs.</div>
           <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Rev Change</div>
           <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Risk</div>
         </div>
@@ -50,9 +50,9 @@ export default function ProductBreakdownSlide({ data, theme }: SlideProps) {
                 </div>
                 <div className={`text-sm font-black ${textColor} uppercase truncate`}>{row.name}</div>
               </div>
-              <div className={`text-sm font-black ${textColor} text-center opacity-60`}>₹{row.current_price?.toLocaleString()}</div>
-              <div className={`text-sm font-black text-indigo-400 text-center italic`}>₹{row.simulated_price?.toLocaleString()}</div>
-              <div className={`text-sm font-black text-emerald-400 text-center`}>+₹{(row.projected_revenue - row.current_revenue).toLocaleString()}</div>
+              <div className={`text-sm font-black ${textColor} text-center opacity-60`}>Rs.{row.current_price?.toLocaleString()}</div>
+              <div className={`text-sm font-black text-indigo-400 text-center italic`}>Rs.{row.simulated_price?.toLocaleString()}</div>
+              <div className={`text-sm font-black text-emerald-400 text-center`}>+Rs.{(row.projected_revenue - row.current_revenue).toLocaleString()}</div>
               <div className="flex justify-center">
                 <div className="w-6 h-6 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-500">
                   <ShieldCheck size={14} />
@@ -68,9 +68,9 @@ export default function ProductBreakdownSlide({ data, theme }: SlideProps) {
             className={`p-6 grid grid-cols-6 gap-6 bg-indigo-600 text-white items-center sticky bottom-0`}
           >
             <div className="col-span-2 text-sm font-black uppercase tracking-widest">Aggregate Potential</div>
-            <div className="text-center opacity-60">─</div>
-            <div className="text-center opacity-60">─</div>
-            <div className="text-center text-lg font-black italic">+₹{(data.simulated_scenario?.total_revenue_projected - data.current_scenario?.total_revenue).toLocaleString()}</div>
+            <div className="text-center opacity-60">-</div>
+            <div className="text-center opacity-60">-</div>
+            <div className="text-center text-lg font-black italic">+Rs.{(data.simulated_scenario?.total_revenue_projected - data.current_scenario?.total_revenue).toLocaleString()}</div>
             <div className="flex justify-center">
               <div className="px-3 py-1 rounded-lg bg-white/20 text-white text-[10px] font-black uppercase">SAFE</div>
             </div>

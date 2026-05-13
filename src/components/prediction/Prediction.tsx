@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { SimulationEngine } from '../dss/simulation/SimulationEngine';
 
 export default function Prediction() {

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'motion/react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Theme } from '../PresentationMode';
@@ -38,11 +38,11 @@ export default function ForecastChartSlide({ data, theme }: SlideProps) {
           <div className="space-y-2">
             <div className="flex justify-between gap-8 items-center">
               <span className="text-[10px] font-bold text-indigo-400 uppercase">Projected</span>
-              <span className="text-xs font-black text-indigo-400">₹{payload[0].value.toLocaleString()}</span>
+              <span className="text-xs font-black text-indigo-400">Rs.{payload[0].value.toLocaleString()}</span>
             </div>
             <div className="flex justify-between gap-8 items-center">
               <span className="text-[10px] font-bold text-slate-500 uppercase">Baseline</span>
-              <span className={`text-xs font-black ${textColor} opacity-60`}>₹{payload[1].value.toLocaleString()}</span>
+              <span className={`text-xs font-black ${textColor} opacity-60`}>Rs.{payload[1].value.toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -93,7 +93,7 @@ export default function ForecastChartSlide({ data, theme }: SlideProps) {
                 axisLine={false} 
                 tickLine={false} 
                 tick={{ fill: theme === 'dark' ? '#94a3b8' : '#475569', fontSize: 10, fontWeight: 900 }}
-                tickFormatter={(val) => `₹${val}`}
+                tickFormatter={(val) => `Rs.${val}`}
               />
               <Tooltip content={<CustomTooltip />} />
               
@@ -135,9 +135,9 @@ export default function ForecastChartSlide({ data, theme }: SlideProps) {
 
         <div className="grid grid-cols-3 gap-4 lg:gap-6 h-28 shrink-0">
           {[
-            { label: 'Peak Day Estimate', val: `Day ${Math.floor(horizon * 0.7)}`, detail: `₹${Math.round((data.simulated_scenario?.total_revenue_projected || 64800) / horizon * 1.2)}` },
-            { label: 'Lowest Day', val: `Day 1`, detail: `₹${Math.round((data.simulated_scenario?.total_revenue_projected || 64800) / horizon * 0.8)}` },
-            { label: 'Average Daily', val: `Overall`, detail: `₹${Math.round((data.simulated_scenario?.total_revenue_projected || 64800) / horizon)}` }
+            { label: 'Peak Day Estimate', val: `Day ${Math.floor(horizon * 0.7)}`, detail: `Rs.${Math.round((data.simulated_scenario?.total_revenue_projected || 64800) / horizon * 1.2)}` },
+            { label: 'Lowest Day', val: `Day 1`, detail: `Rs.${Math.round((data.simulated_scenario?.total_revenue_projected || 64800) / horizon * 0.8)}` },
+            { label: 'Average Daily', val: `Overall`, detail: `Rs.${Math.round((data.simulated_scenario?.total_revenue_projected || 64800) / horizon)}` }
           ].map((stat, i) => (
             <motion.div
               key={i}

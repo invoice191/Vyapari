@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Shield, TrendingUp, Package, Users, PieChart, AlertCircle } from 'lucide-react';
 
 interface HealthScore {
@@ -81,6 +81,6 @@ const AlertItem = ({ color, text, count }: { color: string, text: string, count:
       <div className={`w-2 h-2 rounded-full ${color}`} />
       <span className="text-sm text-slate-300 font-medium">{text}</span>
     </div>
-    <span className="text-xs text-slate-500 font-bold">Details →</span>
+    <span className="text-xs text-slate-500 font-bold">Details -</span>
   </div>
 );

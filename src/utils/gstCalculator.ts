@@ -1,4 +1,4 @@
-export interface GSTBreakdown {
+﻿export interface GSTBreakdown {
   taxableAmount: number;
   cgstRate: number;
   cgstAmount: number;

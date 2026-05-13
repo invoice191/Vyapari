@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { ExternalLink, AlertTriangle, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -78,7 +78,7 @@ export default function CustomerCreditCard({ businessId, contactId, onViewLedger
       {isOverLimit && (
         <div className="flex items-center gap-2 mb-3 bg-red-500 text-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest">
           <AlertTriangle size={12} />
-          CREDIT LIMIT EXCEEDED — PROCEED WITH CAUTION
+          CREDIT LIMIT EXCEEDED - PROCEED WITH CAUTION
         </div>
       )}
 
@@ -107,19 +107,19 @@ export default function CustomerCreditCard({ businessId, contactId, onViewLedger
         <div>
           <div className="text-[9px] font-black text-ink/40 uppercase tracking-wider mb-0.5">Outstanding</div>
           <div className={`text-base font-black tracking-tighter ${isOverLimit ? 'text-red-500' : 'text-ink'}`}>
-            ₹{status.outstanding_amount.toLocaleString('en-IN')}
+            Rs.{status.outstanding_amount.toLocaleString('en-IN')}
           </div>
         </div>
         <div>
           <div className="text-[9px] font-black text-ink/40 uppercase tracking-wider mb-0.5">Credit Limit</div>
           <div className="text-base font-black tracking-tighter">
-            {status.credit_limit > 0 ? `₹${status.credit_limit.toLocaleString('en-IN')}` : 'No Limit'}
+            {status.credit_limit > 0 ? `Rs.${status.credit_limit.toLocaleString('en-IN')}` : 'No Limit'}
           </div>
         </div>
         <div>
           <div className="text-[9px] font-black text-ink/40 uppercase tracking-wider mb-0.5">Available</div>
           <div className={`text-base font-black tracking-tighter ${isNearLimit ? 'text-amber-500' : 'text-green-600'}`}>
-            ₹{Math.max(0, status.available_credit).toLocaleString('en-IN')}
+            Rs.{Math.max(0, status.available_credit).toLocaleString('en-IN')}
           </div>
         </div>
       </div>
@@ -146,7 +146,7 @@ export default function CustomerCreditCard({ businessId, contactId, onViewLedger
       <div className="flex items-center justify-between border-t border-ink/10 pt-3">
         <div className="text-[9px] font-bold text-ink/50 uppercase tracking-tight">
           {status.last_invoice_number
-            ? `Last: ${status.last_invoice_number} — ₹${(status.last_invoice_amount || 0).toLocaleString('en-IN')} — ${status.last_invoice_days_ago}d ago`
+            ? `Last: ${status.last_invoice_number} - Rs.${(status.last_invoice_amount || 0).toLocaleString('en-IN')} - ${status.last_invoice_days_ago}d ago`
             : 'No previous invoices'}
         </div>
         {status.avg_payment_days && (

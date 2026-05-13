@@ -15,9 +15,11 @@ import { useRBAC } from "../../hooks/useRBAC";
 import { auditService } from "../../services/auditService";
 import { useToast } from "../common/Toast";
 import InvoiceAIConsole from "./InvoiceAIConsole";
+import InvoiceAnalytics from "./InvoiceAnalytics";
+import RecurringInvoices from "./RecurringInvoices";
 import { Sparkles } from "lucide-react";
 
-import { useGlobalData } from "../../contexts/DataContext";
+import { useGlobalData } from "../../context/DataContext";
 
 export default function Invoices() {
   const { profile, business } = useAuth();
@@ -38,15 +40,15 @@ export default function Invoices() {
     const dDate = remindInvoice.due_date ? new Date(remindInvoice.due_date).toLocaleDateString("en-IN") : "Due Date";
 
     if (reminderTone === 'friendly') {
-      setEditableMsg(`😊 Hello ${cName}, this is a polite reminder from ${bName}. Just keeping you in the loop that Invoice #${iNum} (INR ${amt}) is scheduled for payment by ${dDate}. Thank you for your support!`);
+      setEditableMsg(`-- Hello ${cName}, this is a polite reminder from ${bName}. Just keeping you in the loop that Invoice #${iNum} (INR ${amt}) is scheduled for payment by ${dDate}. Thank you for your support!`);
     } else if (reminderTone === 'professional') {
       setEditableMsg(`Dear ${cName}, we hope this message finds you well. This is a formal notification regarding outstanding Invoice #${iNum} for INR ${amt}, due on ${dDate}. Please settle at your earliest convenience. Kind regards, the Accounts Team at ${bName}.`);
     } else if (reminderTone === 'urgent') {
-      setEditableMsg(`🚨 URGENT: Invoice #${iNum} for INR ${amt} is overdue. Immediate settlement is required to prevent adverse credit evaluation on your buyer solvency profile. Settle now to maintain optimal relations with ${bName}.`);
+      setEditableMsg(`-- URGENT: Invoice #${iNum} for INR ${amt} is overdue. Immediate settlement is required to prevent adverse credit evaluation on your buyer solvency profile. Settle now to maintain optimal relations with ${bName}.`);
     } else if (reminderTone === 'incentive') {
       const discountAmount = Math.round((remindInvoice.total_amount || 0) * (customDiscount / 100));
       const payableAmount = (remindInvoice.total_amount || 0) - discountAmount;
-      setEditableMsg(`🏷️ Early Settle Offer! Settle Invoice #${iNum} (INR ${amt}) within 24 hours to secure a ${customDiscount}% prompt-payment incentive (Save INR ${discountAmount.toLocaleString("en-IN")}). Pay only INR ${payableAmount.toLocaleString("en-IN")}! — ${bName}`);
+      setEditableMsg(`--- Early Settle Offer! Settle Invoice #${iNum} (INR ${amt}) within 24 hours to secure a ${customDiscount}% prompt-payment incentive (Save INR ${discountAmount.toLocaleString("en-IN")}). Pay only INR ${payableAmount.toLocaleString("en-IN")}! - ${bName}`);
     }
   }, [remindInvoice, reminderTone, customDiscount, business]);
   const businessId = profile?.business_id ?? "";
@@ -100,7 +102,15 @@ export default function Invoices() {
     const gstin = inv.contacts?.gstin?.toLowerCase() || "";
     const s = search.toLowerCase();
     const matchSearch = !search || name.includes(s) || num.includes(s) || phone.includes(s) || gstin.includes(s);
-    const matchStatus = filterStatus === "All" || inv.status?.toLowerCase() === filterStatus.toLowerCase();
+    
+    let matchStatus = true;
+    if (filterStatus !== "All") {
+      if (filterStatus === "Pending") {
+        matchStatus = ["draft", "sent", "viewed", "partial"].includes(inv.status?.toLowerCase());
+      } else {
+        matchStatus = inv.status?.toLowerCase() === filterStatus.toLowerCase();
+      }
+    }
 
     // Advanced Competitor Filters
     const amount = inv.total_amount || 0;
@@ -141,10 +151,10 @@ export default function Invoices() {
   const paginatedInvoices = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const totals = {
-    total: invoices.reduce((a, i) => a + (i.total_amount || 0), 0),
-    paid: invoices.filter(i => i.status === "paid").reduce((a, i) => a + (i.total_amount || 0), 0),
-    pending: invoices.filter(i => i.status === "pending").reduce((a, i) => a + (i.total_amount || 0), 0),
-    overdue: invoices.filter(i => i.status === "overdue").reduce((a, i) => a + (i.total_amount || 0), 0),
+    total: invoices.reduce((a, i) => a + (Number(i.total_amount) || 0), 0),
+    paid: invoices.reduce((a, i) => a + (Number(i.amount_paid) || 0), 0),
+    pending: invoices.reduce((a, i) => a + (Number(i.amount_remaining) || 0), 0),
+    overdue: invoices.filter(i => i.status === "overdue").reduce((a, i) => a + (Number(i.amount_remaining) || 0), 0),
   };
 
   const toggleSelect = (id: string) => {
@@ -211,10 +221,47 @@ export default function Invoices() {
     }
   };
 
+  const [activeTab, setActiveTab] = useState<'list' | 'analytics' | 'recurring'>('list');
+
   if (loading) return <div className="p-10 text-center text-xs font-black uppercase text-ink/40 animate-pulse">Loading Invoice Intelligence...</div>;
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
+      {/* -- TAB SWITCHER -- */}
+      <div className="flex justify-center">
+        <div className="bg-slate-100 p-1.5 rounded-2xl flex gap-1 border border-slate-200">
+          {[
+            { id: 'list', label: 'All Invoices', icon: <FileText size={14} /> },
+            { id: 'analytics', label: 'Analytics Hub', icon: <Sparkles size={14} /> },
+            { id: 'recurring', label: 'Recurring Templates', icon: <Repeat size={14} /> }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${
+                activeTab === tab.id 
+                  ? 'bg-slate-900 text-white shadow-xl' 
+                  : 'text-slate-500 hover:bg-white hover:text-slate-900'
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {activeTab === 'analytics' ? (
+          <motion.div key="analytics" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+             <InvoiceAnalytics />
+          </motion.div>
+        ) : activeTab === 'recurring' ? (
+          <motion.div key="recurring" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+             <RecurringInvoices />
+          </motion.div>
+        ) : (
+          <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-10">
       {/* Premium Finance Banner */}
       <div className="bg-slate-950 text-white p-12 rounded-[3rem] shadow-2xl relative overflow-hidden border border-white/5">
         <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 blur-[100px] -mr-48 -mt-48" />
@@ -251,11 +298,11 @@ export default function Invoices() {
           <div className="flex gap-4">
             <div className="p-6 bg-white/5 border border-white/10 rounded-3xl text-center min-w-[150px] backdrop-blur-xl">
                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Total Revenue</div>
-               <div className="text-2xl font-black text-white">₹{(totals.total / 1000).toFixed(1)}K</div>
+               <div className="text-2xl font-black text-white">Rs.{(totals.total / 1000).toFixed(1)}K</div>
             </div>
             <div className="p-6 bg-rose-600/10 border border-rose-500/20 rounded-3xl text-center min-w-[150px] backdrop-blur-xl">
                <div className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-2">At Risk</div>
-               <div className="text-2xl font-black text-white">₹{(totals.overdue / 1000).toFixed(1)}K</div>
+               <div className="text-2xl font-black text-white">Rs.{(totals.overdue / 1000).toFixed(1)}K</div>
             </div>
           </div>
         </div>
@@ -267,7 +314,7 @@ export default function Invoices() {
           <div>
             <div className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-2">Settlement Progress</div>
             <div className="text-2xl font-black tracking-tighter text-slate-900 uppercase">
-              ₹{(totals.paid/1000).toFixed(1)}K Collected <span className="text-slate-300 mx-2">/</span> <span className="text-indigo-600">₹{(totals.total/1000).toFixed(1)}K Total</span>
+              Rs.{(totals.paid/1000).toFixed(1)}K Collected <span className="text-slate-300 mx-2">/</span> <span className="text-indigo-600">Rs.{(totals.total/1000).toFixed(1)}K Total</span>
             </div>
           </div>
         </div>
@@ -446,7 +493,7 @@ export default function Invoices() {
             >
               <div className="p-6 bg-slate-50 border border-slate-100 rounded-2xl grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">Min Amount (₹)</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">Min Amount (Rs.)</label>
                   <input 
                     type="number" 
                     placeholder="Min value..." 
@@ -456,7 +503,7 @@ export default function Invoices() {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">Max Amount (₹)</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">Max Amount (Rs.)</label>
                   <input 
                     type="number" 
                     placeholder="Max value..." 
@@ -589,11 +636,16 @@ export default function Invoices() {
                           <span className="text-[8px] font-bold text-slate-300 uppercase">Outstanding</span>
                         </div>
                       ) : (
-                        <span className="text-slate-200">—</span>
+                        <span className="text-slate-200">-</span>
                       )}
                     </td>
                     <td className="px-8 py-6 bg-white/40 group-hover:bg-white transition-colors" onClick={() => selectInvoiceWithItems(inv)}>
-                      <div className="text-base font-black text-slate-900 tracking-tighter">₹{(inv.total_amount||0).toLocaleString("en-IN")}</div>
+                      <div className="text-base font-black text-slate-900 tracking-tighter">Rs.{(inv.total_amount||0).toLocaleString("en-IN")}</div>
+                      {inv.status === 'partial' && (
+                        <div className="text-[9px] font-black text-amber-600 uppercase tracking-widest mt-0.5">
+                          Rs.{(inv.amount_remaining||0).toLocaleString("en-IN")} Left
+                        </div>
+                      )}
                     </td>
                     <td className="px-8 py-6 bg-white/40 group-hover:bg-white transition-colors" onClick={() => selectInvoiceWithItems(inv)}><Badge status={inv.status} /></td>
                     <td className="px-8 py-6 bg-white/40 group-hover:bg-white rounded-r-[2rem] transition-colors">
@@ -637,7 +689,7 @@ export default function Invoices() {
                   disabled={currentPage === 1}
                   className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 rounded-xl font-black text-[9px] uppercase tracking-widest text-slate-600 transition-all flex items-center gap-1 active:scale-95"
                 >
-                  ◀ Previous
+                  - Previous
                 </button>
                 <div className="flex items-center px-3 text-[10px] font-black text-slate-700 font-mono">
                   {currentPage} / {totalPages}
@@ -647,7 +699,7 @@ export default function Invoices() {
                   disabled={currentPage === totalPages}
                   className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 rounded-xl font-black text-[9px] uppercase tracking-widest text-slate-600 transition-all flex items-center gap-1 active:scale-95"
                 >
-                  Next ▶
+                  Next -
                 </button>
               </div>
             </div>
@@ -731,14 +783,14 @@ export default function Invoices() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[1000] flex items-center justify-center p-4 overflow-y-auto"
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[1000] flex items-start justify-center p-4 overflow-y-auto"
             onClick={() => setRemindInvoice(null)}
           >
             <motion.div
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="bg-white/90 border border-slate-200/50 rounded-[2.5rem] p-8 max-w-lg w-full shadow-2xl shadow-slate-900/10 space-y-6 relative"
+              className="bg-white/90 border border-slate-200/50 rounded-[2.5rem] p-8 max-w-lg w-full shadow-2xl shadow-slate-900/10 space-y-6 relative my-auto"
               onClick={e => e.stopPropagation()}
             >
               <button 
@@ -757,10 +809,10 @@ export default function Invoices() {
               {/* Tone Buttons */}
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { key: 'friendly', label: '😊 Friendly', desc: 'Soft & supportive' },
-                  { key: 'professional', label: '💼 Professional', desc: 'Formal Accounts Team' },
-                  { key: 'urgent', label: '🚨 Urgent', desc: 'Buyer solvency alert' },
-                  { key: 'incentive', label: '🏷️ Incentive', desc: 'Early settle discount' },
+                  { key: 'friendly', label: '-- Friendly', desc: 'Soft & supportive' },
+                  { key: 'professional', label: '-- Professional', desc: 'Formal Accounts Team' },
+                  { key: 'urgent', label: '-- Urgent', desc: 'Buyer solvency alert' },
+                  { key: 'incentive', label: '--- Incentive', desc: 'Early settle discount' },
                 ].map(t => (
                   <button
                     key={t.key}
@@ -862,6 +914,9 @@ export default function Invoices() {
               <span className="text-[9px] font-black text-slate-400 uppercase">Total Items</span>
               <span className="text-[11px] font-black text-white">{hoveredInvoice.invoice_items?.length || 0}</span>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>

@@ -70,7 +70,7 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
       // Play vocalized response
       setState('speaking');
       
-      // 🚀 IMMEDIATE ACTION: Trigger execution concurrently with speech
+      // -- IMMEDIATE ACTION: Trigger execution concurrently with speech
       // This makes VANI feel "instant" as the UI responds while she starts talking
       if (!response.requires_confirmation && !response.follow_up_question) {
         // Use a slight timeout to ensure state transitions don't clash
@@ -267,9 +267,9 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
               {/* Premium Language Picker */}
               <div className="flex gap-1.5 mb-4 p-1 bg-slate-100/80 rounded-xl border border-slate-200/55">
                 {[
-                  { code: 'hi-IN', label: 'हिन्दी' },
+                  { code: 'hi-IN', label: '------' },
                   { code: 'en-IN', label: 'English' },
-                  { code: 'mr-IN', label: 'मराठी' }
+                  { code: 'mr-IN', label: '-----' }
                 ].map((lang) => (
                   <button
                     key={lang.code}
@@ -404,11 +404,11 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
       {/* Confirmation Modal */}
       <AnimatePresence>
         {state === 'confirming' && pendingAction && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[2000] p-6">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-start justify-center z-[2000] p-6 overflow-y-auto">
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="bg-white p-8 rounded-[2rem] max-w-md w-full shadow-2xl border border-slate-200"
+              className="bg-white p-8 rounded-[2rem] max-w-md w-full shadow-2xl border border-slate-200 my-auto"
             >
               <div className="flex items-center gap-3 text-orange-500 mb-6 font-black uppercase text-xl">
                 <AlertTriangle size={28} /> Confirm Action

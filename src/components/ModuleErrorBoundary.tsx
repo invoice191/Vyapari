@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from "react";
+﻿import React, { Component, ErrorInfo, ReactNode } from "react";
 import { supabase } from "../lib/supabase";
 
 interface Props {
@@ -45,7 +45,7 @@ export class ModuleErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="brutal-card bg-red-50 border-overdue p-10 text-center border-4 border-ink shadow-[8px_8px_0px_var(--color-ink)]">
-          <div className="text-4xl mb-4">⚠️</div>
+          <div className="text-4xl mb-4">--</div>
           <h2 className="text-overdue font-black uppercase tracking-tighter mb-2">Module failed to load</h2>
           <p className="text-xs font-bold text-ink/60 uppercase tracking-widest mb-6">
             The module "{this.props.moduleName || 'System'}" encountered a critical error and has been suspended.

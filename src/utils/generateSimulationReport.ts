@@ -1,6 +1,7 @@
-import jsPDF from "jspdf";
+﻿import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { SimResult } from "./simulationCalculations";
+import { downloadPDF } from "./pdf/downloadPDF";
 
 export interface SimulationData extends SimResult {
   businessName: string;
@@ -66,7 +67,7 @@ export async function generateSimulationReport(
     d.rect(0, 0, 210, 20, "F");
     d.setTextColor(255, 255, 255);
     d.setFontSize(10);
-    d.text("VYAPARI — Simulation Report", 15, 13);
+    d.text("VYAPARI - Simulation Report", 15, 13);
     d.text(bizName, 195, 13, { align: "right" });
   };
 
@@ -89,14 +90,14 @@ export async function generateSimulationReport(
     head: [["Metric", "Current", "Projected", "Change", "% Change"]],
     body: [
       ["Total Revenue", 
-       `₹${data.totalCurrentRevenue.toLocaleString("en-IN")}`,
-       `₹${data.totalProjectedRevenue.toLocaleString("en-IN")}`,
-       `${data.revenueChange >= 0 ? '+' : ''}₹${data.revenueChange.toLocaleString("en-IN")}`,
+       `Rs.${data.totalCurrentRevenue.toLocaleString("en-IN")}`,
+       `Rs.${data.totalProjectedRevenue.toLocaleString("en-IN")}`,
+       `${data.revenueChange >= 0 ? '+' : ''}Rs.${data.revenueChange.toLocaleString("en-IN")}`,
        `${data.revenueChangePct}%`],
       ["Total Profit",
-       `₹${data.totalCurrentProfit.toLocaleString("en-IN")}`,
-       `₹${data.totalProjectedProfit.toLocaleString("en-IN")}`,
-       `${data.profitChange >= 0 ? '+' : ''}₹${data.profitChange.toLocaleString("en-IN")}`,
+       `Rs.${data.totalCurrentProfit.toLocaleString("en-IN")}`,
+       `Rs.${data.totalProjectedProfit.toLocaleString("en-IN")}`,
+       `${data.profitChange >= 0 ? '+' : ''}Rs.${data.profitChange.toLocaleString("en-IN")}`,
        `${data.profitChangePct}%`],
     ],
     headStyles: { 
@@ -122,8 +123,8 @@ export async function generateSimulationReport(
     startY: 50,
     head: [["Metric", "Current", "Projected", "Change", "% Change"]],
     body: [
-      ["Total Revenue", `₹${data.totalCurrentRevenue.toLocaleString("en-IN")}`, `₹${data.totalProjectedRevenue.toLocaleString("en-IN")}`, `${data.revenueChange >= 0 ? '+' : ''}₹${data.revenueChange.toLocaleString("en-IN")}`, `${data.revenueChangePct}%`],
-      ["Total Profit", `₹${data.totalCurrentProfit.toLocaleString("en-IN")}`, `₹${data.totalProjectedProfit.toLocaleString("en-IN")}`, `${data.profitChange >= 0 ? '+' : ''}₹${data.profitChange.toLocaleString("en-IN")}`, `${data.profitChangePct}%`],
+      ["Total Revenue", `Rs.${data.totalCurrentRevenue.toLocaleString("en-IN")}`, `Rs.${data.totalProjectedRevenue.toLocaleString("en-IN")}`, `${data.revenueChange >= 0 ? '+' : ''}Rs.${data.revenueChange.toLocaleString("en-IN")}`, `${data.revenueChangePct}%`],
+      ["Total Profit", `Rs.${data.totalCurrentProfit.toLocaleString("en-IN")}`, `Rs.${data.totalProjectedProfit.toLocaleString("en-IN")}`, `${data.profitChange >= 0 ? '+' : ''}Rs.${data.profitChange.toLocaleString("en-IN")}`, `${data.profitChangePct}%`],
       ["Profit Margin", `${((data.totalCurrentProfit / (data.totalCurrentRevenue || 1)) * 100).toFixed(1)}%`, `${((data.totalProjectedProfit / (data.totalProjectedRevenue || 1)) * 100).toFixed(1)}%`, `${(((data.totalProjectedProfit / (data.totalProjectedRevenue || 1)) - (data.totalCurrentProfit / (data.totalCurrentRevenue || 1))) * 100).toFixed(1)}%`, "-"],
     ],
     headStyles: { fillColor: [79, 70, 229] },
@@ -143,9 +144,9 @@ export async function generateSimulationReport(
     head: [["Product", "Old Price", "New Price", "Rev Change", "Units Change"]],
     body: data.products.map(p => [
       p.productName,
-      `₹${p.currentPrice}`,
-      `₹${p.newPrice}`,
-      `${p.revenueChange >= 0 ? '+' : ''}₹${p.revenueChange}`,
+      `Rs.${p.currentPrice}`,
+      `Rs.${p.newPrice}`,
+      `${p.revenueChange >= 0 ? '+' : ''}Rs.${p.revenueChange}`,
       `${p.adjustedQuantity - (p.currentRevenue/p.currentPrice || 0)}`
     ]),
     headStyles: { fillColor: [79, 70, 229] },
@@ -167,7 +168,7 @@ export async function generateSimulationReport(
       p.productName,
       `${p.breakEvenUnits} units`,
       `${p.breakEvenDays} days`,
-      p.breakEvenDays <= data.horizon ? "✅ Achievable" : "⚠️ High Risk"
+      p.breakEvenDays <= data.horizon ? "- Achievable" : "-- High Risk"
     ]),
     headStyles: { fillColor: [79, 70, 229] },
     styles: { fontSize: 10 }
@@ -187,9 +188,7 @@ export async function generateSimulationReport(
   }
 
   // Save
-  doc.save(
-    `Vyapari_Simulation_${data.businessName.replace(/\s+/g, '_')}_${
-      new Date().toISOString().split("T")[0]
-    }.pdf`
-  );
+  // Safe Blob PDF download trigger to prevent extension corruption
+  const filename = `Vyapari_Simulation_${data.businessName.replace(/\s+/g, '_')}_${new Date().toISOString().split("T")[0]}.pdf`;
+  downloadPDF(doc, filename);
 }

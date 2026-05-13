@@ -6,12 +6,12 @@ export default function CommandPalette({ active, onSelect }: { active: string, o
   const [query, setQuery] = useState("");
 
   const commands = [
-    { key: "dashboard", label: "Open Dashboard", icon: "📊" },
-    { key: "invoices", label: "Create New Invoice", icon: "🧾" },
-    { key: "inventory", label: "Check Stock Levels", icon: "📦" },
-    { key: "reports", label: "Generate Tax Report", icon: "📈" },
-    { key: "ocr", label: "Scan Bill / Receipt", icon: "📄" },
-    { key: "settings", label: "System Settings", icon: "⚙️" },
+    { key: "dashboard", label: "Open Dashboard", icon: "--" },
+    { key: "invoices", label: "Create New Invoice", icon: "--" },
+    { key: "inventory", label: "Check Stock Levels", icon: "--" },
+    { key: "reports", label: "Generate Tax Report", icon: "--" },
+    { key: "ocr", label: "Scan Bill / Receipt", icon: "--" },
+    { key: "settings", label: "System Settings", icon: "--" },
   ];
 
   useEffect(() => {
@@ -42,13 +42,13 @@ export default function CommandPalette({ active, onSelect }: { active: string, o
   return (
     <div 
       onClick={() => setOpen(false)}
-      className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-ink/60 backdrop-blur-md"
+      className="fixed inset-0 z-[1000] flex items-start justify-center p-4 bg-ink/60 backdrop-blur-md overflow-y-auto"
     >
       <motion.div 
         onClick={(e) => e.stopPropagation()}
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="w-full max-w-xl bg-white border-4 border-ink shadow-[12px_12px_0px_var(--color-neon)] overflow-hidden"
+        className="w-full max-w-xl bg-white border-4 border-ink shadow-[12px_12px_0px_var(--color-neon)] overflow-hidden my-auto"
       >
         <div className="p-6 border-b-4 border-ink">
           <input 
@@ -70,7 +70,7 @@ export default function CommandPalette({ active, onSelect }: { active: string, o
                 <span className="text-2xl">{c.icon}</span>
                 <span className="font-black uppercase tracking-tight">{c.label}</span>
               </div>
-              <span className="text-[10px] font-black text-ink/20 group-hover:text-ink/60 italic">RETURN ↵</span>
+              <span className="text-[10px] font-black text-ink/20 group-hover:text-ink/60 italic">RETURN -</span>
             </div>
           ))}
           {filtered.length === 0 && (

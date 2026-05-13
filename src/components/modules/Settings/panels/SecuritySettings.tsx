@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Shield, Lock, Eye, Key, Clock, Globe, List } from 'lucide-react';
 import { ToggleRow, SelectRow, InputRow, BadgeRow } from '../SettingRows';
 import { useToast } from '../../../common/Toast';
@@ -84,7 +84,7 @@ export const SecuritySettings = ({ data, onChange }: { data: any; onChange: (key
           onClick={handleViewLogs}
           className="mt-8 text-[10px] font-black text-brand uppercase tracking-widest hover:text-neon transition-colors"
         >
-          View Master Audit Logs →
+          View Master Audit Logs -
         </button>
       </div>
     </div>

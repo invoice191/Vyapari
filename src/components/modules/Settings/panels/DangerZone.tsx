@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { AlertTriangle, Trash2, RotateCcw, ShieldAlert, ZapOff, Users } from 'lucide-react';
 
 export const DangerZone = () => {

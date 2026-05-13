@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+﻿import { motion } from "motion/react";
 import { BrainCircuit, TrendingUp, Target, AlertTriangle, Zap, Copy, Share2 } from "lucide-react";
 import { Badge } from "../../components/common/UI";
 

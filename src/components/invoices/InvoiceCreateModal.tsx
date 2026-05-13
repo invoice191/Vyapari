@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Plus, Trash2, RefreshCw, Lock, AlertTriangle, CheckCircle, Repeat } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -20,7 +20,7 @@ interface LineItem {
 
 interface Props { isOpen: boolean; onClose: () => void; onCreated: () => void; prefill?: any; }
 
-import { useGlobalData } from '../../contexts/DataContext';
+import { useGlobalData } from '../../context/DataContext';
 
 export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill }: Props) {
   const { profile } = useAuth();
@@ -197,7 +197,7 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
     if (item.quantity <= 0) {
       setStockAlerts(prev => ({ ...prev, [item.product_id]: 'Out of Stock' }));
       if (item.stock_status === 'out_of_stock') {
-        toast(`Cannot add ${item.name} — Zero Stock available. Suggest substitute: Similar items in ${item.category || 'Inventory'}`, "warning");
+        toast(`Cannot add ${item.name} - Zero Stock available. Suggest substitute: Similar items in ${item.category || 'Inventory'}`, "warning");
         return;
       }
     }
@@ -361,7 +361,7 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
                     }}
                     className="flex-1 bg-slate-50 border border-slate-200 focus:border-[#0A84FF] focus:bg-white p-2.5 font-bold text-xs uppercase tracking-wider rounded-xl outline-none text-slate-900 transition-all"
                   >
-                    <option value="">— Select Customer —</option>
+                    <option value="">- Select Customer -</option>
                     {contacts.map(c => <option key={c.id} value={c.id} className="bg-white text-slate-900">{c.name} {c.phone ? `(${c.phone})` : ''}</option>)}
                   </select>
                   <button
@@ -413,10 +413,10 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
                     }}
                     className="flex-1 bg-slate-50 border border-slate-200 focus:border-[#0A84FF] focus:bg-white p-2.5 font-bold text-xs uppercase tracking-wider rounded-xl outline-none text-slate-900 transition-all"
                   >
-                    <option value="">— Select Product —</option>
+                    <option value="">- Select Product -</option>
                     {products.map(p => (
                       <option key={p.id} value={p.id} className="bg-white text-slate-900">
-                        {p.name} (₹{p.selling_price} | Stock: {p.quantity ?? 0})
+                        {p.name} (Rs.{p.selling_price} | Stock: {p.quantity ?? 0})
                       </option>
                     ))}
                   </select>
@@ -464,8 +464,8 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
                     <div className="text-[9px] font-black text-[#0A84FF] uppercase tracking-wider">Quick Register Product</div>
                     <div className="grid grid-cols-3 gap-2">
                       <input placeholder="Product Name *" value={newProduct.name} onChange={e => setNewProduct(prev => ({ ...prev, name: e.target.value }))} className="bg-white border border-slate-200 focus:border-[#0A84FF] p-2 rounded-lg text-xs outline-none text-slate-900" />
-                      <input placeholder="Price (₹) *" type="number" value={newProduct.selling_price || ''} onChange={e => setNewProduct(prev => ({ ...prev, selling_price: parseFloat(e.target.value) || 0 }))} className="bg-white border border-slate-200 focus:border-[#0A84FF] p-2 rounded-lg text-xs outline-none text-slate-900" />
-                      <input placeholder="Cost (₹)" type="number" value={newProduct.cost_price || ''} onChange={e => setNewProduct(prev => ({ ...prev, cost_price: parseFloat(e.target.value) || 0 }))} className="bg-white border border-slate-200 focus:border-[#0A84FF] p-2 rounded-lg text-xs outline-none text-slate-900" />
+                      <input placeholder="Price (Rs.) *" type="number" value={newProduct.selling_price || ''} onChange={e => setNewProduct(prev => ({ ...prev, selling_price: parseFloat(e.target.value) || 0 }))} className="bg-white border border-slate-200 focus:border-[#0A84FF] p-2 rounded-lg text-xs outline-none text-slate-900" />
+                      <input placeholder="Cost (Rs.)" type="number" value={newProduct.cost_price || ''} onChange={e => setNewProduct(prev => ({ ...prev, cost_price: parseFloat(e.target.value) || 0 }))} className="bg-white border border-slate-200 focus:border-[#0A84FF] p-2 rounded-lg text-xs outline-none text-slate-900" />
                       <input placeholder="Stock *" type="number" value={newProduct.quantity || ''} onChange={e => setNewProduct(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))} className="bg-white border border-slate-200 focus:border-[#0A84FF] p-2 rounded-lg text-xs outline-none text-slate-900" />
                       <input placeholder="Tax (%)" type="number" value={newProduct.tax_rate || ''} onChange={e => setNewProduct(prev => ({ ...prev, tax_rate: parseFloat(e.target.value) || 18 }))} className="bg-white border border-slate-200 focus:border-[#0A84FF] p-2 rounded-lg text-xs outline-none text-slate-900" />
                       <input placeholder="Unit" value={newProduct.unit} onChange={e => setNewProduct(prev => ({ ...prev, unit: e.target.value }))} className="bg-white border border-slate-200 focus:border-[#0A84FF] p-2 rounded-lg text-xs outline-none text-slate-900" />
@@ -499,7 +499,7 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                   <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs ${duplicate.similarity_score >= 80 ? 'border-red-200 bg-red-50 text-red-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
                     <AlertTriangle size={14} className={duplicate.similarity_score >= 80 ? 'text-red-500' : 'text-amber-500'} />
-                    <span className="font-bold">Duplicate Match (₹{duplicate.total_amount?.toLocaleString('en-IN')}) {Math.round((Date.now() - new Date(duplicate.created_at).getTime()) / 60000)} min ago.</span>
+                    <span className="font-bold">Duplicate Match (Rs.{duplicate.total_amount?.toLocaleString('en-IN')}) {Math.round((Date.now() - new Date(duplicate.created_at).getTime()) / 60000)} min ago.</span>
                     <button onClick={clearDupe} className="ml-auto text-[9px] font-black uppercase underline">Dismiss</button>
                   </div>
                 </motion.div>
@@ -549,7 +549,7 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
                               className="w-10 bg-slate-50 border border-slate-200 focus:border-[#0A84FF] focus:bg-white p-1 text-[10px] font-black text-center outline-none rounded-md text-slate-900"
                             />
                           </td>
-                          <td className="px-3 py-1.5 font-black text-slate-900">₹{rowTotal.toLocaleString('en-IN', { maximumFractionDigits: 1 })}</td>
+                          <td className="px-3 py-1.5 font-black text-slate-900">Rs.{rowTotal.toLocaleString('en-IN', { maximumFractionDigits: 1 })}</td>
                           <td className="px-2 py-1">
                             {marginPct !== null && (
                               <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
@@ -574,8 +574,42 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
               </div>
             )}
 
+            {/* Upsell Suggestions */}
+            {upsellItems.length > 0 && (
+              <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-3 space-y-2">
+                <div className="flex items-center gap-2 text-[9px] font-black text-indigo-600 uppercase tracking-wider">
+                  <Plus size={10} /> Smart Suggestions
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                  {upsellItems.map((item: any) => (
+                    <button 
+                      key={item.id}
+                      onClick={() => addItem(item)}
+                      className="flex-shrink-0 bg-white border border-indigo-200 px-3 py-1.5 rounded-lg text-[10px] font-bold text-slate-700 hover:bg-indigo-50 transition-colors flex items-center gap-2"
+                    >
+                      {item.name} <span className="text-indigo-500">Rs.{item.selling_price}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Bottom: Deal Health & Invoice Total (Stacked Vertically) */}
             <div className="flex flex-col gap-3">
+              {/* Credit Limit Warning */}
+              {selectedContact && (selectedContact as any).credit_limit && (
+                <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs ${(selectedContact as any).current_outstanding + total > (selectedContact as any).credit_limit ? 'border-red-200 bg-red-50 text-red-800' : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`}>
+                  <AlertTriangle size={14} className={(selectedContact as any).current_outstanding + total > (selectedContact as any).credit_limit ? 'text-red-500' : 'text-emerald-500'} />
+                  <div className="flex-1">
+                    <div className="font-bold uppercase text-[9px]">Credit Integrity</div>
+                    <div className="text-[10px]">
+                      Limit: Rs.{(selectedContact as any).credit_limit?.toLocaleString()} | 
+                      Used: Rs.{((selectedContact as any).current_outstanding || 0 + total).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Deal Health Analysis */}
               {lineItems.length > 0 ? (
                 <div className={`border p-3 rounded-xl transition-all duration-300 flex flex-col justify-center ${
@@ -589,7 +623,7 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
                     </span>
                   </div>
                   <div className="text-xs font-black uppercase text-slate-900">
-                    {margin.marginLabel === 'healthy' ? '✓ Premium Deal Approved' : margin.marginLabel === 'low' ? '⚠️ Standard Profit Deal' : '⛔ High Risk Deal'}
+                    {margin.marginLabel === 'healthy' ? '- Premium Deal Approved' : margin.marginLabel === 'low' ? '-- Standard Profit Deal' : '- High Risk Deal'}
                   </div>
                 </div>
               ) : (
@@ -598,10 +632,28 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
                 </div>
               )}
 
-              {/* Invoice Total */}
-              <div className="bg-slate-900 border border-slate-800 p-3 flex justify-between items-center rounded-xl shadow">
-                <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">Total</div>
-                <div className="text-xl font-black text-[#0A84FF]">₹{total.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+              {/* Invoice Total & GST Breakdown */}
+              <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl space-y-3">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                  <div className="text-[9px] font-black uppercase tracking-wider text-slate-500">Subtotal</div>
+                  <div className="text-sm font-bold text-slate-300">Rs.{lineItems.reduce((s, i) => s + i.quantity * i.unit_price, 0).toLocaleString('en-IN')}</div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                  <div className="flex justify-between">
+                    <span>CGST ({lineItems.length > 0 ? lineItems[0].tax_rate / 2 : 9}%)</span>
+                    <span className="text-slate-400">Rs.{(total - lineItems.reduce((s, i) => s + i.quantity * i.unit_price, 0)) / 2}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>SGST ({lineItems.length > 0 ? lineItems[0].tax_rate / 2 : 9}%)</span>
+                    <span className="text-slate-400">Rs.{(total - lineItems.reduce((s, i) => s + i.quantity * i.unit_price, 0)) / 2}</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center pt-1">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-white">Grand Total</div>
+                  <div className="text-2xl font-black text-[#0A84FF] tracking-tighter">Rs.{total.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+                </div>
               </div>
             </div>
 

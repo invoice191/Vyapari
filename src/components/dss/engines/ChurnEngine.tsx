@@ -34,7 +34,7 @@ export const ChurnEngine: React.FC = () => {
          business_id: profile.business_id,
          contact_id: c.id,
          phone: c.phone || '',
-         message: `👋 Hello ${c.name}, we haven't seen you recently! Enjoy a special 10% OFF on your next purchase. Quote: COMEBACK10. We hope to see you soon!`,
+         message: `-- Hello ${c.name}, we haven't seen you recently! Enjoy a special 10% OFF on your next purchase. Quote: COMEBACK10. We hope to see you soon!`,
          message_type: 'promo',
          scheduled_for: new Date().toISOString(),
          status: 'pending'
@@ -48,7 +48,7 @@ export const ChurnEngine: React.FC = () => {
       if (error) throw error;
 
       // Artificial pause for cinematic effect
-      await new Promise(r => setTimeout(r, 1200));
+      await new Promise(r => setTimeout(r, 200));
 
       setActivated(true);
       toast(`Mission launched! ${queueItems.length} rescue messages dispatched.`, "success");
@@ -109,7 +109,7 @@ export const ChurnEngine: React.FC = () => {
         </div>
         <div className="bg-[#1E293B]/50 border border-slate-800 px-6 py-3 rounded-2xl text-center shadow-lg">
            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Revenue at Risk</span>
-           <span className="text-xl font-bold text-rose-400">₹{stats.riskRevenue.toLocaleString()}</span>
+           <span className="text-xl font-bold text-rose-400">Rs.{stats.riskRevenue.toLocaleString()}</span>
         </div>
       </div>
 
@@ -126,7 +126,7 @@ export const ChurnEngine: React.FC = () => {
               <div>
                  <h3 className="text-base font-bold text-white tracking-tight uppercase mb-1">Rescue Mission</h3>
                  <p className="text-sm text-slate-400 font-medium max-w-sm leading-relaxed mx-auto md:mx-0">
-                   "Sending a personalized 10% discount to these <span className="text-white font-bold">{stats.churnCount} customers</span> could recover <span className="text-emerald-400 font-bold">₹{Math.round(stats.riskRevenue * 0.3).toLocaleString()}</span> this month."
+                   "Sending a personalized 10% discount to these <span className="text-white font-bold">{stats.churnCount} customers</span> could recover <span className="text-emerald-400 font-bold">Rs.{Math.round(stats.riskRevenue * 0.3).toLocaleString()}</span> this month."
                  </p>
               </div>
               <button 
@@ -210,7 +210,7 @@ export const ChurnEngine: React.FC = () => {
                       <span className="font-bold text-white text-sm block">{customer.name}</span>
                       <span className="text-[10px] text-slate-500 font-medium">{customer.phone}</span>
                     </td>
-                    <td className="p-5 text-right font-bold text-slate-300">₹{customer.value.toLocaleString()}</td>
+                    <td className="p-5 text-right font-bold text-slate-300">Rs.{customer.value.toLocaleString()}</td>
                     <td className="p-5 text-right text-xs text-slate-500">{customer.lastVisit}</td>
                     <td className="p-5 text-right">
                       <span className="text-sm font-bold text-rose-400">{customer.riskScore}%</span>

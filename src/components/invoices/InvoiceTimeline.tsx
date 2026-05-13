@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+﻿import { motion } from 'motion/react';
 import { FileText, Send, DollarSign, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface TimelineStep {

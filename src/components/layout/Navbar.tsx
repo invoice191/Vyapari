@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   Search, 
@@ -15,7 +15,7 @@ import {
   LayoutDashboard
 } from "lucide-react";
 import { NotificationCenter } from "./NotificationCenter";
-import { useGlobalData } from "../../contexts/DataContext";
+import { useGlobalData } from "../../context/DataContext";
 
 interface NavbarProps {
   activeTitle: string;
@@ -187,7 +187,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           className="flex-1"
                         >
                           <div className="text-[12px] font-black text-slate-900 uppercase tracking-tight">{p.name}</div>
-                          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">₹{p.selling_price} • STOCK: {p.quantity}</div>
+                          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Rs.{p.selling_price} - STOCK: {p.quantity}</div>
                         </div>
                         <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                            <button 

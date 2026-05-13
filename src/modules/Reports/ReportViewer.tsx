@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   Download, Filter, Printer, TrendingUp, TrendingDown, 
   Activity, RefreshCw, FileText, BarChart3, AlertCircle, Calendar 
@@ -37,6 +37,7 @@ export default function ReportViewer({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'standard' | 'focus'>('standard');
   const [selectedRow, setSelectedRow] = useState<any>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
   
   // Local UI sync
   const [searchQuery, setSearchQuery] = useState(filters?.searchQuery || '');
@@ -50,11 +51,22 @@ export default function ReportViewer({
 
   const { handleExport, exporting } = useReportExport();
   
+  // Memoized components to prevent infinite re-render loop in hooks
+  const memoizedKpis = useMemo(() => 
+    (cards || []).map(c => ({ label: c?.label, value: c?.value })),
+    [cards]
+  );
+
+  const memoizedShortData = useMemo(() => 
+    (data || []).slice(0, 20),
+    [data]
+  );
+
   // Intelligence Logic
   const { advisory } = useReportAdvisory(
     report?.title || 'Report', 
-    (cards || []).map(c => ({ label: c?.label, value: c?.value })), 
-    (data || []).slice(0, 20), 
+    memoizedKpis, 
+    memoizedShortData, 
     filters?.dateRange || 'period', 
     profile?.business_id || ''
   );
@@ -134,7 +146,7 @@ export default function ReportViewer({
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Live_Sync_Active</span>
            </div>
            <div className="text-[11px] text-slate-400 uppercase font-semibold tracking-wider">
-             {profile?.business_name || 'Vyapari Retail'} · Intel_Terminal
+             {profile?.business_name || 'Vyapari Retail'} - Intel_Terminal
            </div>
         </div>
 
@@ -144,7 +156,7 @@ export default function ReportViewer({
             <div className="flex items-center gap-3 mb-[8px]">
                <FileText size={14} className="text-white/40" />
                <div className="text-[10.5px] font-bold tracking-[1px] text-white/65 uppercase">
-                 {report?.category || 'Business Analytics'} · {report?.title}
+                 {report?.category || 'Business Analytics'} - {report?.title}
                </div>
             </div>
             <div className="text-[32px] font-black text-white mb-[8px] leading-[1] italic tracking-tighter uppercase">
@@ -170,14 +182,16 @@ export default function ReportViewer({
                   tableData: filteredData || [],
                   columns: report?.columns || [],
                   filtersApplied: filters?.searchQuery || 'None',
-                  category: report?.category,
-                  description: report?.description
+                  aiAdvisory: advisory
                 })} 
                 className="p-2.5 bg-white/10 hover:bg-white/25 rounded border border-white/10 text-white transition-all backdrop-blur-xl flex items-center gap-2.5 px-4 group/btn shadow-xl"
              >
                <Download size={15} className={`${exporting ? 'animate-bounce' : 'group-hover/btn:scale-110'} transition-transform`} />
-               <span className="text-[10px] font-black uppercase tracking-[0.2em]">Save_PDF</span>
+               <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+                 {exporting ? 'Generating...' : 'Save_PDF'}
+               </span>
              </button>
+             
              <button 
                 onClick={() => openPrintPreview(document.body, generateReportPayload())} 
                 className="p-2.5 bg-white/10 hover:bg-white/25 rounded border border-white/10 text-white transition-all backdrop-blur-xl flex items-center gap-2.5 px-4 group/btn shadow-xl"
@@ -446,7 +460,7 @@ export default function ReportViewer({
                 >
                   {(report?.columns || []).map((col: string, j: number) => (
                     <td key={j} className="p-[12px_16px] text-[#374151] border-r border-[#d1d5db] last:border-r-0 group-hover:text-[#1e2a5e] font-bold">
-                      {String(Object.values(row || {})[j] ?? '—')}
+                      {String(Object.values(row || {})[j] ?? '-')}
                     </td>
                   ))}
                 </tr>
@@ -490,7 +504,7 @@ export default function ReportViewer({
         </div>
 
         <div className="text-center pt-16 opacity-20">
-           <div className="text-[9px] font-black uppercase tracking-[0.5em]">Vyapari Intelligence Core · Terminal_V4_SECURE</div>
+           <div className="text-[9px] font-black uppercase tracking-[0.5em]">Vyapari Intelligence Core - Terminal_V4_SECURE</div>
         </div>
       </div>
 
@@ -544,7 +558,7 @@ export default function ReportViewer({
                     {Object.entries(selectedRow || {}).map(([key, val]) => (
                       <div key={key} className="flex justify-between items-center p-5 bg-slate-50 rounded-xl border border-slate-100 group/attr">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover/attr:text-[#1e2a5e] transition-colors">{key.replace(/_/g, ' ')}</span>
-                        <span className="text-[12px] font-black text-slate-900 italic">{String(val || '—')}</span>
+                        <span className="text-[12px] font-black text-slate-900 italic">{String(val || '-')}</span>
                       </div>
                     ))}
                   </div>
@@ -574,6 +588,7 @@ export default function ReportViewer({
           </>
         )}
       </AnimatePresence>
+
     </div>
   );
 }

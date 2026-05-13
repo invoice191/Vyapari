@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useAuth } from "./useAuth";
 import { rfmService, StockVelocityRow } from "../services/rfmService";
-import { useGlobalData } from "../contexts/DataContext";
+import { useGlobalData } from "../context/DataContext";
 
 export function useStockVelocity() {
   const { profile } = useAuth();

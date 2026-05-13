@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { stripeService } from "../services/stripeService";
 import { razorpayService } from "../services/razorpayService";
@@ -229,7 +229,7 @@ export default function PaymentPortal() {
                   <span className="text-sm font-bold text-slate-400 mt-1 block">GST Included</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-4xl font-black tracking-tight text-white">₹{invoice.total_amount.toLocaleString('en-IN')}</span>
+                  <span className="text-4xl font-black tracking-tight text-white">Rs.{invoice.total_amount.toLocaleString('en-IN')}</span>
                 </div>
               </div>
             </div>
@@ -254,7 +254,7 @@ export default function PaymentPortal() {
                   onClick={handleSimulateUPISuccess}
                   className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-[10px] uppercase tracking-[0.15em] rounded-2xl shadow-lg transition-all hover:scale-[1.01]"
                 >
-                  💳 SIMULATE UPI SUCCESS
+                  -- SIMULATE UPI SUCCESS
                 </button>
               </div>
 
@@ -273,14 +273,14 @@ export default function PaymentPortal() {
                     onClick={handlePayStripe}
                     className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-black text-[10px] uppercase tracking-[0.15em] rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 hover:scale-[1.01]"
                   >
-                    💳 Pay via Stripe (Visa/Master)
+                    -- Pay via Stripe (Visa/Master)
                   </button>
                   
                   <button 
                     onClick={handlePayRazorpay}
                     className="w-full py-4 bg-slate-900 hover:bg-slate-800 border-2 border-indigo-500/30 text-indigo-400 hover:text-white font-black text-[10px] uppercase tracking-[0.15em] rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 hover:scale-[1.01]"
                   >
-                    💳 Pay via Razorpay (India Card/Net)
+                    -- Pay via Razorpay (India Card/Net)
                   </button>
                 </div>
 
@@ -349,7 +349,7 @@ export default function PaymentPortal() {
                   </div>
                   <div className="flex justify-between pt-4 border-t border-slate-800/60 print:border-black">
                     <span className="text-[10px] font-black text-slate-400 print:text-black uppercase tracking-widest">Total Amount Paid</span>
-                    <span className="font-black text-lg text-emerald-400 print:text-black">₹{invoice.total_amount.toLocaleString('en-IN')}</span>
+                    <span className="font-black text-lg text-emerald-400 print:text-black">Rs.{invoice.total_amount.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               </div>

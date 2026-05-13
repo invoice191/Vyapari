@@ -1,4 +1,4 @@
-import { Coins, ShoppingBag, TrendingUp, Sparkles, Zap, IndianRupee, Store, BadgePercent } from "lucide-react";
+﻿import { Coins, ShoppingBag, TrendingUp, Sparkles, Zap, IndianRupee, Store, BadgePercent } from "lucide-react";
 
 const floaters = [
   { Icon: IndianRupee, top: "8%", left: "6%", delay: "0s", color: "text-primary", size: 28 },
@@ -43,7 +43,7 @@ export const AuthBackground = () => (
       vyapari
     </div>
     <div className="absolute top-6 right-8 select-none font-graffiti text-3xl text-secondary/15 leading-none rotate-6">
-      ₹ hustle
+      Rs. hustle
     </div>
   </div>
 );

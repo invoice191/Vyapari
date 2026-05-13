@@ -1,4 +1,4 @@
-import { DSSRecommendation, EngineInput, EngineOutput } from './types';
+﻿import { DSSRecommendation, EngineInput, EngineOutput } from './types';
 import rules from './rules.json';
 
 /**
@@ -65,7 +65,7 @@ export function runChurnEngine(input: EngineInput): EngineOutput {
         impactEstimate: {
           metric: 'Expected Order Value',
           value: Math.round(riskAmount),
-          unit: '₹',
+          unit: 'Rs.',
           direction: 'negative',
         },
         action: {
@@ -86,7 +86,7 @@ export function runChurnEngine(input: EngineInput): EngineOutput {
     }
   }
 
-  metrics.push({ label: 'At Risk Revenue', value: totalAtRiskRevenue, unit: '₹' });
+  metrics.push({ label: 'At Risk Revenue', value: totalAtRiskRevenue, unit: 'Rs.' });
   metrics.push({ label: 'Avg Risk Ratio', value: 1.2 }); // Placeholder
 
   return {

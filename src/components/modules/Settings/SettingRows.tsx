@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'motion/react';
 import { Copy, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 
@@ -136,7 +136,7 @@ export const KeyDisplayRow = ({ label, description, icon, apiKey }: RowProps & {
       </div>
       <div className="flex gap-2">
         <div className="flex-1 bg-slate-800/50 border border-white/10 rounded-xl p-4 font-mono text-[10px] text-slate-400 overflow-hidden relative">
-          {show ? apiKey : apiKey.replace(/./g, '•').slice(0, 32)}
+          {show ? apiKey : apiKey.replace(/./g, '-').slice(0, 32)}
           <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-3">
             <button onClick={() => setShow(!show)} className="text-slate-500 hover:text-white transition-colors">
               {show ? <EyeOff size={14} /> : <Eye size={14} />}

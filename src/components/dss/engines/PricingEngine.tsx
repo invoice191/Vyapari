@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis } from 'recharts';
 import { Zap, TrendingUp, ChevronRight, FileDown, CheckCircle2, HelpCircle, Info, Lightbulb, Trophy, Target, ThumbsUp, ThumbsDown, Loader2, Sparkles, CheckCircle, Clock } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
-import { useGlobalData } from '../../../contexts/DataContext';
+import { useGlobalData } from '../../../context/DataContext';
 import { useToast } from '../../common/Toast';
 
 export const PricingEngine: React.FC = () => {
@@ -21,31 +21,74 @@ export const PricingEngine: React.FC = () => {
 
   const fetchRealProducts = async () => {
     setLoading(true);
-    const { data: products, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('name', { ascending: true })
-      .limit(10);
-    
-    if (error) {
-      console.error(error);
-      return;
+    try {
+      // 1. Get recent sales metrics from real invoice_items
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const { data: salesData } = await supabase
+        .from('invoice_items')
+        .select('product_id, quantity')
+        .gte('created_at', thirtyDaysAgo.toISOString());
+
+      // Aggregate quantities sold per product
+      const volumeMap = new Map<string, number>();
+      if (salesData) {
+        for (const item of salesData) {
+          const qty = Number(item.quantity || 0);
+          volumeMap.set(item.product_id, (volumeMap.get(item.product_id) || 0) + qty);
+        }
+      }
+
+      // 2. Get products
+      const { data: products, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('name', { ascending: true })
+        .limit(15);
+      
+      if (error) throw error;
+
+      // 3. Compute mathematical price optimization
+      const processed = (products || []).map(p => {
+        const sellPrice = Number(p.selling_price || 0);
+        const costPrice = Number(p.cost_price || 0);
+        const currentMargin = sellPrice > 0 ? ((sellPrice - costPrice) / sellPrice) * 100 : 0;
+        
+        // Set target margin dynamically: higher for slow items, standard 20-25% for active ones
+        const unitsSold = volumeMap.get(p.id) || 0;
+        const targetMargin = unitsSold > 10 ? 22 : 28;
+        
+        // Compute optimized price based on target margin floor, but cap increases to avoid customer shock (+12%)
+        const mathSuggested = costPrice / (1 - targetMargin / 100);
+        let finalSuggested = Math.round(Math.max(sellPrice, Math.min(sellPrice * 1.12, mathSuggested)));
+        if (finalSuggested <= sellPrice) {
+          finalSuggested = Math.round(sellPrice * 1.05); // minimum 5% adjustment proposal for tuning
+        }
+
+        // If it has 0 sales, use 5 assumed baseline demand units for forecasting, else use real sales
+        const demandFactor = unitsSold > 0 ? unitsSold : 8; 
+        const calculatedImpact = Math.round((finalSuggested - sellPrice) * demandFactor);
+
+        return {
+          id: p.id,
+          name: p.name,
+          current: sellPrice,
+          suggested: finalSuggested,
+          units: demandFactor,
+          margin: Math.round(currentMargin),
+          impact: calculatedImpact,
+          updatedAt: p.updated_at
+        };
+      });
+
+      setData(processed);
+      setImpact(processed.reduce((acc, curr) => acc + curr.impact, 0));
+    } catch (err) {
+      console.error("Price optimization dataset retrieval failed:", err);
+    } finally {
+      setLoading(false);
     }
-
-    const processed = (products || []).map(p => ({
-      id: p.id,
-      name: p.name,
-      current: p.selling_price,
-      suggested: Math.round(p.selling_price * 1.08),
-      units: Math.floor(Math.random() * 50) + 20,
-      margin: Math.round(((p.selling_price - p.cost_price) / p.selling_price) * 100),
-      impact: Math.round((p.selling_price * 0.08) * (Math.floor(Math.random() * 50) + 20)),
-      updatedAt: p.updated_at
-    }));
-
-    setData(processed);
-    setImpact(processed.reduce((acc, curr) => acc + curr.impact, 0));
-    setLoading(false);
   };
 
   const handleUpdatePrice = async (id: string, newPrice: number) => {
@@ -89,7 +132,7 @@ export const PricingEngine: React.FC = () => {
         <div className="flex gap-4">
            <div className="bg-[#1E293B]/50 border border-slate-800 px-6 py-3 rounded-2xl text-center shadow-lg">
              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Target Profit</span>
-             <span className="text-xl font-bold text-emerald-400">₹{impact.toLocaleString()}</span>
+             <span className="text-xl font-bold text-emerald-400">Rs.{impact.toLocaleString()}</span>
            </div>
         </div>
       </div>
@@ -103,7 +146,7 @@ export const PricingEngine: React.FC = () => {
             <div className="flex-1 space-y-2 text-center md:text-left">
                <h3 className="text-base font-bold text-white tracking-tight">Predictive Insight</h3>
                <p className="text-sm text-slate-400 font-medium">
-                 If you increase the price of <span className="text-white font-bold">{data[0]?.name || 'Rice'}</span> by <span className="text-emerald-400">₹2</span>, how much extra profit will you see this month?
+                 If you increase the price of <span className="text-white font-bold">{data[0]?.name || 'Rice'}</span> by <span className="text-emerald-400">Rs.2</span>, how much extra profit will you see this month?
                </p>
             </div>
             {!showResult ? (
@@ -124,7 +167,7 @@ export const PricingEngine: React.FC = () => {
             ) : (
               <div className="bg-emerald-500/10 border border-emerald-500/20 px-6 py-3 rounded-xl flex items-center gap-3 animate-in fade-in zoom-in-95">
                  <Trophy className="text-emerald-400 w-5 h-5" />
-                 <span className="text-sm font-bold text-emerald-400 italic">Result: ₹{data[0]?.units * 2 || 90}</span>
+                 <span className="text-sm font-bold text-emerald-400 italic">Result: Rs.{data[0]?.units * 2 || 90}</span>
                  <button onClick={() => setShowResult(false)} className="text-[10px] text-slate-500 uppercase font-bold hover:text-white ml-2">Reset</button>
               </div>
             )}
@@ -185,12 +228,12 @@ export const PricingEngine: React.FC = () => {
                      </span>
                   </div>
                 </td>
-                <td className="p-6 text-right text-sm text-slate-400">₹{item.current}</td>
+                <td className="p-6 text-right text-sm text-slate-400">Rs.{item.current}</td>
                 <td className="p-6 text-right">
-                  <span className="text-base font-bold text-indigo-400">₹{item.suggested}</span>
+                  <span className="text-base font-bold text-indigo-400">Rs.{item.suggested}</span>
                 </td>
                 <td className="p-6 text-right">
-                  <span className="text-sm font-bold text-emerald-400">+₹{item.impact}</span>
+                  <span className="text-sm font-bold text-emerald-400">+Rs.{item.impact}</span>
                 </td>
                 <td className="p-6 text-right">
                   {item.current >= item.suggested ? (

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Search, Plus, User, Phone, MapPin, FileText, MessageSquare, UserCheck, UserPlus, RefreshCw, X } from "lucide-react";
-import { useGlobalData } from "../../contexts/DataContext";
+import { useGlobalData } from "../../context/DataContext";
 import { Card, SectionHeader, ActionBtn as Button, KPICard, SkeletonCard } from "../common/UI";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../hooks/useAuth";
@@ -62,9 +62,9 @@ export default function ContactsList() {
     const isNeg = val < 0;
     const absVal = Math.abs(val);
     if (absVal >= 1000) {
-      return `${isNeg ? '-' : ''}₹${(absVal / 1000).toFixed(1)}K`;
+      return `${isNeg ? '-' : ''}Rs.${(absVal / 1000).toFixed(1)}K`;
     }
-    return `${isNeg ? '-' : ''}₹${absVal.toLocaleString()}`;
+    return `${isNeg ? '-' : ''}Rs.${absVal.toLocaleString()}`;
   };
 
   const handleAddContact = async (e: React.FormEvent) => {
@@ -116,7 +116,7 @@ export default function ContactsList() {
   const openWhatsApp = (phone: string, name: string) => {
     const cleanPhone = phone.replace(/\s+/g, "").replace(/[^0-9]/g, "");
     const formattedPhone = cleanPhone.startsWith("91") ? cleanPhone : `91${cleanPhone}`;
-    const msg = `Namaste ${name}! Hope your business is running great. Thank you for being a valued partner of ours. — ${profile?.full_name || "Our Shop"}`;
+    const msg = `Namaste ${name}! Hope your business is running great. Thank you for being a valued partner of ours. - ${profile?.full_name || "Our Shop"}`;
     window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
@@ -183,14 +183,14 @@ export default function ContactsList() {
               <div className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Cash Liquidity</div>
               <div className="text-xl font-black text-white leading-none mb-1">{formatK(cashLiquidity)}</div>
               <div className="flex items-center gap-1.5">
-                <span className="text-[8px] font-black uppercase tracking-widest text-emerald-400">↑ 12.5%</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-emerald-400">- 12.5%</span>
               </div>
             </div>
             <div className="px-6 py-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl flex-1 min-w-[140px]">
               <div className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Pending</div>
               <div className="text-xl font-black text-white leading-none mb-1">{formatK(pendingReceivables)}</div>
               <div className="flex items-center gap-1.5">
-                <span className="text-[8px] font-black uppercase tracking-widest text-rose-400">↓ 3.2%</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-rose-400">- 3.2%</span>
               </div>
             </div>
           </div>
@@ -330,7 +330,7 @@ export default function ContactsList() {
                       <td className="px-5 py-6 bg-white border-y border-slate-100 shadow-sm transition-colors hidden lg:table-cell">
                         <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
                           {c.city && <span className="text-slate-900 line-clamp-1">{c.city},</span>}
-                          {c.state || "—"}
+                          {c.state || "-"}
                         </div>
                       </td>
                       <td className="px-5 py-6 bg-white border border-slate-100 rounded-r-3xl shadow-sm transition-colors">
@@ -375,7 +375,7 @@ export default function ContactsList() {
                   disabled={currentPage === 1}
                   className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 rounded-xl font-black text-[9px] uppercase tracking-widest text-slate-600 transition-all flex items-center gap-1 active:scale-95"
                 >
-                  ◀ Previous
+                  - Previous
                 </button>
                 <div className="flex items-center px-3 text-[10px] font-black text-slate-700 font-mono">
                   {currentPage} / {totalPages}
@@ -385,7 +385,7 @@ export default function ContactsList() {
                   disabled={currentPage === totalPages}
                   className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 rounded-xl font-black text-[9px] uppercase tracking-widest text-slate-600 transition-all flex items-center gap-1 active:scale-95"
                 >
-                  Next ▶
+                  Next -
                 </button>
               </div>
             </div>
@@ -398,14 +398,14 @@ export default function ContactsList() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[1000] flex items-center justify-center p-6"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xl z-[1000] flex items-start justify-center p-6 overflow-y-auto"
             onClick={() => setShowAddModal(false)}
           >
             <motion.div
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="bg-white w-full max-w-lg rounded-[3rem] p-12 shadow-2xl relative overflow-hidden max-h-[90vh] flex flex-col"
+              className="bg-white w-full max-w-lg rounded-[3rem] p-12 shadow-2xl relative overflow-hidden max-h-[90vh] flex flex-col my-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-4">Add Customer or Supplier</h2>

@@ -1,4 +1,4 @@
-import { EngineInput, DSSRecommendation } from '../dssService';
+﻿import { EngineInput, DSSRecommendation } from '../dssService';
 
 export const pricingEngine = {
   analyze: (input: EngineInput): DSSRecommendation[] => {
@@ -18,8 +18,8 @@ export const pricingEngine = {
         title: 'Elasticity-Aware Pricing',
         body: `"${opt.name}" has high demand velocity and stable margins. A ${opt.increase}% adjustment is feasible.`,
         score: opt.confidence,
-        impact: `Projected ₹${opt.revenueLift} monthly profit gain`,
-        action: `Adjust price from ₹${opt.current} to ₹${opt.suggested}`,
+        impact: `Projected Rs.${opt.revenueLift} monthly profit gain`,
+        action: `Adjust price from Rs.${opt.current} to Rs.${opt.suggested}`,
         metadata: { productId: opt.id, currentMargin: opt.margin }
       });
     });

@@ -96,5 +96,38 @@ export const razorpayService = {
       console.error("Razorpay integration error:", err);
       return false;
     }
+  },
+
+  /**
+   * Generates a dynamic payment link for an invoice using Razorpay Payment Links API.
+   * Note: In a production environment, this should be an Edge Function to protect API keys.
+   * This function simulates the API response and creates a tracking record in the database.
+   */
+  generatePaymentLink: async (invoiceId: string, amount: number, contact: any) => {
+    try {
+      // 1. Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // 2. Generate mock Razorpay Link ID
+      const rzpLinkId = `plink_${Math.random().toString(36).substring(2, 10)}`;
+      const paymentUrl = `https://rzp.io/i/${rzpLinkId}`;
+
+      // 3. Update the invoice with the payment link (assuming schema supports it or failing gracefully)
+      const { error } = await supabase
+        .from('invoices')
+        .update({ 
+          payment_link: paymentUrl
+        } as any)
+        .eq('id', invoiceId);
+
+      if (error) {
+        console.warn("payment_link column might not exist on invoices table yet.", error);
+      }
+
+      return { success: true, url: paymentUrl, id: rzpLinkId };
+    } catch (error: any) {
+      console.error("[Razorpay Integration] Error:", error);
+      return { success: false, error: error.message };
+    }
   }
 };

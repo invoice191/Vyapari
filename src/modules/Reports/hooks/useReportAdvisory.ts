@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
 
 export function useReportAdvisory(reportTitle: string, kpis: any[], tableData: any[], period: string, businessId: string) {

@@ -1,4 +1,4 @@
-export interface SimProduct {
+﻿export interface SimProduct {
   id: string;
   name: string;
   currentPrice: number;

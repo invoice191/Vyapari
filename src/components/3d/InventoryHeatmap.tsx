@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { useGlobalData } from '../../contexts/DataContext';
+﻿import React, { useMemo } from 'react';
+import { useGlobalData } from '../../context/DataContext';
 import { motion } from 'motion/react';
 
 export function InventoryHeatmap({ selectedCategory }: { selectedCategory?: string }) {

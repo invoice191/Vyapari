@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { X, Download, MessageSquare, Plus, RefreshCw, Sparkles, AlertTriangle, Check, CreditCard, Loader2, ShieldCheck } from "lucide-react";
+import { X, Download, MessageSquare, Plus, RefreshCw, Sparkles, AlertTriangle, Check, CreditCard, Loader2, ShieldCheck, Eye } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { exportService } from "../../services/exportService";
+import { generateInvoicePDF } from "../../utils/pdf/invoicePDF";
+import { stripeService } from "../../services/stripeService";
+import { Link2 } from "lucide-react";
 import { useToast } from "../common/Toast";
 
 interface InvoiceDetailModalProps {
@@ -53,11 +56,17 @@ export default function InvoiceDetailModal({
   const [loadingAdvice, setLoadingAdvice] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+  const [pdfAction, setPdfAction] = useState<'download' | 'open' | null>(null);
+
+  // Stripe states
+  const [stripeLoading, setStripeLoading] = useState(false);
+  const [stripeLink, setStripeLink] = useState(invoice?.payment_link || "");
 
   useEffect(() => {
     if (invoice?.id) {
       fetchPayments();
       fetchCustomerDNA();
+      setStripeLink(invoice?.payment_link || "");
     }
   }, [invoice]);
 
@@ -143,9 +152,17 @@ export default function InvoiceDetailModal({
       await fetchPayments();
     } catch (e) {
       console.error(e);
-    } finally {
       setPayLoading(false);
     }
+  };
+
+  const handleGenerateStripeLink = async () => {
+    setStripeLoading(true);
+    const res = await stripeService.generatePaymentLink(invoice.id, invoice.total_amount, invoice.contact);
+    if (res.success) {
+      setStripeLink(res.url);
+    }
+    setStripeLoading(false);
   };
 
   const getTermsAdvice = async () => {
@@ -160,7 +177,7 @@ export default function InvoiceDetailModal({
             "Authorization": `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
           },
           body: JSON.stringify({
-            transcript: `Give me payment terms advice for client ${invoice.contacts?.name || "Customer"} with outstanding ₹${invoice.total_amount - invoice.partial_paid_amount} and credit limit ₹${customerDNA.creditLimit}`,
+            transcript: `Give me payment terms advice for client ${invoice.contacts?.name || "Customer"} with outstanding Rs.${invoice.total_amount - invoice.partial_paid_amount} and credit limit Rs.${customerDNA.creditLimit}`,
             businessId,
             contextData: { invoice, customerDNA }
           })
@@ -187,7 +204,7 @@ export default function InvoiceDetailModal({
             "Authorization": `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
           },
           body: JSON.stringify({
-            transcript: `Analyze payment risk for invoice ${invoice.invoice_number} of ₹${invoice.total_amount} due on ${invoice.due_date}`,
+            transcript: `Analyze payment risk for invoice ${invoice.invoice_number} of Rs.${invoice.total_amount} due on ${invoice.due_date}`,
             businessId,
             contextData: { invoice, items }
           })
@@ -218,12 +235,12 @@ export default function InvoiceDetailModal({
   const itcClaimable = items.reduce((acc, it) => acc + (Number(it.quantity) * Number(it.cost_price || 0) * (Number(it.tax_rate || 0) / 100)), 0);
 
   return (
-    <div className="fixed inset-0 bg-[#0c0c0c]/80 backdrop-blur-md z-[1100] flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 bg-[#0c0c0c]/80 backdrop-blur-md z-[1100] flex items-start justify-center p-4 overflow-y-auto">
       <motion.div
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-[#111111] border-2 border-[#222222] w-full max-w-[500px] rounded-3xl overflow-hidden flex flex-col shadow-2xl relative text-white max-h-[92vh]"
+        className="bg-[#111111] border-2 border-[#222222] w-full max-w-[500px] rounded-3xl overflow-hidden flex flex-col shadow-2xl relative text-white max-h-[92vh] my-auto"
       >
         {/* Header */}
         <div className="p-6 border-b border-[#222222] flex justify-between items-start">
@@ -271,14 +288,14 @@ export default function InvoiceDetailModal({
               <div className="bg-[#151515] border border-[#222222] rounded-2xl p-5 relative overflow-hidden">
                 <div className="text-[10px] font-bold text-[#666666] tracking-widest uppercase mb-1">INVOICE AMOUNT</div>
                 <div className="text-4xl font-extrabold text-[#FF5500] tracking-tighter">
-                  ₹{Number(invoice.total_amount || 0).toLocaleString("en-IN")}
+                  Rs.{Number(invoice.total_amount || 0).toLocaleString("en-IN")}
                 </div>
                 
                 {/* Progress bar */}
                 <div className="mt-4 space-y-1">
                   <div className="flex justify-between text-[10px] font-bold text-[#888888] uppercase">
                     <span>Payment progress</span>
-                    <span>{paidPercent}% • ₹{Number(invoice.partial_paid_amount || 0).toLocaleString("en-IN")} received</span>
+                    <span>{paidPercent}% - Rs.{Number(invoice.partial_paid_amount || 0).toLocaleString("en-IN")} received</span>
                   </div>
                   <div className="h-2 w-full bg-[#222222] rounded-full overflow-hidden">
                     <div className="h-full bg-[#00AA55] rounded-full transition-all duration-500" style={{ width: `${paidPercent}%` }} />
@@ -341,7 +358,7 @@ export default function InvoiceDetailModal({
                 </div>
                 <div className="bg-[#151515] border border-[#222222] p-4 rounded-xl">
                   <div className="text-[9px] font-bold text-[#555555] uppercase tracking-wider mb-1">ITC CLAIMABLE</div>
-                  <div className="text-lg font-black text-[#00AA55]">₹{Math.round(itcClaimable)}</div>
+                  <div className="text-lg font-black text-[#00AA55]">Rs.{Math.round(itcClaimable)}</div>
                 </div>
               </div>
 
@@ -349,7 +366,7 @@ export default function InvoiceDetailModal({
               <div className="bg-[#151515] border border-[#222222] rounded-xl p-5 space-y-3.5">
                 <div className="flex justify-between items-center text-xs font-bold">
                   <span className="text-[#666666]">Credit limit (recommended)</span>
-                  <span className="text-[#00AA55]">₹{customerDNA.creditLimit.toLocaleString("en-IN")}</span>
+                  <span className="text-[#00AA55]">Rs.{customerDNA.creditLimit.toLocaleString("en-IN")}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs font-bold">
                   <span className="text-[#666666]">Customer since</span>
@@ -380,6 +397,43 @@ export default function InvoiceDetailModal({
                   ))}
                 </div>
               </div>
+
+              {/* Payment Gateway Link Generator */}
+              <div className="space-y-2 mt-6 border-t border-[#222222] pt-6">
+                <div className="text-[10px] font-bold text-[#555555] tracking-widest uppercase flex items-center justify-between">
+                  <span>STRIPE PAYMENT GATEWAY</span>
+                  {stripeLink && <span className="text-[#00AA55]">ACTIVE</span>}
+                </div>
+                
+                {!stripeLink ? (
+                  <button
+                    onClick={handleGenerateStripeLink}
+                    disabled={stripeLoading || outstanding <= 0}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 font-black text-xs uppercase tracking-widest hover:bg-indigo-500/20 transition-all disabled:opacity-40"
+                  >
+                    {stripeLoading ? <Loader2 size={16} className="animate-spin" /> : <Link2 size={16} />}
+                    Generate Stripe Link
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      readOnly 
+                      value={stripeLink} 
+                      className="flex-1 bg-[#151515] border border-[#222222] rounded-xl px-4 py-3 text-xs font-mono text-[#888888] outline-none"
+                    />
+                    <button 
+                      onClick={() => { navigator.clipboard.writeText(stripeLink); toast("Link copied!", "success"); }}
+                      className="px-4 py-3 bg-[#222222] hover:bg-[#333333] border border-[#333333] rounded-xl text-xs font-black uppercase tracking-widest transition-colors"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                )}
+                <div className="text-[9px] text-[#555555] mt-1 italic">
+                  Generate secure payment links powered by Stripe.
+                </div>
+              </div>
             </div>
           )}
 
@@ -398,7 +452,7 @@ export default function InvoiceDetailModal({
                     <div key={idx} className="bg-[#151515] border border-[#222222] p-4 rounded-2xl space-y-3">
                       <div className="flex justify-between items-start">
                         <div className="text-sm font-extrabold text-white uppercase">{it.product_name}</div>
-                        <div className="text-sm font-black text-[#FF5500]">₹{itemTotal.toFixed(2)}</div>
+                        <div className="text-sm font-black text-[#FF5500]">Rs.{itemTotal.toFixed(2)}</div>
                       </div>
 
                       <div className="grid grid-cols-4 gap-2 text-left text-[10px] font-bold text-[#555555]">
@@ -408,7 +462,7 @@ export default function InvoiceDetailModal({
                         </div>
                         <div>
                           <div>RATE</div>
-                          <div className="text-xs text-white mt-0.5">₹{it.unit_price}</div>
+                          <div className="text-xs text-white mt-0.5">Rs.{it.unit_price}</div>
                         </div>
                         <div>
                           <div>GST</div>
@@ -416,23 +470,23 @@ export default function InvoiceDetailModal({
                         </div>
                         <div>
                           <div>HSN</div>
-                          <div className="text-xs text-white mt-0.5">{it.hsn_code || "—"}</div>
+                          <div className="text-xs text-white mt-0.5">{it.hsn_code || "-"}</div>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 text-left text-[10px] font-bold text-[#555555] pt-2 border-t border-[#222222]/50">
                         <div>
-                          <div>Taxable value: <span className="text-white">₹{itemTaxable.toFixed(2)}</span></div>
-                          <div className="mt-0.5">SGST: <span className="text-white">₹{(itemTax / 2).toFixed(2)}</span></div>
+                          <div>Taxable value: <span className="text-white">Rs.{itemTaxable.toFixed(2)}</span></div>
+                          <div className="mt-0.5">SGST: <span className="text-white">Rs.{(itemTax / 2).toFixed(2)}</span></div>
                         </div>
                         <div>
-                          <div>CGST: <span className="text-white">₹{(itemTax / 2).toFixed(2)}</span></div>
-                          <div className="mt-0.5">Total GST: <span className="text-white">₹{itemTax.toFixed(2)}</span></div>
+                          <div>CGST: <span className="text-white">Rs.{(itemTax / 2).toFixed(2)}</span></div>
+                          <div className="mt-0.5">Total GST: <span className="text-white">Rs.{itemTax.toFixed(2)}</span></div>
                         </div>
                       </div>
 
                       <div className="text-[10px] font-black text-[#00AA55] bg-[#00AA55]/5 border border-[#00AA55]/10 px-3 py-1.5 rounded-lg inline-block">
-                        Profit on this item: ₹{itemProfit.toFixed(2)} ({itemProfitPercent}%)
+                        Profit on this item: Rs.{itemProfit.toFixed(2)} ({itemProfitPercent}%)
                       </div>
                     </div>
                   );
@@ -444,29 +498,29 @@ export default function InvoiceDetailModal({
                 <div className="text-[10px] font-bold text-[#FF5500] tracking-widest uppercase mb-1">GST SUMMARY</div>
                 <div className="flex justify-between items-center text-xs font-bold text-[#666666]">
                   <span>Subtotal (taxable)</span>
-                  <span className="text-white">₹{subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                  <span className="text-white">Rs.{subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs font-bold text-[#666666]">
                   <span>Total CGST</span>
-                  <span className="text-white">₹{totalCGST.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                  <span className="text-white">Rs.{totalCGST.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs font-bold text-[#666666]">
                   <span>Total SGST</span>
-                  <span className="text-white">₹{totalSGST.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                  <span className="text-white">Rs.{totalSGST.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs font-bold text-[#666666]">
                   <span>Total GST</span>
-                  <span className="text-white">₹{totalTax.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                  <span className="text-white">Rs.{totalTax.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm font-black pt-3 border-t border-[#222222] text-white uppercase tracking-wider">
                   <span>GRAND TOTAL</span>
-                  <span className="text-[#FF5500] text-lg">₹{Number(invoice.total_amount).toLocaleString("en-IN")}</span>
+                  <span className="text-[#FF5500] text-lg">Rs.{Number(invoice.total_amount).toLocaleString("en-IN")}</span>
                 </div>
 
                 {/* ITC Panel */}
                 <div className="bg-[#003311]/20 border border-[#00AA55]/20 p-4 rounded-xl mt-4">
                   <div className="text-[10px] font-bold text-[#00AA55] tracking-widest uppercase">ITC CLAIMABLE ON PURCHASE COST</div>
-                  <div className="text-2xl font-black text-[#00AA55] mt-1">₹{itcClaimable.toLocaleString("en-IN", { maximumFractionDigits: 1 })}</div>
+                  <div className="text-2xl font-black text-[#00AA55] mt-1">Rs.{itcClaimable.toLocaleString("en-IN", { maximumFractionDigits: 1 })}</div>
                   <p className="text-[9px] font-bold text-[#555555] uppercase mt-1">Input Tax Credit from vendor cost base</p>
                 </div>
               </div>
@@ -479,13 +533,13 @@ export default function InvoiceDetailModal({
               <div className="bg-[#151515] border border-[#222222] p-5 rounded-2xl text-left">
                 <div className="text-[10px] font-bold text-[#555555] tracking-widest uppercase mb-1">PAYMENT HISTORY</div>
                 <div className="flex justify-between items-end mt-3">
-                  <div className="text-2xl font-black text-[#00AA55]">₹{Number(invoice.partial_paid_amount || 0).toLocaleString("en-IN")} paid</div>
-                  <div className="text-xs font-bold text-[#888888]">₹{outstanding.toLocaleString("en-IN")} due</div>
+                  <div className="text-2xl font-black text-[#00AA55]">Rs.{Number(invoice.partial_paid_amount || 0).toLocaleString("en-IN")} paid</div>
+                  <div className="text-xs font-bold text-[#888888]">Rs.{outstanding.toLocaleString("en-IN")} due</div>
                 </div>
                 <div className="h-2 w-full bg-[#222222] rounded-full overflow-hidden mt-3">
                   <div className="h-full bg-[#00AA55] rounded-full" style={{ width: `${paidPercent}%` }} />
                 </div>
-                <p className="text-[10px] font-bold text-[#555555] uppercase mt-2">{paidPercent}% of ₹{Number(invoice.total_amount || 0).toLocaleString("en-IN")} received</p>
+                <p className="text-[10px] font-bold text-[#555555] uppercase mt-2">{paidPercent}% of Rs.{Number(invoice.total_amount || 0).toLocaleString("en-IN")} received</p>
               </div>
 
               {/* Transactions List */}
@@ -493,9 +547,9 @@ export default function InvoiceDetailModal({
                 {payments.map((p, idx) => (
                   <div key={p.id || idx} className="bg-[#151515] border border-[#222222] p-4 rounded-xl flex justify-between items-center text-left">
                     <div>
-                      <div className="text-sm font-black text-[#00AA55]">₹{Number(p.amount).toLocaleString("en-IN")}</div>
+                      <div className="text-sm font-black text-[#00AA55]">Rs.{Number(p.amount).toLocaleString("en-IN")}</div>
                       <div className="text-[10px] font-bold text-[#555555] uppercase mt-1">
-                        {p.paid_at ? new Date(p.paid_at).toLocaleDateString("en-IN") : "Recent"} • {p.payment_mode}
+                        {p.paid_at ? new Date(p.paid_at).toLocaleDateString("en-IN") : "Recent"} - {p.payment_mode}
                       </div>
                       {p.payment_reference && (
                         <div className="text-[9px] font-mono text-[#444444] mt-0.5">Ref: {p.payment_reference}</div>
@@ -527,7 +581,7 @@ export default function InvoiceDetailModal({
                     <div className="border border-[#222222] rounded-2xl p-5 bg-[#151515] mt-4 space-y-4">
                       <div>
                         <label className="text-[10px] font-bold text-[#555555] uppercase tracking-wider block mb-2">
-                          Balance Due: ₹{outstanding.toLocaleString("en-IN")}
+                          Balance Due: Rs.{outstanding.toLocaleString("en-IN")}
                         </label>
                         <input
                           type="number"
@@ -600,7 +654,7 @@ export default function InvoiceDetailModal({
                       </div>
                       <div className="bg-[#151515] border border-[#222222] p-4 rounded-xl">
                         <div className="text-[9px] font-bold text-[#555555] uppercase tracking-wider mb-1">Total revenue</div>
-                        <div className="text-base font-black text-white">₹{customerDNA.totalRevenue.toLocaleString("en-IN")}</div>
+                        <div className="text-base font-black text-white">Rs.{customerDNA.totalRevenue.toLocaleString("en-IN")}</div>
                       </div>
                       <div className="bg-[#151515] border border-[#222222] p-4 rounded-xl">
                         <div className="text-[9px] font-bold text-[#555555] uppercase tracking-wider mb-1">Avg days to pay</div>
@@ -620,11 +674,11 @@ export default function InvoiceDetailModal({
                       </div>
                       <div className="bg-[#151515] border border-[#222222] p-4 rounded-xl">
                         <div className="text-[9px] font-bold text-[#555555] uppercase tracking-wider mb-1">Credit limit</div>
-                        <div className="text-base font-black text-white">₹{customerDNA.creditLimit.toLocaleString("en-IN")}</div>
+                        <div className="text-base font-black text-white">Rs.{customerDNA.creditLimit.toLocaleString("en-IN")}</div>
                       </div>
                       <div className="bg-[#151515] border border-[#222222] p-4 rounded-xl">
                         <div className="text-[9px] font-bold text-[#555555] uppercase tracking-wider mb-1">Lifetime value</div>
-                        <div className="text-base font-black text-white">₹{customerDNA.lifetimeValue.toLocaleString("en-IN")}</div>
+                        <div className="text-base font-black text-white">Rs.{customerDNA.lifetimeValue.toLocaleString("en-IN")}</div>
                       </div>
                     </div>
                   </div>
@@ -685,51 +739,145 @@ export default function InvoiceDetailModal({
         </div>
 
         {/* Footer Buttons */}
-        <div className="p-6 border-t border-[#222222] bg-[#111111] flex gap-4">
-          <button
-            onClick={async () => {
-              try {
-                console.log("[InvoicePDF] Starting generation for businessId:", businessId);
-                toast("Generating Premium Invoice...", "info");
-                
-                // Fetch business details for the header
-                const { data: business, error: bizError } = await supabase
-                  .from("business_profiles")
-                  .select("*")
-                  .eq("id", businessId)
-                  .single();
-                
-                if (bizError) {
-                  console.error("[InvoicePDF] Business profile fetch error:", bizError);
-                  // Use a fallback if profile is missing
-                  const fallbackBusiness = { name: "Vyapari Business", address: "Mumbai, India", phone: "9876543210" };
-                  await exportService.generateInvoicePDF(fallbackBusiness, invoice, items);
-                } else {
-                  console.log("[InvoicePDF] Business profile found:", business.name);
-                  await exportService.generateInvoicePDF(business, invoice, items);
+        <div className="p-6 border-t border-[#222222] bg-[#111111] flex flex-col gap-3">
+          <div className="flex gap-2">
+            <button
+              disabled={!!pdfAction}
+              onClick={async () => {
+                setPdfAction('download');
+                try {
+                  toast("Preparing Premium Invoice...", "info");
+                  const { data: business, error: bizError } = await supabase
+                    .from("businesses")
+                    .select("*")
+                    .eq("id", businessId)
+                    .single();
+                  
+                  if (bizError) throw bizError;
+
+                  const mappedData = {
+                    invoice_number: invoice.invoice_number || invoice.id.slice(0, 8),
+                    created_at: invoice.invoice_date || invoice.created_at,
+                    due_date: invoice.due_date,
+                    status: invoice.status,
+                    business: {
+                      name: business?.name || "Vyapari Shop",
+                      address: business?.address,
+                      gst_number: business?.gstin,
+                      phone: business?.phone,
+                      upi_id: business?.upi_id
+                    },
+                    customer: {
+                      name: invoice.contacts?.name || "WALK-IN CUSTOMER",
+                      phone: invoice.contacts?.phone,
+                      address: invoice.contacts?.address,
+                      gst_number: invoice.contacts?.gstin
+                    },
+                    items: items.map(it => ({
+                      name: it.product_name,
+                      hsn: it.hsn_code,
+                      quantity: Number(it.quantity),
+                      rate: Number(it.unit_price),
+                      gst_rate: Number(it.tax_rate || 0),
+                      total: (Number(it.quantity) * Number(it.unit_price)) * (1 + (Number(it.tax_rate || 0) / 100))
+                    })),
+                    subtotal: subtotal,
+                    cgst: totalCGST,
+                    sgst: totalSGST,
+                    gst_total: totalTax,
+                    grand_total: Number(invoice.total_amount),
+                    amount_paid: Number(invoice.partial_paid_amount || 0),
+                    amount_remaining: outstanding,
+                    notes: "This is a computer generated invoice."
+                  };
+
+                  await generateInvoicePDF(mappedData, 'download');
+                  toast("Invoice Downloaded", "success");
+                } catch (e: any) {
+                  toast("Failed to export: " + e.message, "error");
+                } finally {
+                  setPdfAction(null);
                 }
-                
-                toast("Invoice Downloaded Successfully", "success");
-              } catch (e: any) {
-                console.error("[InvoicePDF] Critical generation error:", e);
-                toast(`Failed to generate PDF: ${e.message || "Unknown error"}`, "error");
-              }
-            }}
-            className="flex-1 py-4 bg-[#222222] hover:bg-[#333333] text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
-          >
-            <Download size={14} /> DOWNLOAD PDF
-          </button>
+              }}
+              className="flex-[2] py-4 bg-[#FF5500] hover:bg-[#e64d00] text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {pdfAction === 'download' ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+              DOWNLOAD
+            </button>
+
+            <button
+              disabled={!!pdfAction}
+              onClick={async () => {
+                setPdfAction('open');
+                try {
+                  toast("Opening Preview...", "info");
+                  const { data: business, error: bizError } = await supabase
+                    .from("businesses")
+                    .select("*")
+                    .eq("id", businessId)
+                    .single();
+                  
+                  if (bizError) throw bizError;
+
+                  const mappedData = {
+                    invoice_number: invoice.invoice_number || invoice.id.slice(0, 8),
+                    created_at: invoice.invoice_date || invoice.created_at,
+                    due_date: invoice.due_date,
+                    status: invoice.status,
+                    business: {
+                      name: business?.name || "Vyapari Shop",
+                      address: business?.address,
+                      gst_number: business?.gstin,
+                      phone: business?.phone,
+                      upi_id: business?.upi_id
+                    },
+                    customer: {
+                      name: invoice.contacts?.name || "WALK-IN CUSTOMER",
+                      phone: invoice.contacts?.phone,
+                      address: invoice.contacts?.address,
+                      gst_number: invoice.contacts?.gstin
+                    },
+                    items: items.map(it => ({
+                      name: it.product_name,
+                      hsn: it.hsn_code,
+                      quantity: Number(it.quantity),
+                      rate: Number(it.unit_price),
+                      gst_rate: Number(it.tax_rate || 0),
+                      total: (Number(it.quantity) * Number(it.unit_price)) * (1 + (Number(it.tax_rate || 0) / 100))
+                    })),
+                    subtotal: subtotal,
+                    cgst: totalCGST,
+                    sgst: totalSGST,
+                    gst_total: totalTax,
+                    grand_total: Number(invoice.total_amount),
+                    amount_paid: Number(invoice.partial_paid_amount || 0),
+                    amount_remaining: outstanding
+                  };
+
+                  await generateInvoicePDF(mappedData, 'open');
+                } catch (e: any) {
+                  toast("Failed to open", "error");
+                } finally {
+                  setPdfAction(null);
+                }
+              }}
+              className="flex-1 py-4 bg-[#222222] hover:bg-[#333333] text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {pdfAction === 'open' ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} />}
+              VIEW
+            </button>
+          </div>
           
           <button
             onClick={() => {
               const url = `https://wa.me/${invoice.contacts?.phone || ""}?text=${encodeURIComponent(
-                `Hello ${invoice.contacts?.name || "Customer"}, here is your invoice ${invoice.invoice_number} of total ₹${invoice.total_amount}. Due date: ${invoice.due_date || "Immediate"}. Thank you for your business!`
+                `Hello ${invoice.contacts?.name || "Customer"}, here is your invoice ${invoice.invoice_number} of total Rs.${invoice.total_amount}. Due date: ${invoice.due_date || "Immediate"}. Thank you for your business!`
               )}`;
               window.open(url, "_blank");
             }}
-            className="flex-1 py-4 bg-[#00AA55] hover:bg-[#008844] text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+            className="w-full py-4 bg-[#00AA55] hover:bg-[#008844] text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
           >
-            <MessageSquare size={14} /> WA SHARE
+            <MessageSquare size={14} /> SEND ON WHATSAPP
           </button>
         </div>
       </motion.div>

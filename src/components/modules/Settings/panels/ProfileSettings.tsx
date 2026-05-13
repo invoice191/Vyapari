@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Building2, Tag, Mail, Smartphone, MapPin, Globe, Clock, IndianRupee } from 'lucide-react';
 import { InputRow, SelectRow } from '../SettingRows';
 
@@ -58,9 +58,9 @@ export const ProfileSettings = ({ data, onChange }: { data: any; onChange: (key:
           value={data.currency || 'INR'} 
           onChange={(v) => onChange('currency', v)}
           options={[
-            { label: 'INR (₹) - Indian Rupee', value: 'INR' },
+            { label: 'INR (Rs.) - Indian Rupee', value: 'INR' },
             { label: 'USD ($) - US Dollar', value: 'USD' },
-            { label: 'EUR (€) - Euro', value: 'EUR' }
+            { label: 'EUR (-) - Euro', value: 'EUR' }
           ]}
         />
         <SelectRow 

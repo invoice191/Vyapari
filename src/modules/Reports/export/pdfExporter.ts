@@ -1,5 +1,6 @@
-import jsPDF from 'jspdf';
+﻿import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { downloadPDF } from '../../../utils/pdf/downloadPDF';
 
 export type PDFFormat = 'standard' | 'accountant' | 'brutalist';
 
@@ -177,7 +178,9 @@ export async function exportToPDF(
     });
   }
 
-  doc.save(`${reportTitle.toLowerCase().replace(/\s+/g, '_')}_export.pdf`);
+  // Safe Blob PDF download trigger to prevent extension corruption
+  const filename = `${reportTitle.toLowerCase().replace(/\s+/g, '_')}_export.pdf`;
+  downloadPDF(doc, filename);
 }
 
 function getRowValue(row: any, col: string, colIndex: number) {
@@ -185,5 +188,5 @@ function getRowValue(row: any, col: string, colIndex: number) {
   if (row[col.replace(/\s+/g, '_').toLowerCase()]) return row[col.replace(/\s+/g, '_').toLowerCase()];
   const keys = Object.keys(row);
   if (keys[colIndex]) return row[keys[colIndex]];
-  return '—';
+  return '-';
 }

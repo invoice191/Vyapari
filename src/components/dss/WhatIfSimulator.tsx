@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Play, RotateCcw, Save, Download, 
@@ -86,7 +86,7 @@ export default function WhatIfSimulator() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* ── Control Panel ── */}
+        {/* -- Control Panel -- */}
         <div className="lg:col-span-4 space-y-6">
            <Card className="p-8">
               <div className="flex justify-between items-center mb-8">
@@ -160,11 +160,11 @@ export default function WhatIfSimulator() {
            </Card>
         </div>
 
-        {/* ── Results Panel ── */}
+        {/* -- Results Panel -- */}
         <div className="lg:col-span-8 space-y-8">
            <div className="grid grid-cols-3 gap-6">
-              <ResultMetric label="Revenue Shift" value={result?.delta.revenueChange || 0} pct={result?.delta.revenueChangePct || 0} unit="₹" />
-              <ResultMetric label="Profit Delta" value={result?.delta.profitChange || 0} pct={result?.delta.profitChangePct || 0} unit="₹" />
+              <ResultMetric label="Revenue Shift" value={result?.delta.revenueChange || 0} pct={result?.delta.revenueChangePct || 0} unit="Rs." />
+              <ResultMetric label="Profit Delta" value={result?.delta.profitChange || 0} pct={result?.delta.profitChangePct || 0} unit="Rs." />
               <ResultMetric label="Strategic ROI" value={result?.delta.roi || 0} pct={0} unit="x" hidePct />
            </div>
 
@@ -191,7 +191,7 @@ export default function WhatIfSimulator() {
                           axisLine={false} 
                           tickLine={false} 
                           tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }} 
-                          tickFormatter={(v) => `₹${(v/1000).toFixed(0)}K`}
+                          tickFormatter={(v) => `Rs.${(v/1000).toFixed(0)}K`}
                        />
                        <Tooltip 
                           cursor={{ fill: '#f8fafc' }}
@@ -202,10 +202,10 @@ export default function WhatIfSimulator() {
                                   <div className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-2">{payload[0].payload.month}</div>
                                   <div className="space-y-1">
                                     <div className="text-xs font-bold text-white flex justify-between gap-8">
-                                      Baseline: <span className="text-slate-400">₹{payload[0].value?.toLocaleString()}</span>
+                                      Baseline: <span className="text-slate-400">Rs.{payload[0].value?.toLocaleString()}</span>
                                     </div>
                                     <div className="text-xs font-bold text-indigo-400 flex justify-between gap-8">
-                                      Simulated: <span>₹{payload[1].value?.toLocaleString()}</span>
+                                      Simulated: <span>Rs.{payload[1].value?.toLocaleString()}</span>
                                     </div>
                                   </div>
                                 </div>
@@ -252,7 +252,7 @@ export default function WhatIfSimulator() {
             data={{
               ...result,
               summary: {
-                headline: `Projecting ₹${result.delta.revenueChange.toLocaleString()} revenue shift with ${result.delta.roi}x ROI.`,
+                headline: `Projecting Rs.${result.delta.revenueChange.toLocaleString()} revenue shift with ${result.delta.roi}x ROI.`,
                 overall_confidence: 94,
                 potential_revenue_change_percent: result.delta.revenueChangePct,
                 potential_profit_change_percent: result.delta.profitChangePct
@@ -305,7 +305,7 @@ function ResultMetric({ label, value, pct, unit, hidePct = false }: { label: str
        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">{label}</div>
        <div className="flex items-end gap-3 mb-2">
           <div className={`text-4xl font-black tracking-tighter ${positive ? 'text-slate-900' : 'text-rose-600'}`}>
-             {unit === '₹' ? '₹' : ''}{(Math.abs(value)/1000).toFixed(1)}K{unit === 'x' ? 'x' : ''}
+             {unit === 'Rs.' ? 'Rs.' : ''}{(Math.abs(value)/1000).toFixed(1)}K{unit === 'x' ? 'x' : ''}
           </div>
           {!hidePct && (
             <div className={`text-xs font-black mb-1.5 flex items-center gap-1 ${positive ? 'text-emerald-500' : 'text-rose-500'}`}>

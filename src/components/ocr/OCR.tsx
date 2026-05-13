@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { LocalOCRService } from "../../services/ocr/LocalOCRService";
+import { reconciliationService } from "../../services/reconciliationService";
 
 const SAMPLES = {
   RETAIL: {
@@ -144,7 +145,7 @@ export default function OCR() {
           status: "Processing",
           confidence: null as number | null,
           vendor: "Neural Scanning...",
-          amount: "—"
+          amount: "-"
         };
         setQueue(prev => [newItem, ...prev]);
 
@@ -170,7 +171,7 @@ export default function OCR() {
             id: newItem.id,
             status: "Completed", 
             vendor: data.vendor, 
-            amount: `₹${data.total_amount}`, 
+            amount: `Rs.${data.total_amount}`, 
             confidence: data.confidence 
           };
 
@@ -196,7 +197,7 @@ export default function OCR() {
             id: newItem.id,
             status: "Completed",
             vendor: localData.vendor,
-            amount: `₹${localData.total_amount}`,
+            amount: `Rs.${localData.total_amount}`,
             confidence: localData.confidence
           };
 
@@ -298,6 +299,26 @@ export default function OCR() {
         if (itemsErr) throw itemsErr;
       }
 
+      // 4. AUTO-MATCH & RECONCILE PURCHASE ORDER (VYAPARI 2.0 CORE AI)
+      try {
+        const matchingPO = await reconciliationService.findMatchingPurchaseOrder(
+          supabase,
+          profile.business_id,
+          contactId,
+          selected.total_amount || 0
+        );
+        
+        if (matchingPO) {
+          await supabase
+            .from('purchase_orders')
+            .update({ status: 'received' })
+            .eq('id', matchingPO.id);
+          toast(`🔗 Auto-matched & Closed Purchase Order ${matchingPO.po_number}!`, "success");
+        }
+      } catch (e) {
+        console.warn("PO Auto-matching step passed without execution.", e);
+      }
+
       toast("Invoice saved to ledger successfully!", "success");
       setQueue(prev => prev.map(item => 
         item.id === selected.id ? { ...item, status: "Saved" } : item
@@ -322,7 +343,7 @@ export default function OCR() {
         status: "Completed",
         confidence: data.confidence,
         vendor: data.vendor,
-        amount: `₹${data.total_amount}`
+        amount: `Rs.${data.total_amount}`
       };
       setQueue(prev => [newItem, ...prev]);
       setEngine("SIMULATED");
@@ -337,10 +358,10 @@ export default function OCR() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: "Total Processed", value: stats.total.toLocaleString(), icon: "📄", color: '#FF6B35' },
-          { label: "Avg Confidence", value: `${stats.avgConfidence.toFixed(1)}%`, icon: "🎯", color: '#10B981' },
-          { label: "Pending Review", value: stats.pending.toString(), icon: "⏳", color: '#F59E0B' },
-          { label: "Failed", value: stats.failed.toString(), icon: "❌", color: '#EF4444' },
+          { label: "Total Processed", value: stats.total.toLocaleString(), icon: "--", color: '#FF6B35' },
+          { label: "Avg Confidence", value: `${stats.avgConfidence.toFixed(1)}%`, icon: "--", color: '#10B981' },
+          { label: "Pending Review", value: stats.pending.toString(), icon: "-", color: '#F59E0B' },
+          { label: "Failed", value: stats.failed.toString(), icon: "-", color: '#EF4444' },
         ].map(s => (
           <div key={s.label} className="brutal-card bg-white flex justify-between items-center group hover:bg-ink hover:text-white transition-colors">
             <div>
@@ -365,7 +386,7 @@ export default function OCR() {
                 ${dragging ? 'border-neon bg-neon/10' : 'border-ink/10 bg-white/30 hover:border-ink/30'}
               `}
             >
-              <div className="text-6xl mb-6">📁</div>
+              <div className="text-6xl mb-6">--</div>
               <h3 className="text-xl font-black tracking-tight mb-2 uppercase">Drop_Invoices_Here</h3>
               <p className="text-xs font-bold text-ink/40 uppercase tracking-widest mb-8">Support for PDF, JPG, PNG (Max 10MB)</p>
               <input 
@@ -436,7 +457,7 @@ export default function OCR() {
                     `}
                   >
                     <span className="text-2xl">
-                      {item.status === "Completed" ? "✅" : item.status === "Processing" ? "⚙️" : item.status === "Failed" ? "❌" : "⏳"}
+                      {item.status === "Completed" ? "-" : item.status === "Processing" ? "--" : item.status === "Failed" ? "-" : "-"}
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="font-black text-xs uppercase tracking-widest truncate">{item.name}</div>
@@ -460,7 +481,7 @@ export default function OCR() {
                     disabled={currentQueuePage === 1}
                     className="px-2.5 py-1 border-2 border-ink bg-white hover:bg-ink hover:text-white disabled:opacity-40 font-black text-[8px] uppercase tracking-wider transition-all flex items-center gap-1 active:scale-95"
                   >
-                    ◀
+                    -
                   </button>
                   <div className="flex items-center px-1 text-[9px] font-black text-ink font-mono">
                     {currentQueuePage} / {totalQueuePages}
@@ -470,7 +491,7 @@ export default function OCR() {
                     disabled={currentQueuePage === totalQueuePages}
                     className="px-2.5 py-1 border-2 border-ink bg-white hover:bg-ink hover:text-white disabled:opacity-40 font-black text-[8px] uppercase tracking-wider transition-all flex items-center gap-1 active:scale-95"
                   >
-                    ▶
+                    -
                   </button>
                 </div>
               </div>
@@ -536,7 +557,7 @@ export default function OCR() {
                 { id: 'vendor', label: "Vendor Entity", value: selected?.vendor, icon: <Building2 size={14} /> },
                 { id: 'invoice_no', label: "Document ID", value: selected?.invoice_no, icon: <FileText size={14} /> },
                 { id: 'date', label: "Issue Date", value: selected?.date, icon: <Zap size={14} /> },
-                { id: 'total', label: "Total Payable", value: `₹${(selected?.total_amount || 0).toLocaleString("en-IN")}`, icon: <ShieldCheck size={14} />, isPrice: true },
+                { id: 'total', label: "Total Payable", value: `Rs.${(selected?.total_amount || 0).toLocaleString("en-IN")}`, icon: <ShieldCheck size={14} />, isPrice: true },
               ].map(f => (
                 <div key={f.id} className="bg-white/40 border border-white/60 p-4 rounded-2xl hover:border-ink/20 hover:bg-white transition-all group">
                   <div className="flex items-center gap-2 mb-2">
@@ -587,9 +608,9 @@ export default function OCR() {
                         </td>
                         <td className="p-4 text-xs font-black text-center text-ink/40">{item.quantity}</td>
                         <td className="p-4 text-right">
-                          <div className="text-xs font-black text-ink">₹{(item.total || 0).toLocaleString("en-IN")}</div>
+                          <div className="text-xs font-black text-ink">Rs.{(item.total || 0).toLocaleString("en-IN")}</div>
                           {item.last_purchase_price && (
-                            <div className="text-[9px] font-bold text-ink/30 italic">Prev: ₹{item.last_purchase_price}</div>
+                            <div className="text-[9px] font-bold text-ink/30 italic">Prev: Rs.{item.last_purchase_price}</div>
                           )}
                         </td>
                       </tr>
@@ -599,7 +620,7 @@ export default function OCR() {
                         <td colSpan={3} className="p-8 text-center">
                           {selected?.rawGeminiDiagnostics ? (
                             <div className="flex flex-col gap-3 bg-slate-900 rounded-2xl p-4 border border-slate-800">
-                              <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">⚠️ Cognition returned empty dataset</span>
+                              <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">-- Cognition returned empty dataset</span>
                               <textarea 
                                 readOnly
                                 className="w-full h-24 bg-slate-950 text-emerald-400 font-mono text-[10px] p-3 rounded-xl border border-slate-800 resize-none"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Bell, 
@@ -95,7 +95,7 @@ export const NotificationCenter: React.FC<{ isOpen: boolean; onClose: () => void
           combined.push({
             id: `inv-${idx}-${Date.now()}`,
             title: 'Payment Overdue',
-            message: `Invoice #${inv.invoice_number} for ${inv.customer || 'Unknown'} (₹${Number(inv.total_amount).toLocaleString()}) is overdue.`,
+            message: `Invoice #${inv.invoice_number} for ${inv.customer || 'Unknown'} (Rs.${Number(inv.total_amount).toLocaleString()}) is overdue.`,
             type: 'warning',
             timestamp: new Date(inv.due_date || Date.now()),
             read: false,

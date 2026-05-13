@@ -6,7 +6,7 @@ import {
   Skull, Target, Crosshair, Radio, Signal,
   MessageSquare, ArrowRight, RefreshCw, Loader2
 } from 'lucide-react';
-import { useGlobalData } from '../../../contexts/DataContext';
+import { useGlobalData } from '../../../context/DataContext';
 import { warRoomService, TacticalAlert } from '../../../services/dss/warRoomService';
 import { Badge } from '../../common/UI';
 
@@ -36,7 +36,7 @@ export const WarRoomEngine: React.FC = () => {
       setMetrics(results.metrics);
       setLoading(false);
       setScanning(false);
-    }, 1500);
+    }, 200);
   };
 
   return (
@@ -51,7 +51,7 @@ export const WarRoomEngine: React.FC = () => {
               <h2 className="text-2xl font-black text-white tracking-tighter uppercase italic flex items-center gap-3">
                  Strategic War Room
               </h2>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] mt-1 italic">Tactical Command & Control • Live Signal Monitoring</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] mt-1 italic">Tactical Command & Control - Live Signal Monitoring</p>
            </div>
         </div>
         

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Bell, MessageSquare, Mail, Zap, Calendar, Smartphone } from 'lucide-react';
 import { ToggleRow, SelectRow } from '../SettingRows';
 import { TelegramSettings } from './TelegramSettings';

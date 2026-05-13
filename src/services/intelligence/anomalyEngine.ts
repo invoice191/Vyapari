@@ -1,4 +1,4 @@
-import { supabase } from "../../lib/supabase";
+﻿import { supabase } from "../../lib/supabase";
 
 export interface AnomalyEvent {
   id: string;
@@ -55,7 +55,7 @@ export const anomalyEngine = {
             id: `price-${item.id}`,
             type: 'override',
             severity: 'medium',
-            description: `Manual price override: Billed at ₹${billedPrice} (Standard: ₹${standardPrice})`,
+            description: `Manual price override: Billed at Rs.${billedPrice} (Standard: Rs.${standardPrice})`,
             metadata: { invoiceId: item.invoice_id },
             timestamp: item.invoices.created_at,
             resolved: false

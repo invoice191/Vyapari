@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Users, Zap, Award, History, ArrowRight, HelpCircle, Info, Lightbulb, Trophy, Target, MessageSquare, ThumbsUp, ThumbsDown, ChevronDown, Package, Calendar, IndianRupee, Loader2 } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { supabase } from '../../../lib/supabase';
@@ -66,7 +66,7 @@ export const RFMEngine: React.FC = () => {
           lastProduct = firstItem.products?.name || 'Unnamed Product';
         }
 
-        // ── LOGICAL SEGMENTATION ENGINE ──
+        // -- LOGICAL SEGMENTATION ENGINE --
         // Applies real logic + ensures visual dispersion for beautiful demonstration
         let segment = 'Regulars';
         if (totalValue > 8000 && invoices.length > 2) {
@@ -218,7 +218,7 @@ export const RFMEngine: React.FC = () => {
                          </div>
                       </td>
                       <td className="p-5 text-right font-bold text-indigo-400 text-sm italic">
-                         ₹{customer.totalValue.toLocaleString()}
+                         Rs.{customer.totalValue.toLocaleString()}
                       </td>
                       <td className="p-5 text-right">
                         <button className="bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-500 transition-all shadow-md active:scale-95">

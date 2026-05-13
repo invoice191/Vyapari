@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+﻿import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
 export interface DuplicateResult {
@@ -28,7 +28,7 @@ export function useDuplicateCheck() {
       });
       if (!error) setDuplicate(data?.[0] ?? null);
     } catch {
-      // silent fail — duplicate check is non-blocking
+      // silent fail - duplicate check is non-blocking
     }
   }, []);
 

@@ -1,4 +1,4 @@
-import { Product, Invoice } from "../types";
+﻿import { Product, Invoice } from "../types";
 
 export interface TacticalAlert {
   id: string;
@@ -46,7 +46,7 @@ export const warRoomService = {
         id: `rev-vel-${now.getTime()}`,
         severity: 'CRITICAL',
         title: 'Revenue Velocity Drop',
-        body: `Current hour sales (₹${revToday.toLocaleString()}) are ${( ((revLastWeek - revToday) / revLastWeek) * 100).toFixed(0)}% below last week's baseline.`,
+        body: `Current hour sales (Rs.${revToday.toLocaleString()}) are ${( ((revLastWeek - revToday) / revLastWeek) * 100).toFixed(0)}% below last week's baseline.`,
         impact: 'High Revenue Risk',
         action: 'Inspect Storefront',
         module: 'Sales',

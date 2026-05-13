@@ -1,10 +1,10 @@
-import React from 'react';
+﻿import React from 'react';
 import { Calendar, Trash2, Eye, GitCompare, Download } from 'lucide-react';
 
 export const ScenarioHistory: React.FC = () => {
   const history = [
-    { id: 1, name: 'Price Increase Scenario', date: '12 May 2026', risk: 'LOW', impact: '+₹12,800', products: 2 },
-    { id: 2, name: 'Festival Season Scenario', date: '10 May 2026', risk: 'LOW', impact: '+₹28,400', products: 5 },
+    { id: 1, name: 'Price Increase Scenario', date: '12 May 2026', risk: 'LOW', impact: '+Rs.12,800', products: 2 },
+    { id: 2, name: 'Festival Season Scenario', date: '10 May 2026', risk: 'LOW', impact: '+Rs.28,400', products: 5 },
   ];
 
   return (
@@ -23,7 +23,7 @@ export const ScenarioHistory: React.FC = () => {
               <div>
                 <h4 className="text-white font-bold text-lg mb-1">{scn.name}</h4>
                 <p className="text-xs text-slate-500 uppercase font-black tracking-widest">
-                  {scn.date} • {scn.products} PRODUCTS
+                  {scn.date} - {scn.products} PRODUCTS
                 </p>
               </div>
               <span className={`px-3 py-1 rounded-full text-[10px] font-black tracking-widest ${scn.risk === 'LOW' ? 'bg-neon/10 text-neon' : 'bg-orange-500/10 text-orange-400'}`}>

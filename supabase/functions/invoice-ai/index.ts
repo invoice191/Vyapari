@@ -47,6 +47,54 @@ serve(async (req) => {
           "recommendation": "string"
         }
       `;
+    } else if (action === "fraud-detection") {
+      prompt = `
+        Analyze this invoice for potential fraud or unusual patterns.
+        Check for:
+        1. Duplicate amounts/customers in short time.
+        2. Unusual product combinations.
+        3. Round number amounts (e.g. ₹10,000).
+        4. Unusually large amount vs history.
+        
+        Invoice: ${JSON.stringify(payload.invoice)}
+        Recent Context: ${JSON.stringify(payload.recent)}
+        
+        Expected JSON:
+        {
+          "is_suspicious": boolean,
+          "fraud_score": number (0-1),
+          "flags": ["string"],
+          "recommendation": "string"
+        }
+      `;
+    } else if (action === "payment-prediction") {
+      prompt = `
+        Predict the probability of this invoice being paid on time.
+        
+        Invoice: ${JSON.stringify(payload.invoice)}
+        Customer Behavior: ${JSON.stringify(payload.behavior)}
+        
+        Expected JSON:
+        {
+          "probability": number (0-1),
+          "expected_days": number,
+          "insight": "string"
+        }
+      `;
+    } else if (action === "anomaly-detection") {
+      prompt = `
+        Flag price or quantity anomalies in this invoice.
+        
+        Items: ${JSON.stringify(payload.items)}
+        Usual Prices: ${JSON.stringify(payload.usual_prices)}
+        
+        Expected JSON:
+        {
+          "anomalies": [
+            { "item": "string", "type": "price|quantity", "message": "string" }
+          ]
+        }
+      `;
     } else {
       throw new Error("Invalid action");
     }

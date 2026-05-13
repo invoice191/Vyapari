@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { analyticsService } from "../../services/analyticsService";
 import { Card, SectionHeader, ActionBtn, KPICard, Badge } from "../common/UI";
 import { useAuth } from "../../hooks/useAuth";
@@ -77,7 +77,7 @@ export default function PredictionHub() {
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></div>
                   <span className="text-[10px] font-bold text-white uppercase tracking-tight">{p.name}</span>
                 </div>
-                <span className="text-xs font-black text-white">₹{(p.value / 1000).toFixed(1)}K</span>
+                <span className="text-xs font-black text-white">Rs.{(p.value / 1000).toFixed(1)}K</span>
               </div>
             ))}
           </div>
@@ -248,7 +248,7 @@ export default function PredictionHub() {
                     axisLine={{ stroke: '#E2E8F0', strokeWidth: 1 }}
                     tickLine={{ stroke: '#E2E8F0' }}
                     tick={{ fontSize: 10, fontWeight: 900, fill: '#1E293B' }} 
-                    tickFormatter={v => `₹${v/1000}K`} 
+                    tickFormatter={v => `Rs.${v/1000}K`} 
                   />
                   <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(159, 239, 0, 0.2)', strokeWidth: 2 }} />
                   <Legend 
@@ -286,7 +286,7 @@ export default function PredictionHub() {
                    <Zap className="text-neon" size={16} />
                 </div>
                 <div className="text-4xl font-black tracking-tighter text-slate-900 group-hover:scale-105 transition-transform duration-500 origin-left">
-                  +₹{((projectedData[projectedData.length-1]?.optimized - projectedData[projectedData.length-1]?.revenue) || 0).toLocaleString()}
+                  +Rs.{((projectedData[projectedData.length-1]?.optimized - projectedData[projectedData.length-1]?.revenue) || 0).toLocaleString()}
                 </div>
                 <div className="text-[10px] font-black uppercase text-slate-400 mt-2 tracking-widest">UNREALIZED_OPPORTUNITY</div>
               </div>
@@ -305,8 +305,8 @@ export default function PredictionHub() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-             <KPICard title="Revenue Velocity" value="₹1.2M" trend="+14.2%" icon={<Activity size={18}/>} />
-             <KPICard title="Projected LTV" value="₹42K" trend="+8.5%" icon={<Target size={18}/>} />
+             <KPICard title="Revenue Velocity" value="Rs.1.2M" trend="+14.2%" icon={<Activity size={18}/>} />
+             <KPICard title="Projected LTV" value="Rs.42K" trend="+8.5%" icon={<Target size={18}/>} />
              <KPICard title="Risk Factor" value="Low" trend="Stable" icon={<ShieldAlert size={18}/>} />
           </div>
         </div>

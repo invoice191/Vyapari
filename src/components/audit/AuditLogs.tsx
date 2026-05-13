@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import { auditService } from "../../services/auditService";
 import { motion, AnimatePresence } from "motion/react";
 import { 
@@ -209,7 +209,7 @@ export default function AuditLogs() {
         {/* Pagination */}
         <div className="flex justify-between items-center mt-10 px-4">
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-            Page {page} of {Math.ceil(totalCount / pageSize)} • {totalCount} Total Events
+            Page {page} of {Math.ceil(totalCount / pageSize)} - {totalCount} Total Events
           </div>
           <div className="flex gap-4">
             <button 

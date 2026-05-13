@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'motion/react';
 import { Zap, AlertCircle, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { Theme } from '../PresentationMode';
@@ -57,7 +57,7 @@ export default function RecommendationsSlide({ data, theme }: SlideProps) {
             <div className="mt-auto space-y-4">
               <div className="pt-4 border-t border-white/5 flex justify-between items-center">
                  <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Expected Impact</span>
-                 <span className="text-sm font-black text-emerald-400 italic">₹{rec.rupee_impact?.toLocaleString() || 'High'}</span>
+                 <span className="text-sm font-black text-emerald-400 italic">Rs.{rec.rupee_impact?.toLocaleString() || 'High'}</span>
               </div>
               <button className="w-full py-3 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 group-hover:bg-indigo-500 transition-all">
                 Implement Now <ArrowRight size={12} />

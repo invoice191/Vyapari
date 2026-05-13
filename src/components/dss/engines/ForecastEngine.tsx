@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { TrendingUp, TrendingDown, Calendar, AlertTriangle, Info, Lightbulb, Zap, Rocket, Filter, Sun, Cloud, Music, ShoppingBag, Loader2, Sparkles, Target } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
@@ -69,7 +69,7 @@ export const ForecastEngine: React.FC = () => {
             <div className="space-y-4 relative z-10">
                <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                   <span>Standard Climate</span>
-                  <span className="text-amber-400">Extreme Heatwave (+42°C)</span>
+                  <span className="text-amber-400">Extreme Heatwave (+42-C)</span>
                </div>
                <input 
                  type="range" 
@@ -107,7 +107,7 @@ export const ForecastEngine: React.FC = () => {
                  className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-rose-400"
                />
                <p className="text-[10px] text-slate-500 italic font-medium">
-                  Anticipating <span className="text-white font-bold">↑{festivalImpact / 2}%</span> surge in dairy and snacks.
+                  Anticipating <span className="text-white font-bold">-{festivalImpact / 2}%</span> surge in dairy and snacks.
                </p>
             </div>
          </div>

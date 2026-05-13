@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'motion/react';
 import { CreditCard, Zap, FileText, Cpu, PieChart, CheckCircle2 } from 'lucide-react';
 import { BadgeRow } from '../SettingRows';
@@ -44,11 +44,11 @@ export const BillingSettings = ({ plan }: { plan: any }) => {
 
         <div className="glass-card !bg-white/[0.02] !border-white/[0.05] !p-8">
           <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-8">Next Settlement</h4>
-          <div className="text-5xl font-black text-white tracking-tighter font-display">₹14,999</div>
+          <div className="text-5xl font-black text-white tracking-tighter font-display">Rs.14,999</div>
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-4">Scheduled for Jan 15, 2026</p>
           <div className="mt-10 pt-6 border-t border-white/5">
             <button className="text-[10px] font-black text-brand uppercase tracking-widest hover:text-neon transition-colors">
-              Download Latest Ledger →
+              Download Latest Ledger -
             </button>
           </div>
         </div>

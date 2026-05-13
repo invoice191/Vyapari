@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   TrendingUp, ShieldCheck, Landmark, FileText, 
@@ -57,7 +57,7 @@ export default function BankerStrategicView({ businessId = "default_business" }:
 
   return (
     <div className="space-y-12 pb-20">
-      {/* ── Futuristic Strategic HUD Header ── */}
+      {/* -- Futuristic Strategic HUD Header -- */}
       <div className="relative overflow-hidden bg-slate-950 rounded-2xl p-8 border border-white/5 shadow-2xl">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4" />
         
@@ -143,7 +143,7 @@ export default function BankerStrategicView({ businessId = "default_business" }:
             exit={{ opacity: 0, y: -10 }}
             className="grid grid-cols-1 lg:grid-cols-12 gap-10"
           >
-            {/* ── Key Ratios Grid ── */}
+            {/* -- Key Ratios Grid -- */}
             <div className="lg:col-span-8 space-y-10">
               <SectionHeader title="Institutional Underwriting Ratios" subtitle="Live health metrics checked by creditors" />
               
@@ -195,7 +195,7 @@ export default function BankerStrategicView({ businessId = "default_business" }:
                           </div>
                           <div>
                             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Outstanding Balance</div>
-                            <div className="text-lg font-black text-slate-900">₹{risk.amount.toLocaleString()}</div>
+                            <div className="text-lg font-black text-slate-900">Rs.{risk.amount.toLocaleString()}</div>
                           </div>
                         </div>
                       </div>
@@ -205,7 +205,7 @@ export default function BankerStrategicView({ businessId = "default_business" }:
               </div>
             </div>
 
-            {/* ── Sidebar Stats ── */}
+            {/* -- Sidebar Stats -- */}
             <div className="lg:col-span-4 space-y-8">
               <Card className="!bg-slate-950 !border-white/5 !p-8 relative overflow-hidden group">
                 <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
@@ -215,13 +215,13 @@ export default function BankerStrategicView({ businessId = "default_business" }:
                 </div>
                 <div className="space-y-6 text-sm text-slate-300 leading-relaxed font-medium">
                   <p>
-                    • At your current burn rate, your business cash runway is approximately <strong className="text-emerald-400">{metrics.cashRunway.months.toFixed(1)} months</strong>.
+                    - At your current burn rate, your business cash runway is approximately <strong className="text-emerald-400">{metrics.cashRunway.months.toFixed(1)} months</strong>.
                   </p>
                   <p>
-                    • Maintaining a Quick Ratio of over <strong className="text-emerald-400">1.0</strong> puts you in the top 15% of evaluated SMEs in your tier.
+                    - Maintaining a Quick Ratio of over <strong className="text-emerald-400">1.0</strong> puts you in the top 15% of evaluated SMEs in your tier.
                   </p>
                   <p>
-                    • Suggested actions: Resolve outstanding high-risk receivables to optimize liquidity further.
+                    - Suggested actions: Resolve outstanding high-risk receivables to optimize liquidity further.
                   </p>
                 </div>
               </Card>
@@ -303,8 +303,8 @@ export default function BankerStrategicView({ businessId = "default_business" }:
                   </div>
                   <div className="space-y-4">
                     <DetailRow label="Qualified for Credit" value={cmaReport.bankingReadiness.qualified ? 'Yes' : 'No'} />
-                    <DetailRow label="Suggested Loan Limit" value={`₹${cmaReport.bankingReadiness.suggestedLoanLimit.toLocaleString()}`} />
-                    <DetailRow label="Estimated QoQ Revenue" value={`₹${cmaReport.projections.nextQuarterRevenue.toLocaleString()}`} />
+                    <DetailRow label="Suggested Loan Limit" value={`Rs.${cmaReport.bankingReadiness.suggestedLoanLimit.toLocaleString()}`} />
+                    <DetailRow label="Estimated QoQ Revenue" value={`Rs.${cmaReport.projections.nextQuarterRevenue.toLocaleString()}`} />
                   </div>
                 </Card>
               </div>

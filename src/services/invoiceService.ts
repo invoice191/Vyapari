@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase";
+﻿import { supabase } from "../lib/supabase";
 import { auditService } from "./auditService";
 
 export const invoiceService = {
@@ -223,5 +223,36 @@ export const invoiceService = {
       console.error("Risk Scoring Failure:", err);
       throw err;
     }
+  },
+
+  recordPayment: async (businessId: string, invoiceId: string, amount: number, method: string, reference?: string) => {
+    const { data: inv } = await supabase.from('invoices').select('amount_paid, total_amount').eq('id', invoiceId).single();
+    if (!inv) throw new Error("Invoice not found");
+
+    const newPaid = Number(inv.amount_paid || 0) + Number(amount);
+    const newRemaining = Number(inv.total_amount) - newPaid;
+    const newStatus = newRemaining <= 0 ? 'paid' : 'partial';
+
+    const { error: payError } = await supabase.from('invoice_payments').insert({
+      business_id: businessId,
+      invoice_id: invoiceId,
+      amount: amount,
+      payment_mode: method,
+      payment_reference: reference,
+      paid_at: new Date().toISOString()
+    });
+
+    if (payError) throw payError;
+
+    const { error: invError } = await supabase.from('invoices').update({
+      amount_paid: newPaid,
+      amount_remaining: newRemaining,
+      status: newStatus,
+      paid_at: newStatus === 'paid' ? new Date().toISOString() : null
+    }).eq('id', invoiceId);
+
+    if (invError) throw invError;
+    
+    return { success: true, newStatus };
   }
 };

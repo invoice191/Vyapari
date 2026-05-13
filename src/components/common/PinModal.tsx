@@ -17,12 +17,12 @@ export const PinModal = ({ isOpen, onClose, onConfirm, title = "Confirm Identity
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xl">
+      <div className="fixed inset-0 z-[1000] flex items-start justify-center p-4 bg-slate-900/60 backdrop-blur-xl overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="bg-white rounded-[3rem] p-12 max-w-md w-full shadow-2xl relative overflow-hidden"
+          className="bg-white rounded-[3rem] p-12 max-w-md w-full shadow-2xl relative overflow-hidden my-auto"
         >
           <div className="absolute top-0 right-0 w-40 h-40 bg-neon/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
           

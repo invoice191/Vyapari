@@ -1,4 +1,5 @@
-import jsPDF from 'jspdf';
+﻿import jsPDF from 'jspdf';
+import { downloadPDF } from '../../../../../utils/pdf/downloadPDF';
 
 interface SimplePDFProps {
   businessName: string;
@@ -78,12 +79,6 @@ export async function generateSimplePDF({
   drawFooter();
 
   // Safe Blob PDF download trigger
-  const pdfBuffer = doc.output('arraybuffer');
-  const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url; link.download = `${reportTitle.replace(/\s+/g, '_')}_Summary.pdf`;
-  link.style.display = 'none';
-  document.body.appendChild(link); link.click(); document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const filename = `${reportTitle.replace(/\s+/g, '_')}_Summary.pdf`;
+  downloadPDF(doc, filename);
 }

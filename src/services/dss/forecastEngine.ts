@@ -2,7 +2,7 @@ import { DSSRecommendation, EngineInput, EngineOutput, ForecastResult } from './
 import rules from './rules.json';
 
 /**
- * 6. FORECAST ENGINE — Realistic Revenue & Stock Projections
+ * 6. FORECAST ENGINE - Realistic Revenue & Stock Projections
  */
 export function runForecastEngine(input: EngineInput): EngineOutput {
   const start = Date.now();
@@ -90,7 +90,7 @@ export function runForecastEngine(input: EngineInput): EngineOutput {
       impactEstimate: {
         metric: 'Projected Growth',
         value: Math.round(trend * 3),
-        unit: '₹',
+        unit: 'Rs.',
         direction: 'positive',
       },
       action: {
@@ -99,8 +99,8 @@ export function runForecastEngine(input: EngineInput): EngineOutput {
         deepLink: '/analytics',
       },
       evidence: [
-        `Avg Monthly Revenue: ₹${Math.round(avg).toLocaleString()}`,
-        `Current Trend: +₹${Math.round(trend).toLocaleString()}/mo`,
+        `Avg Monthly Revenue: Rs.${Math.round(avg).toLocaleString()}`,
+        `Current Trend: +Rs.${Math.round(trend).toLocaleString()}/mo`,
         `Festive Boost: ${rules.forecast.festivalBoostFactor}x included`
       ],
       createdAt: new Date(),
@@ -108,8 +108,24 @@ export function runForecastEngine(input: EngineInput): EngineOutput {
     });
   }
 
-  metrics.push({ label: 'Next Mo. Forecast', value: months.find(m => m.isFuture)?.actual || 0, unit: '₹' });
-  metrics.push({ label: 'Forecast Confidence', value: 70, unit: '%' });
+  // Compute forecast confidence dynamically based on historical data density
+  const totalHistoryMonths = Math.max(1, months.filter(m => !m.isFuture).length);
+  const totalTransactions = input.invoices.length;
+  
+  // Start with base confidence: more records = more reliability
+  let baseConfidence = 50; 
+  if (totalTransactions > 50) baseConfidence += 25;
+  else if (totalTransactions > 15) baseConfidence += 15;
+  
+  // Data span multiplier (seasonal capture reliability)
+  if (totalHistoryMonths > 6) baseConfidence += 15;
+  else if (totalHistoryMonths > 3) baseConfidence += 8;
+
+  // Clamp statistical confidence between 45% and 94%
+  const calculatedConfidence = Math.min(94, Math.max(45, baseConfidence));
+
+  metrics.push({ label: 'Next Mo. Forecast', value: months.find(m => m.isFuture)?.actual || 0, unit: 'Rs.' });
+  metrics.push({ label: 'Forecast Confidence', value: calculatedConfidence, unit: '%' });
 
   return {
     engine: 'forecast',

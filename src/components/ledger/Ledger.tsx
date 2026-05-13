@@ -4,16 +4,17 @@ import { rfmService } from "../../services/rfmService";
 import { Card, SectionHeader, Badge, KPICard, ActionBtn, SkeletonCard } from "../common/UI";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../../hooks/useAuth";
-import { Search, Plus, Wallet, ArrowUpRight, ArrowDownLeft, Calendar, History } from "lucide-react";
+import { Search, Plus, Wallet, ArrowUpRight, ArrowDownLeft, Calendar, History, UploadCloud, Loader2 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import LedgerEntryModal from "./LedgerEntryModal";
 
-import { useGlobalData } from "../../contexts/DataContext";
+import { useGlobalData } from "../../context/DataContext";
 
 export default function Ledger() {
   const { profile } = useAuth();
   const { ledger: entries, loading, refresh } = useGlobalData();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [rfmLabels, setRfmLabels] = useState<Record<string, string>>({});
@@ -46,6 +47,43 @@ export default function Ledger() {
     };
   }, []);
 
+  const handleImportCSV = async (e: any) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const parsed = await import("../../services/reconciliationService").then(m => m.reconciliationService.parseBankCSV(text));
+      
+      if (!parsed || parsed.length === 0) {
+        alert("No valid transactions found in CSV.");
+        return;
+      }
+
+      const toInsert = parsed.map((t: any) => ({
+        business_id: profile?.business_id,
+        entity_name: "CSV Import",
+        description: t.description,
+        type: t.type,
+        amount: t.amount,
+        date: new Date(t.date).toISOString() || new Date().toISOString()
+      }));
+
+      const { error } = await supabase.from('ledger_entries').insert(toInsert);
+      if (error) throw error;
+      
+      alert(`Successfully imported ${toInsert.length} transactions.`);
+      refresh('ledger_entries');
+    } catch (err: any) {
+      console.error(err);
+      alert("Failed to parse CSV: " + err.message);
+    } finally {
+      setIsImporting(false);
+      e.target.value = null;
+    }
+  };
+
   const filtered = entries.filter(e => {
     const contactName = e.contacts?.name?.toLowerCase() || "";
     const entityName = e.entity_name?.toLowerCase() || "";
@@ -68,7 +106,7 @@ export default function Ledger() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <KPICard 
           title="Cash Liquidity" 
-          value={`₹${(cashOnHand / 1000).toFixed(1)}K`} 
+          value={`Rs.${(cashOnHand / 1000).toFixed(1)}K`} 
           change={12.5} 
           changeLabel="net flow" 
           icon={<Wallet />} 
@@ -76,7 +114,7 @@ export default function Ledger() {
         />
         <KPICard 
           title="Pending Receivables" 
-          value={`₹${(pendingReceivables / 1000).toFixed(1)}K`} 
+          value={`Rs.${(pendingReceivables / 1000).toFixed(1)}K`} 
           change={-3.2} 
           changeLabel="settled" 
           icon={<History />} 
@@ -99,9 +137,23 @@ export default function Ledger() {
               onChange={e => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
-          <ActionBtn onClick={() => setIsModalOpen(true)} className="!px-10 !h-[62px]">
-            <Plus size={20} /> NEW ENTRY
-          </ActionBtn>
+          <div className="flex items-center gap-4">
+            <input 
+              type="file" 
+              id="csv-upload" 
+              accept=".csv" 
+              className="hidden" 
+              onChange={handleImportCSV} 
+              disabled={isImporting}
+            />
+            <label htmlFor="csv-upload" className="cursor-pointer flex items-center justify-center gap-2 px-6 h-[62px] rounded-2xl border-2 border-indigo-600/20 text-indigo-600 font-black text-[11px] uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-sm">
+              {isImporting ? <Loader2 size={20} className="animate-spin" /> : <UploadCloud size={20} />}
+              IMPORT CSV
+            </label>
+            <ActionBtn onClick={() => setIsModalOpen(true)} className="!px-10 !h-[62px]">
+              <Plus size={20} /> NEW ENTRY
+            </ActionBtn>
+          </div>
         </div>
 
         <div className="overflow-x-auto -mx-10">
@@ -170,7 +222,7 @@ export default function Ledger() {
                   </td>
                   <td className={`px-8 py-6 bg-white/40 group-hover:bg-white rounded-r-[2rem] text-right transition-colors`}>
                     <div className={`text-base font-black tracking-tighter ${entry.type === 'credit' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                       {entry.type === 'credit' ? '+' : '-'} ₹{entry.amount.toLocaleString("en-IN")}
+                       {entry.type === 'credit' ? '+' : '-'} Rs.{entry.amount.toLocaleString("en-IN")}
                     </div>
                   </td>
                 </motion.tr>
@@ -191,7 +243,7 @@ export default function Ledger() {
                 disabled={page === 1}
                 className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 rounded-xl font-black text-[9px] uppercase tracking-widest text-slate-600 transition-all flex items-center gap-1 active:scale-95"
               >
-                ◀ Previous
+                - Previous
               </button>
               <div className="flex items-center px-3 text-[10px] font-black text-slate-700 font-mono">
                 {page} / {totalPages}
@@ -201,7 +253,7 @@ export default function Ledger() {
                 disabled={page === totalPages}
                 className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 rounded-xl font-black text-[9px] uppercase tracking-widest text-slate-600 transition-all flex items-center gap-1 active:scale-95"
               >
-                Next ▶
+                Next -
               </button>
             </div>
           </div>

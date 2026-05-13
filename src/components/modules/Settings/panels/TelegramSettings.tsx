@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Send, Smartphone, Bell, CheckCircle2, Loader2, RefreshCw, XCircle, Trash2, Copy, Check, Monitor, ArrowRight } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import { toast } from 'sonner';
@@ -64,7 +64,7 @@ export const TelegramSettings = ({ data, onChange }: { data: any; onChange: (key
           setWaiting(false);
           setConnectCode(null);
           clearInterval(poll);
-          toast.success('Telegram Connected! 🎉');
+          toast.success('Telegram Connected! --');
         }
       }, 3000);
     }
@@ -213,7 +213,7 @@ export const TelegramSettings = ({ data, onChange }: { data: any; onChange: (key
               </div>
               <div>
                 <h3 className="text-xl font-black uppercase tracking-tight text-white font-display">Telegram Connected</h3>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">System operational • Real-time intelligence active</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">System operational - Real-time intelligence active</p>
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { DSSRecommendation, EngineInput, EngineOutput } from './types';
+﻿import { DSSRecommendation, EngineInput, EngineOutput } from './types';
 import rules from './rules.json';
 
 /**
@@ -49,7 +49,7 @@ export function runMarketEngine(input: EngineInput): EngineOutput {
         impactEstimate: {
           metric: 'Potential Upside',
           value: Math.round(catValue * (growth/100)),
-          unit: '₹',
+          unit: 'Rs.',
           direction: 'positive',
         },
         action: {
@@ -59,7 +59,7 @@ export function runMarketEngine(input: EngineInput): EngineOutput {
         },
         evidence: [
           `Growth Rate: ${growth.toFixed(1)}%`,
-          `Stock Value: ₹${catValue.toLocaleString()}`,
+          `Stock Value: Rs.${catValue.toLocaleString()}`,
           `Market Trend: Positive`
         ],
         createdAt: new Date(),

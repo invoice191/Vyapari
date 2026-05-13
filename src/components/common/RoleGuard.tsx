@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useRBAC } from '../../hooks/useRBAC';
 import { ShieldAlert } from 'lucide-react';
 import { motion } from 'motion/react';

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, 
@@ -95,14 +95,14 @@ export default function ProductInsights({
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-black text-white uppercase tracking-tight">
-                {product.name} — Intelligence Terminal
+                {product.name} - Intelligence Terminal
               </h1>
               <span className="px-2 py-0.5 bg-orange-500 text-white text-[8px] font-black rounded uppercase tracking-widest">
                 AI Powered
               </span>
             </div>
             <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
-              SKU: {product.sku || (product.id && product.id.slice(0, 8)) || 'N/A'} • Last Analyzed {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+              SKU: {product.sku || (product.id && product.id.slice(0, 8)) || 'N/A'} - Last Analyzed {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
             </div>
           </div>
         </div>
@@ -152,7 +152,7 @@ export default function ProductInsights({
                 <div className="grid grid-cols-4 gap-4">
                   {[
                     { label: 'PREDICTED 30D DEMAND', value: Math.round(velocity * 30), sub: '+12% vs last month', icon: TrendingUp, color: 'orange' },
-                    { label: 'PREDICTED PEAK DAY', value: '24 May', sub: 'Saturday — market day', icon: Calendar, color: 'blue' },
+                    { label: 'PREDICTED PEAK DAY', value: '24 May', sub: 'Saturday - market day', icon: Calendar, color: 'blue' },
                     { label: 'FORECAST CONFIDENCE', value: '87%', sub: 'Based on 90 days data', icon: Shield, color: 'emerald' },
                     { label: 'AVG PREDICTED/DAY', value: velocity.toFixed(1), sub: 'Rising trend', icon: Zap, color: 'amber' }
                   ].map((kpi, i) => (
@@ -170,7 +170,7 @@ export default function ProductInsights({
                 {/* Demand Forecast Chart */}
                 <div className="p-8 bg-white border border-slate-200/60 rounded-[2.5rem] shadow-sm space-y-6">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Daily demand forecast — next 30 days</h3>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Daily demand forecast - next 30 days</h3>
                     <div className="flex items-center gap-6">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-slate-900" />
@@ -272,13 +272,13 @@ export default function ProductInsights({
                           { week: '11-17 May', units: Math.round(velocity * 7), delta: '+8%', conf: 92, driver: 'Normal demand', color: 'emerald' },
                           { week: '18-24 May', units: Math.round(velocity * 9), delta: '+25%', conf: 78, driver: 'Weekend market surge', color: 'orange' },
                           { week: '25-31 May', units: Math.round(velocity * 8), delta: '+12%', conf: 85, driver: 'Month-end buying', color: 'indigo' },
-                          { week: '1-10 Jun', units: Math.round(velocity * 7.5), delta: 'Stable', conf: 70, driver: 'Normal — less data', color: 'slate' },
+                          { week: '1-10 Jun', units: Math.round(velocity * 7.5), delta: 'Stable', conf: 70, driver: 'Normal - less data', color: 'slate' },
                         ].map((w, i) => (
                           <tr key={i} className="text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">
                             <td className="px-6 py-4 font-black">{w.week}</td>
                             <td className="px-6 py-4 text-center">{w.units}</td>
                             <td className={`px-6 py-4 text-center ${w.delta.includes('+') ? 'text-emerald-600' : 'text-slate-400'}`}>
-                              {w.delta.includes('+') && '↑'} {w.delta}
+                              {w.delta.includes('+') && '-'} {w.delta}
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
@@ -313,7 +313,7 @@ export default function ProductInsights({
                   <div className="space-y-1">
                     <div className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Forecast Insight</div>
                     <p className="text-xs font-semibold text-slate-600 leading-relaxed">
-                      Demand for {product.name} is predicted to rise 12% over the next 30 days, driven by a weekend market surge around 22-24 May. Week 2 shows the highest uncertainty — confidence drops to 78% due to a local school holiday pattern that may or may not repeat. Stock up to at least {Math.round(velocity * 30)} units before 18 May to avoid a stockout during peak week.
+                      Demand for {product.name} is predicted to rise 12% over the next 30 days, driven by a weekend market surge around 22-24 May. Week 2 shows the highest uncertainty - confidence drops to 78% due to a local school holiday pattern that may or may not repeat. Stock up to at least {Math.round(velocity * 30)} units before 18 May to avoid a stockout during peak week.
                     </p>
                   </div>
                 </div>
@@ -348,7 +348,7 @@ export default function ProductInsights({
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-2">WHAT-IF SCENARIOS</h3>
                   <div className="grid grid-cols-3 gap-6">
                     {[
-                      { type: 'PESSIMISTIC', val: Math.round(velocity * 30 * 0.7), sub: 'Units needed if demand drops 20% — monsoon, school holidays, or local competition.', color: 'blue' },
+                      { type: 'PESSIMISTIC', val: Math.round(velocity * 30 * 0.7), sub: 'Units needed if demand drops 20% - monsoon, school holidays, or local competition.', color: 'blue' },
                       { type: 'BASE FORECAST', val: Math.round(velocity * 30), sub: 'Most likely scenario. 87% confidence based on 90 days of your sales history.', color: 'orange' },
                       { type: 'OPTIMISTIC', val: Math.round(velocity * 30 * 1.3), sub: 'If festival or local event drives 30% higher demand than baseline prediction.', color: 'emerald' }
                     ].map((s, i) => (
@@ -369,7 +369,7 @@ export default function ProductInsights({
                   <div className="flex justify-between items-center">
                     <div className="space-y-1">
                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Price Sensitivity</h3>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">How demand changes with price — {product.name}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">How demand changes with price - {product.name}</p>
                     </div>
                   </div>
 
@@ -382,7 +382,7 @@ export default function ProductInsights({
                           axisLine={false} 
                           tickLine={false} 
                           tick={{ fontSize: 9, fontWeight: 700, fill: '#94a3b8' }}
-                          tickFormatter={(v) => `₹${v}`}
+                          tickFormatter={(v) => `Rs.${v}`}
                         />
                         <YAxis 
                           axisLine={false} 
@@ -406,7 +406,7 @@ export default function ProductInsights({
                       <Calculator size={16} />
                     </div>
                     <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wide leading-relaxed">
-                      Raising price from ₹{price} to ₹{Math.round(price * 1.2)} reduces demand by <span className="text-orange-600">-35%</span> but increases margin from {Math.round((margin/(price || 1))*100)}% to {Math.round(((price*1.2-cost)/(price*1.2 || 1))*100)}%. At ₹{Math.round(price * 1.1)}, revenue stays flat. <span className="text-orange-600">Recommended: test ₹{Math.round(price * 1.05)} first.</span>
+                      Raising price from Rs.{price} to Rs.{Math.round(price * 1.2)} reduces demand by <span className="text-orange-600">-35%</span> but increases margin from {Math.round((margin/(price || 1))*100)}% to {Math.round(((price*1.2-cost)/(price*1.2 || 1))*100)}%. At Rs.{Math.round(price * 1.1)}, revenue stays flat. <span className="text-orange-600">Recommended: test Rs.{Math.round(price * 1.05)} first.</span>
                     </p>
                   </div>
                 </div>
@@ -433,13 +433,13 @@ export default function ProductInsights({
                      onClick={() => onRestock(Math.round(velocity * 30))}
                      className="px-8 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:bg-black transition-all"
                    >
-                     <RefreshCw size={16} /> Restock now — 0% risk
+                     <RefreshCw size={16} /> Restock now - 0% risk
                    </button>
                    <button 
                      onClick={() => onUpdatePrice(Math.round(price * 1.1))}
                      className="px-8 py-4 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:border-orange-500 transition-all"
                    >
-                     <Target size={16} /> Test ₹{Math.round(price * 1.1)} price
+                     <Target size={16} /> Test Rs.{Math.round(price * 1.1)} price
                    </button>
                 </div>
               </div>
@@ -459,7 +459,7 @@ export default function ProductInsights({
                       <div key={i} className="p-6 bg-white border border-slate-100 rounded-3xl flex items-center gap-8 group hover:border-orange-100 transition-all">
                         <div className="w-32 shrink-0">
                           <div className="text-sm font-black text-slate-900 uppercase">{f.name}</div>
-                          <div className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">{f.date} • {f.days} days away</div>
+                          <div className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">{f.date} - {f.days} days away</div>
                         </div>
                         <div className="flex-1 space-y-2">
                            <div className="flex justify-between items-center text-[9px] font-black text-slate-400 uppercase">
@@ -519,7 +519,7 @@ export default function ProductInsights({
                     <h4 className="text-[10px] font-black text-orange-600 uppercase tracking-[0.2em]">Festival strategy</h4>
                   </div>
                   <p className="text-xs font-semibold text-slate-600 leading-relaxed uppercase tracking-tight">
-                    Based on last year's data, {product.name} spikes 3.8x during Diwali — your single biggest sales event for this product. Last year you stocked out 3 days before Diwali and lost an estimated ₹4,200 in revenue. Order 820 units by October 10 to avoid a repeat. For Eid in 20 days, order 120 units by May 25 — you currently have {stock} units which will stock out by 13 May.
+                    Based on last year's data, {product.name} spikes 3.8x during Diwali - your single biggest sales event for this product. Last year you stocked out 3 days before Diwali and lost an estimated Rs.4,200 in revenue. Order 820 units by October 10 to avoid a repeat. For Eid in 20 days, order 120 units by May 25 - you currently have {stock} units which will stock out by 13 May.
                   </p>
                 </div>
 
@@ -528,7 +528,7 @@ export default function ProductInsights({
                      onClick={() => onRestock(120)}
                      className="px-6 py-3 bg-white border border-slate-200 text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-50 transition-all"
                    >
-                     <RefreshCw size={14} /> Order for Eid — 120 units
+                     <RefreshCw size={14} /> Order for Eid - 120 units
                    </button>
                    <button 
                      onClick={() => window.dispatchEvent(new CustomEvent('toast', { detail: { message: "Diwali reminder set for Oct 10", type: 'success' }}))}
@@ -549,7 +549,7 @@ export default function ProductInsights({
             {activeTab === 'Smart Reorder' && (
               <div className="space-y-10">
                 <div className="p-10 bg-orange-50/30 border border-orange-100 rounded-[3rem] relative overflow-hidden">
-                  <div className="absolute top-6 right-8 px-3 py-1 bg-rose-500/10 text-rose-600 text-[10px] font-black rounded-full uppercase animate-pulse">Urgent — 2 days left</div>
+                  <div className="absolute top-6 right-8 px-3 py-1 bg-rose-500/10 text-rose-600 text-[10px] font-black rounded-full uppercase animate-pulse">Urgent - 2 days left</div>
                   <div className="space-y-2">
                     <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Smart reorder recommendation</h3>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Calculated from velocity + forecast + festival calendar</p>
@@ -580,15 +580,15 @@ export default function ProductInsights({
                           <th className="px-8 py-5">COMPONENT</th>
                           <th className="px-8 py-5">QTY</th>
                           <th className="px-8 py-5">REASON</th>
-                          <th className="px-8 py-5 text-right">COST AT ₹{cost}</th>
+                          <th className="px-8 py-5 text-right">COST AT Rs.{cost}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
                         {[
-                          { comp: '30-day baseline', qty: Math.round(velocity * 30), reason: `Avg ${velocity.toFixed(1)} units/day × 30 days`, cost: `₹${(Math.round(velocity * 30) * cost).toLocaleString()}` },
-                          { comp: 'Eid spike buffer', qty: 120, reason: '2.4x spike × 7 day window', cost: `₹${(120 * cost).toLocaleString()}` },
-                          { comp: 'Safety stock', qty: 20, reason: '10% buffer for uncertainty', cost: `₹${(20 * cost).toLocaleString()}` },
-                          { comp: 'Total order', qty: Math.round(velocity * 30) + 140, reason: 'Covers 30 days + Eid + buffer', cost: `₹${((Math.round(velocity * 30) + 140) * cost).toLocaleString()}`, highlight: true },
+                          { comp: '30-day baseline', qty: Math.round(velocity * 30), reason: `Avg ${velocity.toFixed(1)} units/day - 30 days`, cost: `Rs.${(Math.round(velocity * 30) * cost).toLocaleString()}` },
+                          { comp: 'Eid spike buffer', qty: 120, reason: '2.4x spike - 7 day window', cost: `Rs.${(120 * cost).toLocaleString()}` },
+                          { comp: 'Safety stock', qty: 20, reason: '10% buffer for uncertainty', cost: `Rs.${(20 * cost).toLocaleString()}` },
+                          { comp: 'Total order', qty: Math.round(velocity * 30) + 140, reason: 'Covers 30 days + Eid + buffer', cost: `Rs.${((Math.round(velocity * 30) + 140) * cost).toLocaleString()}`, highlight: true },
                         ].map((r, i) => (
                           <tr key={i} className={`text-xs font-bold text-slate-700 ${r.highlight ? 'bg-orange-50/50' : ''}`}>
                             <td className="px-8 py-5 font-black uppercase tracking-tight">{r.comp}</td>
@@ -617,9 +617,9 @@ export default function ProductInsights({
                       </thead>
                       <tbody className="divide-y divide-slate-50">
                         {[
-                          { name: 'Preferred Vendor (direct)', price: `₹${cost.toFixed(2)}`, moq: '500 units', lead: '3 days', roi: '28%', best: true },
-                          { name: 'Local Wholesaler', price: `₹${(cost * 1.05).toFixed(2)}`, moq: '50 units', lead: 'Next day', roi: '18%' },
-                          { name: 'District distributor', price: `₹${(cost * 1.08).toFixed(2)}`, moq: '100 units', lead: '2 days', roi: '16%' },
+                          { name: 'Preferred Vendor (direct)', price: `Rs.${cost.toFixed(2)}`, moq: '500 units', lead: '3 days', roi: '28%', best: true },
+                          { name: 'Local Wholesaler', price: `Rs.${(cost * 1.05).toFixed(2)}`, moq: '50 units', lead: 'Next day', roi: '18%' },
+                          { name: 'District distributor', price: `Rs.${(cost * 1.08).toFixed(2)}`, moq: '100 units', lead: '2 days', roi: '16%' },
                         ].map((s, i) => (
                           <tr key={i} className="text-xs font-bold text-slate-700 hover:bg-slate-50/50 transition-colors">
                             <td className="px-8 py-5 font-black uppercase tracking-tight">
@@ -642,7 +642,7 @@ export default function ProductInsights({
                       <h4 className="text-[10px] font-black text-orange-600 uppercase tracking-[0.2em]">Reorder decision</h4>
                    </div>
                    <p className="text-xs font-semibold text-slate-600 leading-relaxed uppercase tracking-tight">
-                     Order {Math.round(velocity * 30) + 140} units from direct vendor today — you have few days of stock remaining and Eid is 20 days away. If you want to unlock the 500-unit direct rate, the extra units will sell in 20 days at current velocity — a worthwhile investment before Eid demand peaks.
+                     Order {Math.round(velocity * 30) + 140} units from direct vendor today - you have few days of stock remaining and Eid is 20 days away. If you want to unlock the 500-unit direct rate, the extra units will sell in 20 days at current velocity - a worthwhile investment before Eid demand peaks.
                    </p>
                 </div>
 
@@ -651,7 +651,7 @@ export default function ProductInsights({
                      onClick={() => onRestock(Math.round(velocity * 30) + 140)}
                      className="px-8 py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:bg-black transition-all shadow-xl shadow-slate-200"
                    >
-                     <Package size={16} /> Create PO — {Math.round(velocity * 30) + 140} units
+                     <Package size={16} /> Create PO - {Math.round(velocity * 30) + 140} units
                    </button>
                    <button 
                      onClick={() => onWhatsApp(`Hi, I need to restock ${product.name}. My smart forecast suggests an order of ${Math.round(velocity * 30) + 140} units to cover next month and the Eid spike. Please confirm price.`)}
@@ -683,7 +683,7 @@ export default function ProductInsights({
         <div className="flex items-center gap-4">
           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-            AI Engine Status: Optimized • V5.2-Stable
+            AI Engine Status: Optimized - V5.2-Stable
           </span>
         </div>
         <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">

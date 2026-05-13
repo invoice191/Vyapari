@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+﻿import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   Zap, Shield, Activity, 
@@ -13,7 +13,7 @@ import { warRoomService, TacticalAlert } from "../services/dss/warRoomService";
 import { InventoryHeatmap } from "../components/3d/InventoryHeatmap";
 import { useAuth } from "../hooks/useAuth";
 import { systemAlertService, SystemAlert } from "../services/systemAlertService";
-import { useGlobalData } from "../contexts/DataContext";
+import { useGlobalData } from "../context/DataContext";
 import { supabase } from "../lib/supabase";
 
 export default function CommandCenter() {
@@ -204,7 +204,7 @@ export default function CommandCenter() {
 
         <div className="relative z-10">
             <div className="flex items-center gap-4 mb-3">
-              <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-indigo-400">Tactical War Room — Live</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-indigo-400">Tactical War Room - Live</div>
               <div className="flex gap-1">
                 {[1,2,3,4,5].map(i => (
                   <motion.div 
@@ -437,7 +437,7 @@ export default function CommandCenter() {
                   }`} />
                   <div className="flex-1 min-w-0">
                     <p className="text-[11px] font-black uppercase tracking-wider text-white truncate">{log.action}</p>
-                    <p className="text-[10px] font-medium text-slate-400 truncate">{log.module} • {new Date(log.timestamp).toLocaleTimeString()}</p>
+                    <p className="text-[10px] font-medium text-slate-400 truncate">{log.module} - {new Date(log.timestamp).toLocaleTimeString()}</p>
                   </div>
                 </div>
               )) : (
