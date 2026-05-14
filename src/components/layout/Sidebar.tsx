@@ -16,8 +16,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ShoppingCart,
-  Calculator
+  Calculator,
+  ShieldCheck,
+  Lock,
+  Bot
 } from "lucide-react";
+import { useRBAC } from "../../hooks/useRBAC";
 
 interface SidebarProps {
   active: string;
@@ -33,46 +37,49 @@ interface SidebarProps {
 // Categorized module taxonomy for standard ERP hierarchy
 const MODULE_GROUPS = [
   {
-    title: "Core Operations",
+    title: "Home",
     items: [
-      { key: "dashboard", label: "Executive Desk", icon: LayoutDashboard },
-      { key: "pos", label: "Point of Sale", icon: Calculator },
+      { key: "dashboard", label: "Home", icon: LayoutDashboard },
+      { key: "autopilot", label: "Auto Reminders", icon: Bot },
+      { key: "pos", label: "Billing Counter", icon: Calculator },
     ]
   },
   {
-    title: "Supply & Stock",
+    title: "Items & Stock",
     items: [
-      { key: "inventory", label: "Stock Ledger", icon: Box },
-      { key: "purchases", label: "Procurement", icon: ShoppingCart },
+      { key: "inventory", label: "My Stock", icon: Box },
+      { key: "purchases", label: "Supplier Bills", icon: ShoppingCart },
     ]
   },
   {
-    title: "Financial Center",
+    title: "Money",
     items: [
-      { key: "invoices", label: "Sales & Billing", icon: Receipt },
-      { key: "ledger", label: "General Ledger", icon: BookOpen },
-      { key: "ocr", label: "Expense OCR", icon: FileSearch },
+      { key: "invoices", label: "Bills & Orders", icon: Receipt },
+      { key: "invoice_ai", label: "Invoice AI", icon: Bot },
+      { key: "ledger", label: "Money History", icon: BookOpen },
+      { key: "ocr", label: "Snap a Photo", icon: FileSearch },
     ]
   },
   {
-    title: "Intelligence & CRM",
+    title: "Growth",
     items: [
-      { key: "contacts", label: "CRM Contacts", icon: Users },
-      { key: "dss", label: "Neural AI Hub", icon: Brain },
-      { key: "reports", label: "Metric Analytics", icon: BarChart3 },
+      { key: "contacts", label: "Customers & Suppliers", icon: Users },
+      { key: "dss", label: "Business Tips", icon: Brain },
+      { key: "reports", label: "Reports", icon: BarChart3 },
+      { key: "users", label: "My Team", icon: Users },
     ]
   },
   {
-    title: "Compliance",
+    title: "Security & Tools",
     items: [
-      { key: "accounting", label: "Financial Audit", icon: Landmark },
-      { key: "audit", label: "Access Logs", icon: History },
+      { key: "accounting", label: "Accountant View", icon: Landmark },
+      { key: "audit", label: "Activity Log", icon: History },
     ]
   }
 ];
 
 const FOOTER_MODULES = [
-  { key: "settings", label: "Configurations", icon: Settings },
+  { key: "settings", label: "Settings", icon: Settings },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -83,8 +90,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobile,
   drawerOpen,
   setDrawerOpen,
-  logout 
+  logout,
 }) => {
+  const { can } = useRBAC();
+  
   const NavItem = ({ m, small = false }: any) => {
     const Icon = m.icon;
     const isActive = active === m.key;
@@ -161,7 +170,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   Vyapari
                 </span>
                 <span className="font-bold text-[8px] tracking-[0.25em] text-indigo-500 uppercase mt-0.5">
-                  ERP SUITE v10.0
+                  Business Software
                 </span>
               </motion.div>
             )}
@@ -171,7 +180,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       
       {/* Scrollable Enterprise Taxonomy Nav */}
       <div className="flex-1 overflow-y-auto py-6 custom-scrollbar space-y-6">
-        {MODULE_GROUPS.map((group, idx) => (
+        {MODULE_GROUPS.map((group, idx) => {
+          const visibleItems = group.items.filter(m => can(m.key, 'view') || m.key === 'dashboard');
+          if (visibleItems.length === 0) return null;
+          
+          return (
           <div key={idx} className="space-y-1.5">
             {(sidebarOpen || drawerOpen) && (
               <div className="px-7 mb-2 text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -179,15 +192,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="flex-1 h-px bg-gradient-to-r from-slate-200/60 to-transparent" />
               </div>
             )}
-            {group.items.map(m => <NavItem key={m.key} m={m} />)}
+            {visibleItems.map(m => <NavItem key={m.key} m={m} />)}
           </div>
-        ))}
+          );
+        })}
       </div>
       
+
       {/* Footer Control Panel */}
       <div className="mt-auto border-t border-slate-200/30 bg-slate-50/40 p-4 space-y-3">
         {/* Settings Configurations */}
-        {FOOTER_MODULES.map(m => <NavItem key={m.key} m={m} small />)}
+        {FOOTER_MODULES.filter(m => can(m.key, 'view')).map(m => <NavItem key={m.key} m={m} small />)}
 
         <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-200/40">
           <button 

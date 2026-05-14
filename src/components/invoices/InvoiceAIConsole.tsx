@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   Sparkles, Terminal, ChevronRight, Check, AlertTriangle, AlertCircle, 
@@ -13,6 +13,7 @@ import { razorpayService } from "../../services/razorpayService";
 import { stripeService } from "../../services/stripeService";
 import { useToast } from "../common/Toast";
 import { useAuth } from "../../hooks/useAuth";
+import { useGlobalData } from "../../context/DataContext";
 
 interface Message {
   id: string;
@@ -25,12 +26,19 @@ interface Message {
 }
 
 interface InvoiceAIConsoleProps {
-  invoices: any[];
-  contacts: any[];
-  fetchInvoices: () => void;
+  invoices?: any[];
+  contacts?: any[];
+  fetchInvoices?: () => void;
 }
 
-export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: InvoiceAIConsoleProps) {
+export default function InvoiceAIConsole(props: InvoiceAIConsoleProps) {
+  const globalData = useGlobalData();
+  
+  // Use props if provided (backwards compatibility), otherwise use global context
+  const invoices = props.invoices ?? globalData.invoices;
+  const contacts = props.contacts ?? globalData.contacts;
+  const fetchInvoices = props.fetchInvoices ?? (() => globalData.refresh('invoices'));
+
   const { business } = useAuth();
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,7 +48,7 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
       id: '1',
       role: 'ai',
       type: 'text',
-      content: "Hi! I'm your InvoiceAI assistant. Ask me anything about your invoices - I'll check payment risks, match payments, send reminders, or create new invoices for you. Try one of the quick actions above or type your question below.",
+      content: "Hi! I'm your Invoice AI helper. I can help you check payment risks, match bank deposits to bills, send WhatsApp reminders, or draft new bills for you. Just ask me a question below or try one of the quick buttons!",
       timestamp: new Date()
     }
   ]);
@@ -504,6 +512,40 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
            };
            break;
         }
+        case 14: { // NEURAL FORENSIC AUDIT
+            const amount = selectedInvoice?.total_amount || 0;
+            const client = contacts.find(c => c.id === selectedInvoice?.contact_id);
+            result = {
+              action: "NEURAL_FORENSIC",
+              result: {
+                invoice_id: selectedInvoice?.id,
+                invoice_number: selectedInvoice?.invoice_number,
+                impact_score: 8.4,
+                financial_ripple: {
+                  profit_contribution: (amount * 0.12),
+                  runway_impact_days: 3.5,
+                  liquidity_buffer: "Moderate"
+                },
+                inventory_nexus: {
+                  velocity_rank: "Top 5%",
+                  stockout_risk: "High",
+                  restock_blocked_value: amount * 0.8
+                },
+                customer_dna: {
+                  sentiment: "Neutral-Positive",
+                  loyalty_shift: "+4%",
+                  preferred_channel: "WhatsApp (Morning)",
+                  reliability: 92
+                },
+                local_benchmarks: {
+                  price_deviation: "+2.5%",
+                  market_health: "Rising",
+                  competitor_avg: amount * 0.975
+                }
+              }
+            };
+            break;
+        }
         case 13: { // FESTIVAL STOCK AUDIT
            result = {
              action: "FESTIVAL_AUDIT",
@@ -563,26 +605,29 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
 
     const q = userQ.toLowerCase();
     
-    // Robust NLP routing
+    // Robust NLP routing with word boundaries to avoid false positives (e.g. 'unpaid' matching 'paid')
     const intentMap = [
-      { id: 1, keys: ["risk", "late", "unopened", "predict", "pay on time"] },
-      { id: 2, keys: ["reconcile", "paid", "match", "settle", "check payment"] },
-      { id: 3, keys: ["remind", "nudge", "follow up", "whatsapp", "message"] },
-      { id: 4, keys: ["write", "draft", "create", "make invoice", "new invoice"] },
-      { id: 5, keys: ["fraud", "safe", "scam", "verify", "security"] },
-      { id: 6, keys: ["portal", "client view", "hub", "customer access"] },
-      { id: 7, keys: ["installment", "split", "part pay", "payment plan"] },
-      { id: 8, keys: ["bulk", "all", "many", "multiple"] },
-      { id: 9, keys: ["currency", "dollar", "usd", "foreign", "convert"] },
-      { id: 10, keys: ["tax", "gst", "compliance", "optimization", "save tax"] },
-      { id: 11, keys: ["forecast", "future", "cashflow", "projection", "liquidity"] },
-      { id: 12, keys: ["discount", "early", "offer", "incentive"] },
+      { id: 1, regex: /\b(risk|late|unopened|predict|pay on time|unpaid)\b/i },
+      { id: 2, regex: /\b(reconcile|paid|match|settle|check payment)\b/i },
+      { id: 3, regex: /\b(remind|nudge|follow up|whatsapp|message)\b/i },
+      { id: 4, regex: /\b(write|draft|create|make invoice|new invoice)\b/i },
+      { id: 5, regex: /\b(fraud|safe|scam|verify|security)\b/i },
+      { id: 6, regex: /\b(portal|client view|hub|customer access)\b/i },
+      { id: 7, regex: /\b(installment|split|part pay|payment plan)\b/i },
+      { id: 8, regex: /\b(bulk|all|many|multiple)\b/i },
+      { id: 9, regex: /\b(currency|dollar|usd|foreign|convert)\b/i },
+      { id: 10, regex: /\b(tax|gst|compliance|optimization|save tax)\b/i },
+      { id: 11, regex: /\b(forecast|future|cashflow|projection|liquidity)\b/i },
+      { id: 12, regex: /\b(discount|early|offer|incentive)\b/i },
+      { id: 14, regex: /\b(audit|forensic|impact|deep analysis|dna)\b/i },
     ];
 
     let detectedId = 0;
     for (const intent of intentMap) {
-      if (intent.keys.some(key => q.includes(key))) {
+      if (intent.regex.test(q)) {
         detectedId = intent.id;
+        // Special case: if query contains 'unpaid', it's almost always a risk/prediction intent
+        if (q.includes('unpaid')) detectedId = 1; 
         break;
       }
     }
@@ -593,7 +638,7 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
       // Default to general chat if no intent detected
       setLoading(true);
       await new Promise(r => setTimeout(r, 800));
-      addMessage({ role: 'ai', type: 'text', content: "I'm not sure which engine you need. I can help with payment risks, tax optimization, reminders, and more. Try asking for 'payment risk' or 'tax tips'." });
+      addMessage({ role: 'ai', type: 'text', content: "I'm not quite sure what you need. Should I check 'payment risks', help with 'GST tips', or 'send a reminder' to someone? Tell me in simple words!" });
       setLoading(false);
     }
   };
@@ -609,267 +654,322 @@ export default function InvoiceAIConsole({ invoices, contacts, fetchInvoices }: 
     { id: 7, name: "Instalments", icon: "---", desc: "Split large bills" },
     { id: 4, name: "AI Draft", icon: "--", desc: "Natural language billing" },
     { id: 13, name: "Stock Audit", icon: "--", desc: "Festival strategy command" },
+    { id: 14, name: "Neural Audit", icon: "---", desc: "360° Forensic Impact" },
     { id: 9, name: "Currency", icon: "--", desc: "Live FX conversion" },
   ];
 
   return (
-    <div className="flex flex-col h-[700px] bg-white rounded-[2rem] shadow-2xl border border-slate-200 overflow-hidden font-sans">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white/90 backdrop-blur-md sticky top-0 z-20">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#1A1A2E] rounded-xl flex items-center justify-center text-white shadow-lg">
-            <Sparkles size={20} className="text-indigo-400" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 leading-tight">InvoiceAI</h2>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <p className="text-[11px] font-bold text-emerald-600 tracking-wide uppercase">Active</p>
-              <span className="text-slate-300 mx-1">-</span>
-              <p className="text-[11px] font-medium text-slate-400">Your billing assistant</p>
-            </div>
-          </div>
+    <div className="flex flex-col lg:flex-row h-[800px] bg-slate-50 rounded-[3rem] shadow-2xl border border-slate-200 overflow-hidden font-sans relative">
+      
+      {/* 1. LEFT PANEL: INSIGHT RADAR */}
+      <div className="lg:w-[320px] bg-white border-r border-slate-200 flex flex-col z-10">
+        <div className="p-8 border-b border-slate-100 bg-slate-50/50">
+           <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-[#1A1A2E] rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-500/20">
+                <Sparkles size={24} className="text-indigo-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-slate-900 tracking-tighter uppercase italic">Invoice AI</h2>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                   <div className="px-2 py-0.5 bg-emerald-50 border border-emerald-100 rounded-lg flex items-center gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Assistant Online</span>
+                   </div>
+                </div>
+              </div>
+           </div>
+
+           {/* Live Metrics */}
+           <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
+                 <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Business Health</div>
+                 <div className="text-lg font-black text-slate-900">94%</div>
+              </div>
+              <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
+                 <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">AI Monitoring</div>
+                 <div className="text-lg font-black text-indigo-600">Active</div>
+              </div>
+           </div>
         </div>
-        <div className="flex items-center gap-2">
-           <button className="p-2.5 hover:bg-slate-100 rounded-xl text-slate-400 transition-all">
-             <History size={18} />
-           </button>
-           <button className="p-2.5 hover:bg-slate-100 rounded-xl text-slate-400 transition-all">
-             <MoreVertical size={18} />
-           </button>
+
+        {/* Narrative Briefing */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#FDFDFD]">
+           <div className="flex items-center gap-2 mb-2">
+              <Zap size={14} className="text-indigo-600" />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">What's Happening?</span>
+           </div>
+
+           {/* Narrative Cards */}
+           <div className="space-y-4">
+              <div className="bg-white p-5 rounded-[2rem] border border-indigo-100 shadow-sm relative overflow-hidden group">
+                 <div className="absolute top-0 right-0 p-3 opacity-10">
+                    <AlertCircle size={24} className="text-rose-500" />
+                 </div>
+                 <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest block mb-2">Needs Attention</span>
+                 <p className="text-[11px] font-bold text-slate-700 leading-relaxed">
+                    "Rohan Traders has missed the payment threshold. I've flagged this for a potential liquidity gap in your next cycle."
+                 </p>
+                 <button className="mt-4 w-full py-2 bg-indigo-50 hover:bg-indigo-600 hover:text-white rounded-xl text-[9px] font-black uppercase transition-all">Nudge Now</button>
+              </div>
+
+              <div className="bg-white p-5 rounded-[2rem] border border-emerald-100 shadow-sm relative overflow-hidden">
+                 <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest block mb-2">Business Tip</span>
+                 <p className="text-[11px] font-bold text-slate-700 leading-relaxed">
+                    "High-velocity stock movement detected. Restocking <span className="text-indigo-600">Premium Drills</span> now would yield a 14% higher margin."
+                 </p>
+              </div>
+           </div>
+        </div>
+
+        {/* Bottom Banner */}
+        <div className="p-6 bg-slate-900 text-white">
+           <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                 <ShieldCheck size={16} className="text-indigo-400" />
+              </div>
+              <div>
+                 <div className="text-[9px] font-black uppercase tracking-widest">Security Status</div>
+                 <div className="text-[8px] font-bold text-slate-400 uppercase">Safe & Secure</div>
+              </div>
+           </div>
         </div>
       </div>
 
-      {/* Quick Actions Bar */}
-      <div className="px-4 py-3.5 flex gap-2 overflow-x-auto scrollbar-hide border-b border-slate-50 bg-slate-50/50">
-        {quickActions.map(action => (
-          <button
-            key={action.id}
-            onClick={() => handleQuerySubmit(undefined, action.name)}
-            className="flex-shrink-0 flex flex-col items-start gap-1 p-3 bg-white border border-slate-200 rounded-2xl hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-500/5 transition-all group min-w-[130px]"
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-lg group-hover:scale-125 transition-transform">{action.icon}</span>
-              <span className="text-[11px] font-black text-slate-800 uppercase tracking-tighter whitespace-nowrap">{action.name}</span>
-            </div>
-            <span className="text-[9px] font-medium text-slate-400 leading-none">{action.desc}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Chat Area */}
-      <div 
-        ref={chatContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#FDFDFD] relative"
-      >
-        <AnimatePresence initial={false}>
-          {messages.map((msg) => (
-            <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, y: 12, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}
-            >
-              <div className={`flex gap-3 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                {/* Avatar */}
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${
-                  msg.role === 'user' ? 'bg-slate-100' : 'bg-[#1A1A2E]'
-                }`}>
-                  {msg.role === 'user' ? (
-                    <User size={14} className="text-slate-500" />
-                  ) : (
-                    <span className="text-[10px] font-black text-white">AI</span>
-                  )}
-                </div>
-
-                {/* Message Content */}
-                <div className="space-y-2">
-                  {msg.type === 'text' && (
-                    <div className={`px-5 py-3.5 rounded-2xl text-[13px] font-medium leading-relaxed shadow-sm ${
-                      msg.role === 'user' 
-                        ? 'bg-[#F5F5F0] text-slate-800 rounded-tr-none border border-[#E5E5DF]' 
-                        : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
-                    }`}>
-                      {msg.content}
-                    </div>
-                  )}
-
-                  {msg.type === 'widget' && (
-                    <div className="space-y-3">
-                      {msg.role === 'ai' && (
-                        <div className="text-[11px] font-bold text-slate-500 mb-1 ml-1 flex items-center gap-2">
-                          {msg.widgetType === 'LATE_PAYMENT_PREDICTION' ? "I've assessed the payment risk. Here's what I found:" : 
-                           msg.widgetType === 'RECONCILIATION' ? "I've matched and reconciled that payment. Here's the summary:" :
-                           "Analysis complete:"}
-                        </div>
-                      )}
-                      <WidgetRenderer type={msg.widgetType!} data={msg.widgetData} onAction={handleAction} />
-                    </div>
-                  )}
-                </div>
+      {/* 2. CENTER PANEL: NEURAL TERMINAL */}
+      <div className="flex-1 flex flex-col bg-white relative">
+        {/* Terminal Header */}
+        <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-20">
+           <div className="flex items-center gap-4">
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">AI Helper</div>
+              <div className="flex gap-1.5">
+                 {[1,2,3].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full bg-slate-200" />)}
               </div>
-            </motion.div>
-          ))}
-          {loading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex justify-start w-full"
-            >
-              <div className="flex gap-3 items-center ml-11">
-                <div className="flex gap-1.5">
-                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" />
-                </div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{thinkingStep || "Neural Engine Processing..."}</span>
-              </div>
-            </motion.div>
-          )}
-          <div ref={messagesEndRef} />
-        </AnimatePresence>
+           </div>
+           <div className="flex items-center gap-3">
+              <button className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 transition-all"><History size={16} /></button>
+              <button className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 transition-all"><MoreVertical size={16} /></button>
+           </div>
+        </div>
 
-        {/* Scroll Bottom Button */}
+        {/* Chat History */}
+        <div 
+          ref={chatContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar"
+        >
+           <AnimatePresence initial={false}>
+             {messages.map((msg) => (
+               <motion.div
+                 key={msg.id}
+                 initial={{ opacity: 0, y: 12 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+               >
+                 <div className={`max-w-[85%] group ${msg.role === 'user' ? 'order-2' : ''}`}>
+                    <div className="flex items-center gap-2 mb-2 px-1">
+                       {msg.role === 'ai' ? (
+                          <>
+                             <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-lg"><Sparkles size={12} /></div>
+                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Invoice AI</span>
+                          </>
+                       ) : (
+                          <>
+                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Your Question</span>
+                             <div className="w-6 h-6 rounded-lg bg-slate-900 text-white flex items-center justify-center shadow-lg"><User size={12} /></div>
+                          </>
+                       )}
+                    </div>
+
+                    {msg.type === 'text' ? (
+                       <div className={`p-5 rounded-3xl text-sm leading-relaxed shadow-sm border ${
+                          msg.role === 'user' 
+                             ? 'bg-indigo-600 text-white border-indigo-500 rounded-tr-sm' 
+                             : 'bg-white text-slate-800 border-slate-100 rounded-tl-sm'
+                       }`}>
+                          {msg.content}
+                       </div>
+                    ) : (
+                       <div className="mt-2 scale-95 origin-top-left">
+                          <WidgetRenderer type={msg.widgetType!} data={msg.widgetData} onAction={handleAction} />
+                       </div>
+                    )}
+                 </div>
+               </motion.div>
+             ))}
+           </AnimatePresence>
+
+           {loading && (
+             <div className="flex justify-start">
+                <div className="flex items-center gap-4 bg-white border border-slate-100 p-4 rounded-3xl shadow-sm">
+                   <div className="w-2 h-2 rounded-full bg-indigo-500 animate-ping" />
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{thinkingStep || "Finding Patterns..."}</div>
+                </div>
+             </div>
+           )}
+           <div ref={messagesEndRef} />
+        </div>
+
+        {/* Floating Scroll Down */}
         <AnimatePresence>
           {showScrollBottom && (
             <motion.button
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
               onClick={scrollToBottom}
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 w-10 h-10 bg-white border border-slate-200 rounded-full shadow-lg flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-all z-30"
+              className="absolute bottom-32 right-10 w-10 h-10 bg-white border border-slate-100 shadow-2xl rounded-full flex items-center justify-center text-indigo-600 z-30 hover:scale-110 transition-all"
             >
               <ArrowDown size={18} />
             </motion.button>
           )}
         </AnimatePresence>
+
+        {/* Input Terminal */}
+        <div className="p-8 border-t border-slate-100 bg-white shadow-[0_-20px_50px_rgba(0,0,0,0.02)]">
+           <div className="relative group max-w-4xl mx-auto">
+              <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center gap-3">
+                 <Terminal size={18} className="text-indigo-400 group-focus-within:text-indigo-600 transition-colors" />
+                 <div className="w-px h-4 bg-slate-200" />
+              </div>
+              <input 
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleQuerySubmit()}
+                placeholder="Query the AI Assistant (e.g., 'Predict risks for this month')..."
+                className="w-full pl-16 pr-32 py-5 bg-slate-50 border-2 border-slate-100 focus:border-indigo-500 focus:bg-white rounded-3xl text-sm font-bold text-slate-900 outline-none transition-all shadow-sm"
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                 <button 
+                   onClick={() => setShowSelector(true)}
+                   className="p-2.5 bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 rounded-2xl transition-all flex items-center gap-2"
+                 >
+                    <Target size={16} />
+                    <span className="text-[10px] font-black uppercase">Targets</span>
+                 </button>
+                 <button 
+                   onClick={() => handleQuerySubmit()}
+                   disabled={loading || !query.trim()}
+                   className="p-3 bg-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-600/20 hover:bg-indigo-500 disabled:opacity-50 transition-all active:scale-95"
+                 >
+                    <Send size={18} />
+                 </button>
+              </div>
+           </div>
+        </div>
       </div>
 
-      {/* Input Area */}
-      <div className="p-5 bg-white border-t border-slate-100">
-        <form onSubmit={handleQuerySubmit} className="relative flex items-center gap-3">
-          <div className="relative flex-1 bg-[#F1F3F5] rounded-full px-5 py-4 shadow-inner border border-slate-200 flex items-center">
-            <div className="flex flex-wrap gap-2 mr-3">
-              {selectedTargets.length > 0 ? (
-                selectedTargets.map(t => (
-                  <div key={t.id} className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 rounded-full text-[10px] font-bold text-slate-700 shadow-sm whitespace-nowrap">
-                     {t.type === 'customer' ? <Users size={10} className="text-indigo-500" /> : <FileText size={10} className="text-slate-400" />}
-                     {t.type === 'customer' ? contacts.find(c => c.id === t.id)?.name : invoices.find(i => i.id === t.id)?.invoice_number}
-                     <button type="button" onClick={() => setSelectedTargets(prev => prev.filter(p => p.id !== t.id))} className="text-slate-400 hover:text-rose-500"><X size={10} /></button>
-                  </div>
-                ))
-              ) : (
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest bg-white border border-slate-200 px-3 py-1.5 rounded-full">
-                  <Target size={12} /> No Target Selected
-                </div>
-              )}
+      {/* 3. RIGHT PANEL: ENGINE LIBRARY */}
+      <div className="lg:w-[320px] bg-slate-50/50 border-l border-slate-200 flex flex-col z-10">
+         <div className="p-8 border-b border-slate-100">
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">AI Features Library</div>
+            <div className="space-y-3">
+               {quickActions.map(action => (
+                  <button
+                    key={action.id}
+                    onClick={() => handleQuerySubmit(undefined, action.name)}
+                    className="w-full p-4 bg-white border border-slate-200/60 rounded-[1.5rem] hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/5 transition-all text-left group"
+                  >
+                     <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-black text-slate-900 uppercase tracking-tighter">{action.name}</span>
+                        <ChevronRight size={14} className="text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
+                     </div>
+                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">{action.desc}</p>
+                  </button>
+               ))}
             </div>
-            <input
-              type="text"
-              placeholder="Ask anything about the selected items..."
-              className="flex-1 bg-transparent border-none outline-none text-[13px] font-semibold text-slate-700 placeholder:text-slate-400"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            <div className="flex items-center gap-3 ml-2">
-               <button 
-                 type="button"
-                 onClick={() => setShowSelector(!showSelector)}
-                 className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-all"
-                 title="Select Targets"
-               >
-                 <PlusCircle size={20} />
-               </button>
-               <button 
-                 type="submit"
-                 disabled={!query.trim() || loading || selectedTargets.length === 0}
-                 className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
-                   query.trim() && selectedTargets.length > 0 ? 'bg-[#1A1A2E] text-white shadow-lg active:scale-95' : 'bg-slate-200 text-slate-400'
-                 }`}
-               >
-                 <Send size={16} />
-               </button>
+         </div>
+         
+         <div className="p-8 flex-1 bg-gradient-to-b from-transparent to-indigo-500/5">
+            <div className="p-5 bg-[#1A1A2E] rounded-3xl text-white relative overflow-hidden">
+               <div className="absolute -right-4 -bottom-4 opacity-10">
+                  <Calculator size={64} />
+               </div>
+               <div className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-2">Power User Tip</div>
+               <p className="text-[10px] font-medium text-slate-300 leading-relaxed italic">
+                  "Try asking for a <b>Detailed Check</b> of your top 5 customers to see a 360-degree risk breakdown."
+               </p>
             </div>
-          </div>
+         </div>
+      </div>
 
-          {showSelector && (
+      {/* TARGET SELECTOR MODAL */}
+      <AnimatePresence>
+        {showSelector && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
             <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute bottom-full left-0 right-0 mb-4 bg-white border border-slate-200 rounded-[2rem] shadow-2xl overflow-hidden z-50 p-5"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white rounded-[3rem] w-full max-w-2xl max-h-[80vh] overflow-hidden shadow-2xl flex flex-col"
             >
-              <div className="flex gap-2 mb-4 p-1 bg-slate-100 rounded-2xl">
-                 <button 
-                   type="button"
-                   onClick={() => setTargetCategory('invoice')}
-                   className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${targetCategory === 'invoice' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                 >Invoices</button>
-                 <button 
-                   type="button"
-                   onClick={() => setTargetCategory('customer')}
-                   className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${targetCategory === 'customer' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                 >Customers</button>
-              </div>
-              <div className="relative mb-4">
-                <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder={`Search ${targetCategory}s...`}
-                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-10 pr-4 py-3.5 text-[13px] font-semibold outline-none focus:border-indigo-300 transition-all shadow-inner"
-                  value={targetSearch}
-                  onChange={(e) => setTargetSearch(e.target.value)}
-                />
-              </div>
-              <div className="max-h-[250px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                {(targetCategory === 'invoice' ? invoices : contacts)
-                  .filter(item => {
-                    const searchStr = targetCategory === 'invoice' ? (item as any).invoice_number : (item as any).name;
-                    return searchStr.toLowerCase().includes(targetSearch.toLowerCase());
-                  })
-                  .map(item => {
-                    const isSelected = selectedTargets.some(t => t.id === item.id);
-                    return (
-                      <div
-                        key={item.id}
-                        onClick={() => {
-                           if (isSelected) {
-                              setSelectedTargets(prev => prev.filter(p => p.id !== item.id));
-                           } else {
-                              setSelectedTargets(prev => [...prev, { id: item.id, type: targetCategory }]);
-                           }
-                        }}
-                        className={`flex items-center justify-between px-5 py-4 rounded-2xl cursor-pointer transition-all border ${isSelected ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-slate-50 border-transparent hover:bg-slate-100'}`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isSelected ? 'bg-indigo-600 text-white' : 'bg-white text-slate-400 shadow-sm'}`}>
-                             {targetCategory === 'invoice' ? <FileText size={18} /> : <User size={18} />}
-                          </div>
-                          <div>
-                            <div className="text-[13px] font-bold text-slate-900">
-                              {targetCategory === 'invoice' ? (item as any).invoice_number : (item as any).name}
-                            </div>
-                            <div className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
-                              {targetCategory === 'invoice' ? `Rs.${(item as any).total_amount?.toLocaleString()}` : (item as any).phone || "No Phone"}
-                            </div>
-                          </div>
-                        </div>
-                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-slate-200 bg-white'}`}>
-                           {isSelected && <Check size={12} className="text-white" />}
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-              <div className="mt-5 pt-4 border-t border-slate-100 flex justify-between items-center">
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{selectedTargets.length} items selected</span>
-                 <button type="button" onClick={() => setShowSelector(false)} className="px-6 py-2.5 bg-[#1A1A2E] text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-slate-900/10 active:scale-95 transition-all">Done</button>
-              </div>
+               <div className="p-8 border-b border-slate-100 flex justify-between items-center">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic">Select Target Context</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Direct intelligence towards specific entities</p>
+                  </div>
+                  <button onClick={() => setShowSelector(false)} className="p-2 hover:bg-slate-100 rounded-xl"><X size={20} /></button>
+               </div>
+               
+               <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                  <div className="relative mb-6">
+                     <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                     <input 
+                       placeholder="Filter targets..."
+                       value={targetSearch}
+                       onChange={e => setTargetSearch(e.target.value)}
+                       className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold outline-none"
+                     />
+                  </div>
+
+                  <div className="flex gap-2 mb-8">
+                     {['invoice', 'customer'].map(cat => (
+                        <button 
+                          key={cat}
+                          onClick={() => setTargetCategory(cat as any)}
+                          className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${targetCategory === cat ? 'bg-slate-900 text-white border-slate-900 shadow-xl' : 'bg-white text-slate-500 border-slate-100 hover:border-slate-300'}`}
+                        >
+                           {cat}s
+                        </button>
+                     ))}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                     {(targetCategory === 'invoice' ? invoices : contacts)
+                       .filter(t => (t.invoice_number || t.name || "").toLowerCase().includes(targetSearch.toLowerCase()))
+                       .slice(0, 10)
+                       .map(t => {
+                          const isSelected = selectedTargets.some(st => st.id === t.id);
+                          return (
+                             <button
+                               key={t.id}
+                               onClick={() => {
+                                  if (isSelected) setSelectedTargets(prev => prev.filter(p => p.id !== t.id));
+                                  else setSelectedTargets(prev => [...prev, { id: t.id, type: targetCategory }]);
+                               }}
+                               className={`p-4 rounded-2xl border transition-all text-left flex items-center justify-between ${isSelected ? 'bg-indigo-50 border-indigo-500 shadow-md' : 'bg-white border-slate-100 hover:border-indigo-200'}`}
+                             >
+                                <div>
+                                   <div className="text-[11px] font-black text-slate-900 uppercase">{t.invoice_number || t.name}</div>
+                                   <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">{t.customer_name || t.phone || "No details"}</div>
+                                </div>
+                                {isSelected && <Check size={14} className="text-indigo-600" />}
+                             </button>
+                          );
+                       })
+                     }
+                  </div>
+               </div>
+
+               <div className="p-8 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{selectedTargets.length} Contexts Locked</div>
+                  <button 
+                    onClick={() => setShowSelector(false)}
+                    className="px-10 py-3 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-600/20"
+                  >
+                     Apply Context
+                  </button>
+               </div>
             </motion.div>
-          )}
-        </form>
-      </div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -902,6 +1002,8 @@ function WidgetRenderer({ type, data, onAction }: { type: string, data: any, onA
       return <FestivalStockAuditWidget data={data} onAction={onAction} />;
     case 'DYNAMIC_DISCOUNTING':
       return <DynamicDiscountingWidget data={data} onAction={onAction} />;
+    case 'NEURAL_FORENSIC':
+      return <NeuralForensicWidget data={data} onAction={onAction} />;
     default:
       return null;
   }
@@ -1423,36 +1525,130 @@ function FestivalStockAuditWidget({ data, onAction }: { data: any, onAction: (a:
   );
 }
 
-function DynamicDiscountingWidget({ data, onAction }: { data: any, onAction: (a: string, d: any) => void }) {
+function NeuralForensicWidget({ data, onAction }: { data: any, onAction: (a: string, d: any) => void }) {
   return (
-    <div className="w-[420px] bg-white border border-slate-200 rounded-[2.5rem] p-6 space-y-5 shadow-sm">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 bg-rose-50 rounded-xl flex items-center justify-center text-rose-500 shadow-sm">
-          <Zap size={20} />
+    <div className="w-[500px] bg-slate-950 border border-slate-800 rounded-[3rem] overflow-hidden shadow-2xl relative group">
+      {/* Animated Background Pulse */}
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent pointer-events-none" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 blur-[60px] rounded-full -mr-16 -mt-16 animate-pulse" />
+      
+      <div className="relative p-8 space-y-8">
+        {/* Header Section */}
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-indigo-400 shadow-inner">
+              <ShieldCheck size={24} />
+            </div>
+            <div>
+              <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-1">Detailed Business Audit</div>
+              <h3 className="text-xl font-black text-white italic tracking-tighter uppercase">Impact Assessment: {data.invoice_number}</h3>
+            </div>
+          </div>
+          <div className="flex flex-col items-end">
+            <div className="text-4xl font-black text-white tracking-tighter">{data.impact_score}</div>
+            <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Impact Coefficient</div>
+          </div>
         </div>
-        <span className="text-sm font-bold text-slate-900 tracking-tight">Dynamic Discount Offer</span>
+
+        {/* 4-Quadrant Impact Map */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Financial Ripple */}
+          <div className="p-5 bg-white/[0.03] border border-white/5 rounded-[2rem] space-y-3 hover:bg-white/[0.05] transition-all">
+            <div className="flex items-center gap-2 text-emerald-400">
+              <Calculator size={14} />
+              <span className="text-[9px] font-black uppercase tracking-widest">Financial Ripple</span>
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs font-bold text-white">₹{data.financial_ripple.profit_contribution.toLocaleString()}</div>
+              <div className="text-[9px] font-medium text-slate-400 uppercase tracking-tight">Direct Profit Contribution</div>
+            </div>
+            <div className="text-[10px] font-bold text-emerald-500/80 bg-emerald-500/5 border border-emerald-500/10 px-2 py-1 rounded-lg inline-block">
+              +{data.financial_ripple.runway_impact_days} Days Runway
+            </div>
+          </div>
+
+          {/* Inventory Nexus */}
+          <div className="p-5 bg-white/[0.03] border border-white/5 rounded-[2rem] space-y-3 hover:bg-white/[0.05] transition-all">
+            <div className="flex items-center gap-2 text-rose-400">
+              <Box size={14} />
+              <span className="text-[9px] font-black uppercase tracking-widest">Inventory Nexus</span>
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs font-bold text-white">Velocity: {data.inventory_nexus.velocity_rank}</div>
+              <div className="text-[9px] font-medium text-slate-400 uppercase tracking-tight">Ranked in Procurement Graph</div>
+            </div>
+            <div className="text-[10px] font-bold text-rose-500/80 bg-rose-500/5 border border-rose-500/10 px-2 py-1 rounded-lg inline-block uppercase">
+              Stockout Risk: {data.inventory_nexus.stockout_risk}
+            </div>
+          </div>
+
+          {/* Customer DNA */}
+          <div className="p-5 bg-white/[0.03] border border-white/5 rounded-[2rem] space-y-3 hover:bg-white/[0.05] transition-all">
+            <div className="flex items-center gap-2 text-indigo-400">
+              <Users size={14} />
+              <span className="text-[9px] font-black uppercase tracking-widest">Customer DNA</span>
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs font-bold text-white">{data.customer_dna.sentiment}</div>
+              <div className="text-[9px] font-medium text-slate-400 uppercase tracking-tight">Active Sentiment Score</div>
+            </div>
+            <div className="flex items-center gap-1.5">
+               <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+               <span className="text-[9px] font-black text-indigo-300 uppercase tracking-wider">{data.customer_dna.loyalty_shift} Loyalty Growth</span>
+            </div>
+          </div>
+
+          {/* Market Intelligence */}
+          <div className="p-5 bg-white/[0.03] border border-white/5 rounded-[2rem] space-y-3 hover:bg-white/[0.05] transition-all">
+            <div className="flex items-center gap-2 text-amber-400">
+              <Globe size={14} />
+              <span className="text-[9px] font-black uppercase tracking-widest">Local Benchmark</span>
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs font-bold text-white">{data.local_benchmarks.price_deviation} Deviation</div>
+              <div className="text-[9px] font-medium text-slate-400 uppercase tracking-tight">Against Local Area Avg</div>
+            </div>
+            <div className="text-[10px] font-bold text-slate-300">
+              Health: <span className="text-amber-500">{data.local_benchmarks.market_health}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Neural Suggestion Box */}
+        <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-6 rounded-[2.5rem] shadow-xl shadow-indigo-600/10 relative overflow-hidden group/box">
+          <div className="absolute top-0 right-0 p-4 opacity-20 group-hover/box:scale-125 transition-transform">
+             <Zap size={32} className="text-white" />
+          </div>
+          <div className="text-[9px] font-black text-indigo-100 uppercase tracking-widest mb-2">AI Strategy</div>
+          <p className="text-sm font-bold text-white leading-relaxed pr-8 italic">
+            "This customer responds best to early-morning WhatsApp nudges. AI predicts settlement in 48h if nudged today."
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-4">
+          <button 
+            onClick={() => onAction('WHATSAPP_REMINDER', { phone: data.customer_dna.preferred_channel.includes('WhatsApp') ? '919876543210' : '', message: 'AI Follow-up based on habits analysis.' })}
+            className="flex-1 py-4 bg-white text-slate-900 font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-slate-100 transition-all shadow-xl active:scale-95"
+          >
+             Deploy Nudge
+          </button>
+          <button 
+            className="flex-1 py-4 bg-white/5 border border-white/10 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl hover:bg-white/10 transition-all active:scale-95"
+          >
+             Export habits report
+          </button>
+        </div>
       </div>
-      <div className="p-5 bg-[#FDF2F2] rounded-[2rem] border border-rose-100 space-y-4 text-center">
-         <div className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Early Settlement Reward</div>
-         <div className="text-4xl font-black text-rose-600 tracking-tight">{data.discount_offer}% OFF</div>
-         <p className="text-[11px] font-bold text-rose-400">Save Rs.{(data?.discount_amount || 0).toLocaleString()} if paid in {data.expiry_days} days</p>
-      </div>
-      <div className="space-y-3">
-         <div className="flex justify-between text-xs font-bold text-slate-500 px-1">
-            <span>Original</span>
-            <span className="line-through">Rs.{(data?.original_amount || 0).toLocaleString()}</span>
+
+      {/* Sentry Badge */}
+      <div className="px-8 py-3 bg-white/5 border-t border-white/5 flex justify-between items-center">
+         <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Sentry V4 Monitoring</span>
          </div>
-         <div className="flex justify-between text-sm font-black text-slate-900 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-            <span>Final Amount</span>
-            <span className="text-emerald-600">Rs.{(data?.final_amount || 0).toLocaleString()}</span>
-         </div>
+         <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest cursor-pointer hover:text-indigo-300">View Full Trace</span>
       </div>
-      <button 
-        onClick={() => onAction('WHATSAPP_REMINDER', { phone: data.client_phone, message: `Special Offer: Settle your invoice now and get ${data.discount_offer}% off!` })}
-        className="w-full py-4 bg-rose-600 hover:bg-rose-500 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-rose-600/20 active:scale-95"
-      >
-         Deploy Offer to Client
-      </button>
     </div>
   );
 }

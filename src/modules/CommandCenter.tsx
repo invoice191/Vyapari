@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   Zap, Shield, Activity, 
@@ -24,6 +24,7 @@ export default function CommandCenter() {
   const [dateFilter, setDateFilter] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [dbAlerts, setDbAlerts] = useState<SystemAlert[]>([]);
   const [liveActivity, setLiveActivity] = useState<any[]>([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -51,8 +52,11 @@ export default function CommandCenter() {
     };
 
     runTacticalAnalysis();
-    // In a real app, we might poll every 5 minutes
-    const interval = setInterval(runTacticalAnalysis, 5 * 60 * 1000);
+    // Neural Heartbeat: Refresh every 10 seconds for "real-time" feel
+    const interval = setInterval(() => {
+      runTacticalAnalysis();
+      setRefreshKey(prev => prev + 1);
+    }, 10 * 1000);
     return () => clearInterval(interval);
   }, [products, invoices, purchaseOrders, stockMovements]);
 
@@ -415,7 +419,19 @@ export default function CommandCenter() {
             </div>
 
             <div className="mt-8 pt-8 border-t border-slate-100">
-              <button className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-indigo-600 transition-all shadow-xl shadow-indigo-500/20 active:scale-95 flex items-center justify-center gap-3">
+              <button 
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('app:toast', {
+                    detail: {
+                      title: "Executing Strategic Command",
+                      message: "Monsoon supply shift activated. Procurement pipelines prioritized for Rainwear and Agricultural sectors.",
+                      type: 'smart'
+                    }
+                  }));
+                  setRefreshKey(prev => prev + 1);
+                }}
+                className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-indigo-600 transition-all shadow-xl shadow-indigo-500/20 active:scale-95 flex items-center justify-center gap-3"
+              >
                 <Zap size={18} className="text-indigo-400" />
                 Execute Strategy
               </button>

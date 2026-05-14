@@ -1,9 +1,16 @@
-﻿import React, { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useGlobalData } from '../../context/DataContext';
 import { motion } from 'motion/react';
 
 export function InventoryHeatmap({ selectedCategory }: { selectedCategory?: string }) {
   const { products, categories } = useGlobalData();
+  const [heartbeat, setHeartbeat] = React.useState(0);
+
+  // Re-render for oscillation to feel "live"
+  React.useEffect(() => {
+    const timer = setInterval(() => setHeartbeat(h => h + 1), 2000);
+    return () => clearInterval(timer);
+  }, []);
 
   const categoryStats = useMemo(() => {
     let filteredProducts = products;
@@ -50,7 +57,10 @@ export function InventoryHeatmap({ selectedCategory }: { selectedCategory?: stri
     return Object.entries(groups).map(([name, stats]: any, i) => {
       const totalStock = stats.totalStock;
       const count = stats.count;
-      const velocity = Math.max(0.5, Math.min(3, totalStock / (count * 10 || 1)));
+      // Add a small time-based oscillation to make it feel "real-time" and "alive"
+      const oscillation = Math.sin(Date.now() / 2000 + i) * 0.05;
+      const velocity = Math.max(0.1, Math.min(5, (totalStock / (count * 12 || 1)) + oscillation));
+      
       return {
         name,
         count,

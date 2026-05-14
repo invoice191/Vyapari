@@ -1,5 +1,5 @@
-﻿import React from 'react';
-import { Bell, MessageSquare, Mail, Zap, Calendar, Smartphone } from 'lucide-react';
+import React from 'react';
+import { Bell, MessageSquare, Mail, Zap, Calendar, Smartphone, Moon, ArrowUpRight, Filter, Clock, ShieldAlert } from 'lucide-react';
 import { ToggleRow, SelectRow } from '../SettingRows';
 import { TelegramSettings } from './TelegramSettings';
 
@@ -80,6 +80,76 @@ export const NotificationSettings = ({ data, onChange }: { data: any; onChange: 
             { label: '08:00 AM (Standard)', value: '08:00' },
             { label: '09:00 AM (Operational)', value: '09:00' },
             { label: '10:00 AM (Executive)', value: '10:00' }
+          ]}
+        />
+      </div>
+
+      {/* Enterprise Alert Additions */}
+      <div className="glass-card !bg-white/[0.02] !border-white/[0.05] !p-8 mt-8">
+        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-6 flex items-center gap-2">
+          <ShieldAlert size={14} className="text-amber-500" /> Advanced Alert Protocol
+        </h4>
+        
+        <ToggleRow 
+          label="Do Not Disturb (DND)" 
+          description="Suppress non-critical alerts outside of operational hours" 
+          icon={<Moon size={18} />} 
+          value={data.dnd_enabled || false} 
+          onChange={(v) => onChange('dnd_enabled', v)} 
+        />
+        
+        {data.dnd_enabled && (
+          <div className="ml-12 pl-4 border-l border-slate-700/50 space-y-4 mb-4 mt-2">
+            <SelectRow 
+              label="DND Operational Window" 
+              description="Alerts will be silent outside these hours" 
+              icon={<Clock size={16} className="text-slate-500" />} 
+              value={data.dnd_window || '22-06'} 
+              onChange={(v) => onChange('dnd_window', v)}
+              options={[
+                { label: '10:00 PM to 06:00 AM', value: '22-06' },
+                { label: '08:00 PM to 08:00 AM', value: '20-08' },
+                { label: 'Weekend Silence Only', value: 'weekend' }
+              ]}
+            />
+          </div>
+        )}
+
+        <SelectRow 
+          label="Priority-Based Routing" 
+          description="How critical system alerts are handled" 
+          icon={<Filter size={18} />} 
+          value={data.alert_routing || 'intelligent'} 
+          onChange={(v) => onChange('alert_routing', v)}
+          options={[
+            { label: 'Intelligent (AI predicts priority)', value: 'intelligent' },
+            { label: 'Critical -> SMS & Email, Warn -> In-App', value: 'critical_escalate' },
+            { label: 'All Alerts to All Channels', value: 'broadcast' }
+          ]}
+        />
+
+        <ToggleRow 
+          label="Escalation Rules" 
+          description="If an alert is unread for 1 hour, escalate to SMS automatically" 
+          icon={<ArrowUpRight size={18} />} 
+          value={data.escalation_enabled || false} 
+          onChange={(v) => onChange('escalation_enabled', v)} 
+        />
+      </div>
+
+      <div className="glass-card !bg-white/[0.02] !border-white/[0.05] !p-8 mt-8">
+         <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-6">Per-User Preferences</h4>
+         <SelectRow 
+          label="My Active Role Profile" 
+          description="Filters noise. You will only receive alerts relevant to this role." 
+          icon={<Bell size={18} />} 
+          value={data.user_notification_role || 'owner'} 
+          onChange={(v) => onChange('user_notification_role', v)}
+          options={[
+            { label: 'Business Owner (All Alerts)', value: 'owner' },
+            { label: 'Inventory Manager (Stock only)', value: 'inventory' },
+            { label: 'Sales Exec (Invoices only)', value: 'sales' },
+            { label: 'Silent Mode (History only)', value: 'silent' }
           ]}
         />
       </div>

@@ -4,11 +4,16 @@ import { rfmService } from "../../services/rfmService";
 import { Card, SectionHeader, Badge, KPICard, ActionBtn, SkeletonCard } from "../common/UI";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../../hooks/useAuth";
-import { Search, Plus, Wallet, ArrowUpRight, ArrowDownLeft, Calendar, History, UploadCloud, Loader2 } from "lucide-react";
+import { 
+  Plus, Search, Download, Calendar, Filter, Wallet, ArrowUpRight, 
+  History, TrendingUp, Info, Zap, AlertCircle, CheckCircle, 
+  Loader2, ArrowRight, UploadCloud, FileText
+} from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import LedgerEntryModal from "./LedgerEntryModal";
 
 import { useGlobalData } from "../../context/DataContext";
+import { reportExporter } from "../../services/reportExporter";
 
 export default function Ledger() {
   const { profile } = useAuth();
@@ -18,6 +23,8 @@ export default function Ledger() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [rfmLabels, setRfmLabels] = useState<Record<string, string>>({});
+  const [reconcileMode, setReconcileMode] = useState(false);
+  const [reconciliationAttempts, setReconciliationAttempts] = useState<any[]>([]);
   const pageSize = 15;
 
   useEffect(() => {
@@ -35,6 +42,18 @@ export default function Ledger() {
         .catch(err => console.error("RFM loading failed:", err));
     }
   }, [profile?.business_id]);
+
+  useEffect(() => {
+    // Check if we should open in reconcile mode via URL or state
+    // For demo, we'll just check if there are attempts
+    if (profile?.business_id) {
+      supabase.from('reconciliation_attempts')
+        .select('*, ledger_entries(*), invoices(*)')
+        .eq('business_id', profile.business_id)
+        .eq('status', 'pending')
+        .then(({ data }) => setReconciliationAttempts(data || []));
+    }
+  }, [profile?.business_id, entries]);
 
   useEffect(() => {
     // We can still trigger a manual refresh on mount if we want,
@@ -101,11 +120,144 @@ export default function Ledger() {
   const cashOnHand = (entries || []).reduce((a, b) => a + (b.type === 'credit' ? b.amount : -b.amount), 0);
   const pendingReceivables = (entries || []).filter(e => !e.is_paid).reduce((a, b) => a + b.amount, 0);
 
+  const handleConfirmReconciliation = async (attempt: any) => {
+    try {
+      // 1. Mark attempt as confirmed
+      await supabase.from('reconciliation_attempts').update({ status: 'confirmed' }).eq('id', attempt.id);
+      
+      // 2. Mark invoice as paid (or update amount_paid)
+      const { data: inv } = await supabase.from('invoices').select('amount_paid, total_amount').eq('id', attempt.matched_invoice_id).single();
+      if (inv) {
+        const newPaid = Number(inv.amount_paid || 0) + Number(attempt.ledger_entries.amount);
+        await supabase.from('invoices').update({ 
+          amount_paid: newPaid, 
+          amount_remaining: Number(inv.total_amount) - newPaid,
+          status: (Number(inv.total_amount) - newPaid) <= 0 ? 'paid' : 'partial'
+        }).eq('id', attempt.matched_invoice_id);
+      }
+      
+      // 3. Refresh
+      refresh('invoices');
+      refresh('ledger_entries');
+      setReconciliationAttempts(prev => prev.filter(a => a.id !== attempt.id));
+    } catch (err) {
+      console.error("Reconciliation confirmation failed:", err);
+    }
+  };
+
+  const handleExportPDF = () => {
+    reportExporter.downloadPDF({
+      type: 'finance',
+      title: 'Business Ledger Audit',
+      businessName: profile?.business_name || 'Vyapari Retail',
+      dateRange: { from: new Date().toISOString(), to: new Date().toISOString() },
+      rows: filtered.map((e, i) => ({
+        ...e,
+        sr: i + 1,
+        date: new Date(e.timestamp || e.created_at || e.date).toLocaleDateString('en-GB'),
+        entity_name: e.contacts?.name || e.entity_name || 'General',
+        amount_display: `${e.type === 'credit' ? '+' : '-'}Rs.${Number(e.amount).toLocaleString()}`
+      })),
+      columns: [
+        { key: 'sr', label: '#', type: 'text' },
+        { key: 'date', label: 'Date', type: 'text' },
+        { key: 'entity_name', label: 'Party', type: 'text' },
+        { key: 'description', label: 'Details', type: 'text' },
+        { key: 'amount_display', label: 'Amount', type: 'text' }
+      ],
+      generatedBy: profile?.full_name || 'System',
+      kpis: [
+        { label: 'Available Cash', value: `Rs.${(cashOnHand / 1000).toFixed(1)}K` },
+        { label: 'Pending Rec.', value: `Rs.${(pendingReceivables / 1000).toFixed(1)}K` }
+      ]
+    });
+  };
+
+  const handleExportCSV = () => {
+    reportExporter.downloadCSV({
+      type: 'finance',
+      title: 'Business Ledger Export',
+      businessName: profile?.business_name || 'Vyapari Retail',
+      dateRange: { from: new Date().toISOString(), to: new Date().toISOString() },
+      rows: filtered.map(e => ({
+        ...e,
+        date: new Date(e.timestamp || e.created_at || e.date).toLocaleDateString('en-GB'),
+        entity: e.contacts?.name || e.entity_name || 'General',
+        type_label: e.type.toUpperCase()
+      })),
+      columns: [
+        { key: 'date', label: 'Date', type: 'text' },
+        { key: 'entity', label: 'Entity', type: 'text' },
+        { key: 'description', label: 'Description', type: 'text' },
+        { key: 'type_label', label: 'Type', type: 'text' },
+        { key: 'amount', label: 'Amount', type: 'currency' }
+      ],
+      generatedBy: profile?.full_name || 'System'
+    });
+    toast("CSV exported successfully", "success");
+  };
+
+  if (reconcileMode) {
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em]">Smart Helper</div>
+            <h2 className="text-2xl font-black italic uppercase tracking-tighter text-slate-950">Auto Payment Match</h2>
+          </div>
+          <button onClick={() => setReconcileMode(false)} className="px-6 py-2 border border-slate-200 rounded-xl font-black text-[10px] uppercase tracking-widest text-slate-500 hover:bg-slate-50">Back to History</button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6">
+          {reconciliationAttempts.length === 0 ? (
+            <div className="brutal-card p-20 text-center space-y-4">
+              <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 mx-auto">
+                <CheckCircle size={32} />
+              </div>
+              <div className="text-sm font-black uppercase text-slate-900">All Done!</div>
+              <p className="text-xs font-bold text-slate-400 uppercase">AI has matched all recent bank deposits.</p>
+            </div>
+          ) : (
+            reconciliationAttempts.map(attempt => (
+              <motion.div 
+                key={attempt.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="brutal-card !p-8 flex flex-col md:flex-row gap-8 items-center"
+              >
+                <div className="flex-1 space-y-2">
+                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Bank Deposit Found</div>
+                  <div className="text-lg font-black text-slate-950">{attempt.ledger_entries.description}</div>
+                  <div className="text-2xl font-black text-emerald-600 tracking-tighter">₹{attempt.ledger_entries.amount.toLocaleString()}</div>
+                </div>
+
+                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                  <ArrowUpRight size={20} />
+                </div>
+
+                <div className="flex-1 space-y-2">
+                  <div className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">Match Found ({attempt.confidence_score}% Accuracy)</div>
+                  <div className="text-lg font-black text-slate-950">Bill #{attempt.invoices.invoice_number}</div>
+                  <p className="text-[10px] font-bold text-slate-500 italic">"Why it matches: {attempt.matching_reason}"</p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button onClick={() => handleConfirmReconciliation(attempt)} className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-700 shadow-xl shadow-indigo-600/20">Confirm Match</button>
+                  <button className="px-6 py-3 border border-slate-200 rounded-2xl font-black text-[10px] uppercase tracking-widest text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all">Reject</button>
+                </div>
+              </motion.div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <KPICard 
-          title="Cash Liquidity" 
+          title="Available Cash" 
           value={`Rs.${(cashOnHand / 1000).toFixed(1)}K`} 
           change={12.5} 
           changeLabel="net flow" 
@@ -113,7 +265,7 @@ export default function Ledger() {
           color="#6366F1" 
         />
         <KPICard 
-          title="Pending Receivables" 
+          title="Money to Collect" 
           value={`Rs.${(pendingReceivables / 1000).toFixed(1)}K`} 
           change={-3.2} 
           changeLabel="settled" 
@@ -127,6 +279,19 @@ export default function Ledger() {
         animate={{ opacity: 1, y: 0 }}
         className="brutal-card !p-10"
       >
+        <div className="flex items-center justify-between mb-8">
+           <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-950">Money History</div>
+           {reconciliationAttempts.length > 0 && (
+             <button 
+               onClick={() => setReconcileMode(true)}
+               className="px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center gap-2 text-indigo-600 hover:bg-indigo-100 transition-all"
+             >
+               <Zap size={14} className="animate-pulse" />
+               <span className="text-[9px] font-black uppercase tracking-wider">{reconciliationAttempts.length} AI Matches Pending</span>
+             </button>
+           )}
+        </div>
+
         <div className="flex flex-col lg:flex-row gap-8 mb-12 items-start lg:items-center">
           <div className="relative flex-1 w-full group">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-neon transition-colors" size={20} />
@@ -150,6 +315,20 @@ export default function Ledger() {
               {isImporting ? <Loader2 size={20} className="animate-spin" /> : <UploadCloud size={20} />}
               IMPORT CSV
             </label>
+            <div className="flex bg-slate-100 rounded-2xl p-1 gap-1 border border-slate-200">
+              <button 
+                onClick={handleExportPDF} 
+                className="flex items-center justify-center gap-2 px-6 h-12 rounded-xl text-slate-500 font-black text-[10px] uppercase tracking-widest hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all"
+              >
+                <Download size={16} /> PDF
+              </button>
+              <button 
+                onClick={handleExportCSV} 
+                className="flex items-center justify-center gap-2 px-6 h-12 rounded-xl text-slate-500 font-black text-[10px] uppercase tracking-widest hover:bg-white hover:text-slate-900 hover:shadow-sm transition-all"
+              >
+                <FileText size={16} /> CSV
+              </button>
+            </div>
             <ActionBtn onClick={() => setIsModalOpen(true)} className="!px-10 !h-[62px]">
               <Plus size={20} /> NEW ENTRY
             </ActionBtn>

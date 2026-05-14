@@ -161,7 +161,7 @@ export default function ContactsList() {
               </div>
             </div>
             <h1 className="text-4xl font-black text-white italic uppercase tracking-tighter leading-tight">
-              Partners & <br className="hidden md:block xl:hidden" /> <span className="text-indigo-500">Connections</span>
+              Customers & <br className="hidden md:block xl:hidden" /> <span className="text-indigo-500">Suppliers</span>
             </h1>
             <p className="text-slate-400 text-sm font-bold uppercase tracking-wider max-w-md leading-relaxed">
               Complete oversight of your ecosystem. Manage high-value clients and key suppliers from a single command center.
@@ -180,14 +180,14 @@ export default function ContactsList() {
               <span className="text-[8px] font-black uppercase tracking-widest text-indigo-400">Partners</span>
             </div>
             <div className="px-6 py-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl flex-1 min-w-[140px]">
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Cash Liquidity</div>
+              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Available Cash</div>
               <div className="text-xl font-black text-white leading-none mb-1">{formatK(cashLiquidity)}</div>
               <div className="flex items-center gap-1.5">
                 <span className="text-[8px] font-black uppercase tracking-widest text-emerald-400">- 12.5%</span>
               </div>
             </div>
             <div className="px-6 py-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl flex-1 min-w-[140px]">
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Pending</div>
+              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">To Collect</div>
               <div className="text-xl font-black text-white leading-none mb-1">{formatK(pendingReceivables)}</div>
               <div className="flex items-center gap-1.5">
                 <span className="text-[8px] font-black uppercase tracking-widest text-rose-400">- 3.2%</span>
@@ -208,7 +208,7 @@ export default function ContactsList() {
           </div>
           <input 
             type="text" 
-            placeholder="Search partners by name, phone, or location..."
+            placeholder="Search by name, phone, or location..."
             className="w-full bg-white border-2 border-slate-100 focus:border-indigo-500 p-6 pl-20 rounded-[2rem] text-sm font-bold outline-none transition-all shadow-sm placeholder:text-slate-300"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -241,7 +241,7 @@ export default function ContactsList() {
               <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center group-hover:rotate-90 transition-transform">
                 <Plus size={14} />
               </div>
-              Onboard Partner
+              Add Person
             </button>
           </div>
         </div>
@@ -253,12 +253,12 @@ export default function ContactsList() {
             <table className="w-full border-separate border-spacing-y-4 min-w-[800px]">
               <thead>
                 <tr>
-                  <th className="px-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-left w-[30%]">Partner Identity</th>
+                  <th className="px-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-left w-[30%]">Name & ID</th>
                   <th className="px-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-left w-[10%]">Role</th>
                   <th className="px-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-left w-[15%]">Direct Contact</th>
                   <th className="px-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-left hidden xl:table-cell w-[15%]">Tax Details</th>
                   <th className="px-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-left hidden lg:table-cell w-[15%]">Location</th>
-                  <th className="px-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right w-[15%]">Tactical Actions</th>
+                  <th className="px-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-right w-[15%]">Quick Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -304,7 +304,7 @@ export default function ContactsList() {
                               : "bg-emerald-50 text-emerald-600 border-emerald-100"
                           }`}
                         >
-                          {c.type === "customer" ? "Retail" : "Partner"}
+                          {c.type === "customer" ? "Customer" : "Supplier"}
                         </span>
                       </td>
                       <td className="px-5 py-6 bg-white border-y border-slate-100 shadow-sm transition-colors">

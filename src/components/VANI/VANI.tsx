@@ -232,10 +232,10 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
   };
 
   const orbLabels = {
-    idle:       'VANI Core Standby',
-    listening:  'VANI Listening...',
-    thinking:   'Analyzing Command...',
-    speaking:   'VANI Speaking...',
+    idle:       'Voice Assistant Ready',
+    listening:  'Listening...',
+    thinking:   'Thinking...',
+    speaking:   'Speaking...',
     confirming: 'Awaiting Confirmation'
   };
 
@@ -255,7 +255,7 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full bg-white ${state === 'listening' ? 'animate-ping' : ''}`} />
                 <span className="text-[10px] font-bold uppercase tracking-widest">
-                  {permError ? 'Hardware Shield Blocked' : state !== 'idle' ? orbLabels[state] : 'Execution Summary'}
+                  {permError ? 'Microphone Blocked' : state !== 'idle' ? orbLabels[state] : 'Execution Summary'}
                 </span>
               </div>
               <button onClick={() => { setLastResponse(null); setPermError(false); }} className="opacity-50 hover:opacity-100 text-slate-500">
@@ -267,9 +267,9 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
               {/* Premium Language Picker */}
               <div className="flex gap-1.5 mb-4 p-1 bg-slate-100/80 rounded-xl border border-slate-200/55">
                 {[
-                  { code: 'hi-IN', label: '------' },
+                  { code: 'hi-IN', label: 'Hindi' },
                   { code: 'en-IN', label: 'English' },
-                  { code: 'mr-IN', label: '-----' }
+                  { code: 'mr-IN', label: 'Marathi' }
                 ].map((lang) => (
                   <button
                     key={lang.code}
@@ -363,7 +363,7 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
             </div>
 
             <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
-              <span className="text-[8px] font-black text-slate-400 tracking-[0.2em]">VANI_INTELLIGENCE_v4</span>
+              <span className="text-[8px] font-black text-slate-400 tracking-[0.2em]">VOICE_ASSISTANT_v4</span>
               <div className="flex gap-1">
                 <div className="w-1 h-1 rounded-full bg-emerald-500" />
                 <div className="w-1 h-1 rounded-full bg-emerald-500" />

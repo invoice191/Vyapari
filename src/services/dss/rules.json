@@ -83,5 +83,14 @@
     "highScoreFloor": 65,
     "mediumScoreFloor": 40,
     "confidenceWeightInScore": 0.25
+  },
+  "monsoon": {
+    "arrivalMonth": 6,
+    "departureMonth": 9,
+    "footfallImpactPct": -20,
+    "supplyChainDelayRisk": 0.45,
+    "highDemandCategories": ["Rainwear", "Umbrellas", "Waterproofing", "Agricultural Seeds", "Pesticides"],
+    "logisticsSurchargePct": 8,
+    "inventoryBufferMultiplier": 1.4
   }
 }

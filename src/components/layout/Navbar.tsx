@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   Search, 
@@ -12,7 +12,8 @@ import {
   ArrowRight,
   Box,
   Users,
-  LayoutDashboard
+  LayoutDashboard,
+  Shield
 } from "lucide-react";
 import { NotificationCenter } from "./NotificationCenter";
 import { useGlobalData } from "../../context/DataContext";
@@ -100,7 +101,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <Activity size={14} className="text-indigo-600 animate-pulse" />
-            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Live System</span>
+            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hidden sm:inline">Live System</span>
+            
+            {/* Security Indicator */}
+            <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100 ml-2">
+               <Shield size={10} className="text-emerald-500" />
+               <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Secured</span>
+            </div>
           </div>
           <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight whitespace-nowrap">
             {activeTitle}

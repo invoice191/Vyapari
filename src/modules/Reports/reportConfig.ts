@@ -1,4 +1,4 @@
-﻿import { 
+import { 
   BarChart3, TrendingUp, Package, Users, 
   CreditCard, Clock, MapPin, AlertCircle,
   BarChart, PieChart, LineChart, Table,
@@ -7,11 +7,11 @@
 } from 'lucide-react';
 
 export type ReportCategory = 
-  | '-- Sales Reports'
-  | '-- Inventory Reports'
-  | '-- Financial Reports'
-  | '-- Customer Insights'
-  | '-- Performance Metrics';
+  | 'Sales Records'
+  | 'Stock Records'
+  | 'Money Records'
+  | 'Customer Tips'
+  | 'Staff & Speed';
 
 export type ReportId = 
   | 'daily-sales'
@@ -52,48 +52,48 @@ export const REPORT_CONFIG: ReportDefinition[] = [
   // Sales Reports
   {
     id: 'daily-sales',
-    title: 'Daily Sales Summary',
-    description: "Consolidated view of a single day's selling activity - invoices, gross sales, discounts, taxes and net collections by hour and channel.",
+    title: "Today's Sales",
+    description: "A simple look at today's sales, discounts, and taxes collected.",
     icon: BarChart3,
-    category: '-- Sales Reports',
+    category: 'Sales Records',
     type: 'hybrid',
     columns: ['Date', 'Invoices', 'Gross Sales', 'Discounts', 'Tax', 'Net Sales'],
     filters: ['payment', 'threshold']
   },
   {
     id: 'hourly-sales',
-    title: 'Hourly Sales Analysis',
-    description: 'Hour-by-hour breakdown of transactions and revenue to identify peak and lean periods for staffing and promotions.',
+    title: 'Sales by Hour',
+    description: 'See which hours of the day are busiest to help you manage your staff better.',
     icon: Clock,
-    category: '-- Sales Reports',
+    category: 'Sales Records',
     type: 'hybrid',
     columns: ['Hour', 'Transactions', 'Units Sold', 'Revenue', 'Avg. Ticket']
   },
   {
     id: 'payment-modes',
-    title: 'Payment Mode Distribution',
-    description: 'Share of collections across cash, card, UPI, wallets and credit to monitor payment-mix trends and reconciliation.',
+    title: 'How Customers Pay',
+    description: 'See if people are paying more by Cash, Card, or UPI.',
     icon: CreditCard,
-    category: '-- Sales Reports',
+    category: 'Sales Records',
     type: 'hybrid',
     columns: ['Payment Mode', 'Transactions', 'Amount', 'Share %'],
     filters: ['payment']
   },
   {
     id: 'top-products',
-    title: 'Top Performing Products',
-    description: 'Ranking of best-selling SKUs by units and revenue with margin contribution to guide buying and shelf-space decisions.',
+    title: 'Best Selling Items',
+    description: 'Your top items that are making the most money.',
     icon: Package,
-    category: '-- Sales Reports',
+    category: 'Sales Records',
     type: 'table',
-    columns: ['Rank', 'SKU', 'Product', 'Units', 'Revenue', 'Margin %']
+    columns: ['Rank', 'Item Code', 'Product', 'Units', 'Revenue', 'Margin %']
   },
   {
     id: 'tax-gst',
-    title: 'Tax / GST Summary',
-    description: 'Slab-wise breakup of taxable sales, CGST, SGST and IGST liabilities for the period to support GST filing.',
+    title: 'GST Reports',
+    description: 'A simple summary of GST collected to help you with your filings.',
     icon: FileText,
-    category: '-- Sales Reports',
+    category: 'Sales Records',
     type: 'table',
     columns: ['GST Slab', 'Taxable Value', 'CGST', 'SGST', 'IGST', 'Total Tax'],
     filters: ['gst_slab']
@@ -111,58 +111,58 @@ export const REPORT_CONFIG: ReportDefinition[] = [
   // Inventory Reports
   {
     id: 'stock-levels',
-    title: 'Current Stock Status',
-    description: 'Live snapshot of on-hand quantity, reserved stock and available-to-sell across all SKUs and warehouses.',
+    title: 'My Stock List',
+    description: 'See exactly how much of each item you have left in the shop.',
     icon: Package,
-    category: '-- Inventory Reports',
+    category: 'Stock Records',
     type: 'table',
-    columns: ['SKU', 'Product', 'On Hand', 'Reserved', 'Available', 'Reorder Lvl'],
+    columns: ['Item Code', 'Product', 'On Hand', 'Reserved', 'Available', 'Reorder Lvl'],
     filters: ['category', 'threshold']
   },
   {
     id: 'stock-movement',
-    title: 'Stock Movement History',
-    description: 'Chronological log of all inward, outward, transfer and adjustment movements for traceability and audit.',
+    title: 'Stock History Log',
+    description: 'A record of every item that came in or went out of your shop.',
     icon: TrendingUp,
-    category: '-- Inventory Reports',
+    category: 'Stock Records',
     type: 'table',
-    columns: ['Date', 'SKU', 'Type', 'Qty', 'Reference', 'Balance']
+    columns: ['Date', 'Item Code', 'Type', 'Qty', 'Reference', 'Balance']
   },
   {
     id: 'low-stock',
-    title: 'Low Stock Alert',
-    description: 'Items at or below reorder threshold with suggested order quantity based on average daily demand and lead time.',
+    title: 'Low Stock Alerts',
+    description: 'Items that are almost finished. Buy these soon!',
     icon: ShieldAlert,
-    category: '-- Inventory Reports',
+    category: 'Stock Records',
     type: 'table',
-    columns: ['SKU', 'Product', 'Available', 'Reorder Lvl', 'Avg Daily Sale', 'Suggested Qty'],
+    columns: ['Item Code', 'Product', 'Available', 'Reorder Lvl', 'Avg Daily Sale', 'Suggested Qty'],
     filters: ['category', 'threshold']
   },
   {
     id: 'dead-stock',
-    title: 'Dead Stock Analysis',
-    description: 'SKUs with zero or negligible movement over a defined window, with locked-in capital and disposal recommendations.',
+    title: 'Old Stock List',
+    description: "Items that haven't sold in a long time. Try giving a discount!",
     icon: AlertCircle,
-    category: '-- Inventory Reports',
+    category: 'Stock Records',
     type: 'table',
-    columns: ['SKU', 'Product', 'Days No Sale', 'Qty', 'Stock Value', 'Action'],
+    columns: ['Item Code', 'Product', 'Days No Sale', 'Qty', 'Stock Value', 'Action'],
     filters: ['category', 'threshold']
   },
   {
     id: 'inventory-valuation',
-    title: 'Inventory Valuation',
-    description: 'Closing stock value by category using FIFO/Weighted-Average cost - used for balance sheet and COGS reconciliation.',
+    title: 'Stock Value',
+    description: 'Total value of everything you have in your shop right now.',
     icon: BarChart,
-    category: '-- Inventory Reports',
+    category: 'Stock Records',
     type: 'hybrid',
-    columns: ['Category', 'SKUs', 'Units', 'Cost Value', 'Retail Value', 'Method']
+    columns: ['Category', 'Items', 'Units', 'Cost Value', 'Retail Value', 'Method']
   },
   {
     id: 'supplier-perf',
-    title: 'Supplier Performance',
-    description: 'Vendor scorecard covering on-time delivery, fill-rate, quality rejections and price variance.',
+    title: 'Supplier Quality',
+    description: 'See which suppliers deliver on time and which ones give you trouble.',
     icon: Coins,
-    category: '-- Inventory Reports',
+    category: 'Stock Records',
     type: 'table',
     columns: ['Supplier', 'Orders', 'On-Time %', 'Fill Rate', 'Rejection %', 'Score']
   },
@@ -170,111 +170,111 @@ export const REPORT_CONFIG: ReportDefinition[] = [
   // Financial Reports
   {
     id: 'pl-statement',
-    title: 'Profit & Loss Statement',
-    description: 'Statement of revenue, cost of goods sold, operating expenses and net profit for the reporting period.',
+    title: 'Profit & Loss',
+    description: 'A simple list of how much you earned and how much you spent.',
     icon: Landmark,
-    category: '-- Financial Reports',
+    category: 'Money Records',
     type: 'table',
-    columns: ['Particulars', 'Current Period', 'Previous Period', 'Change %']
+    columns: ['Details', 'This Month', 'Last Month', 'Change %']
   },
   {
     id: 'cash-flow',
-    title: 'Cash Flow Statement',
-    description: 'Movement of cash across operating, investing and financing activities for the period with closing balance.',
+    title: 'Money In & Out',
+    description: 'Track how cash is moving in and out of your business.',
     icon: TrendingUp,
-    category: '-- Financial Reports',
+    category: 'Money Records',
     type: 'table',
-    columns: ['Activity', 'Inflows', 'Outflows', 'Net Cash']
+    columns: ['Activity', 'Money In', 'Money Out', 'Balance']
   },
   {
     id: 'expense-breakdown',
-    title: 'Expense Breakdown',
-    description: 'Categorised view of operating expenses with variance against budget to identify overspend.',
+    title: 'Spend History',
+    description: 'See where your money is going - Rent, Salary, Bills, etc.',
     icon: PieChart,
-    category: '-- Financial Reports',
+    category: 'Money Records',
     type: 'hybrid',
     columns: ['Category', 'Budget', 'Actual', 'Variance', 'Variance %']
   },
   {
     id: 'cogs-analysis',
-    title: 'COGS Analysis',
-    description: 'Cost of goods sold by category and SKU with movement in cost and impact on margin.',
+    title: 'Item Costs',
+    description: 'How much you are spending to buy the items you sell.',
     icon: BarChart,
-    category: '-- Financial Reports',
+    category: 'Money Records',
     type: 'table',
-    columns: ['Category', 'Revenue', 'COGS', 'Gross Profit', 'GP %']
+    columns: ['Category', 'Revenue', 'Cost', 'Profit', 'Profit %']
   },
 
   // Customer Insights
   {
     id: 'rfm-segmentation',
-    title: 'Customer RFM Clusters',
-    description: 'Segmentation of customers by Recency, Frequency and Monetary value into actionable behavioural clusters.',
+    title: 'Customer Types',
+    description: 'Group your customers into VIPs, Regulars, and New ones.',
     icon: Users,
-    category: '-- Customer Insights',
+    category: 'Customer Tips',
     type: 'hybrid',
-    columns: ['Segment', 'Customers', 'Avg Recency', 'Avg Frequency', 'Avg Spend'],
+    columns: ['Type', 'Customers', 'Last Visit', 'Visit Frequency', 'Avg Spend'],
     filters: ['segment']
   },
   {
     id: 'churn-risk',
-    title: 'Churn Prediction Report',
-    description: 'ML-scored list of customers most likely to churn in the next 30 days with key drivers and suggested interventions.',
+    title: 'Losing Customers',
+    description: 'Customers who haven’t visited in a while. Invite them back!',
     icon: AlertCircle,
-    category: '-- Customer Insights',
+    category: 'Customer Tips',
     type: 'table',
-    columns: ['Customer', 'Last Purchase', 'Churn Probability', 'Predicted LTV Loss', 'Suggested Action']
+    columns: ['Customer', 'Last Purchase', 'Risk Level', 'Potential Loss', 'Advice']
   },
   {
     id: 'acquisition-retention',
-    title: 'Acquisition & Retention',
-    description: 'Monthly cohort analysis of new vs returning customers, retention curves and net customer growth.',
+    title: 'New vs Old Customers',
+    description: 'See if you are getting new customers or if old ones are coming back.',
     icon: LineChart,
-    category: '-- Customer Insights',
+    category: 'Customer Tips',
     type: 'table',
-    columns: ['Cohort', 'New', 'Returning', 'Retention M+1', 'Retention M+3']
+    columns: ['Month', 'New', 'Old', 'Came Back', 'Stayed']
   },
   {
     id: 'clv-analysis',
-    title: 'CLV Analysis',
-    description: 'Predicted Customer Lifetime Value by segment with average order value, purchase frequency and projected horizon.',
+    title: 'Customer Lifetime Value',
+    description: 'See which customers are worth the most to your shop in the long run.',
     icon: BarChart2,
-    category: '-- Customer Insights',
+    category: 'Customer Tips',
     type: 'table',
-    columns: ['Segment', 'AOV', 'Purchase Freq.', 'Avg Lifespan', 'Predicted CLV']
+    columns: ['Type', 'Avg Order', 'Visit Freq.', 'Life Span', 'Total Value']
   },
 
   // Performance Metrics
   {
     id: 'sales-by-employee',
-    title: 'Sales by Employee',
-    description: 'Employee-wise sales, units, conversion and average ticket size to evaluate front-line performance.',
+    title: 'Staff Sales',
+    description: 'See how much each staff member is selling.',
     icon: Users,
-    category: '-- Performance Metrics',
+    category: 'Staff & Speed',
     type: 'hybrid',
-    columns: ['Employee', 'Invoices', 'Units', 'Revenue', 'Avg Ticket', 'vs Target']
+    columns: ['Staff Name', 'Bills', 'Items', 'Total Money', 'Avg Bill', 'Target Status']
   }
 ];
 
 export const REPORT_TREE = [
   {
-    cat: '-- Sales Reports' as ReportCategory,
-    items: REPORT_CONFIG.filter(r => r.category === '-- Sales Reports')
+    cat: 'Sales Records' as ReportCategory,
+    items: REPORT_CONFIG.filter(r => r.category === 'Sales Records')
   },
   {
-    cat: '-- Inventory Reports' as ReportCategory,
-    items: REPORT_CONFIG.filter(r => r.category === '-- Inventory Reports')
+    cat: 'Stock Records' as ReportCategory,
+    items: REPORT_CONFIG.filter(r => r.category === 'Stock Records')
   },
   {
-    cat: '-- Financial Reports' as ReportCategory,
-    items: REPORT_CONFIG.filter(r => r.category === '-- Financial Reports')
+    cat: 'Money Records' as ReportCategory,
+    items: REPORT_CONFIG.filter(r => r.category === 'Money Records')
   },
   {
-    cat: '-- Customer Insights' as ReportCategory,
-    items: REPORT_CONFIG.filter(r => r.category === '-- Customer Insights')
+    cat: 'Customer Tips' as ReportCategory,
+    items: REPORT_CONFIG.filter(r => r.category === 'Customer Tips')
   },
   {
-    cat: '-- Performance Metrics' as ReportCategory,
-    items: REPORT_CONFIG.filter(r => r.category === '-- Performance Metrics')
+    cat: 'Staff & Speed' as ReportCategory,
+    items: REPORT_CONFIG.filter(r => r.category === 'Staff & Speed')
   }
 ];

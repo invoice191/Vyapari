@@ -53,14 +53,16 @@ serve(async (req) => {
         "risk_level": "low" | "medium" | "high",
         "reason": string (max 12 words),
         "suggestion": string (max 12 words),
-        "escalation_required": boolean
+        "escalation_required": boolean,
+        "credit_block": boolean
       }
 
       Rules:
       - Score > 80: Consistent on-time payments.
       - Score 40-80: Occasional delays or increasing outstanding.
       - Score < 40: Frequent delays, large outstanding, or no recent payments.
-      - If outstanding_balance > credit_limit, flag as high risk.
+      - If outstanding_balance > credit_limit, flag as high risk and set credit_block to true.
+      - If risk_level is high, set credit_block to true.
 
       Customer: ${JSON.stringify(contact)}
       Historical Ledger: ${JSON.stringify(ledgerEntries)}

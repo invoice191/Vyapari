@@ -5,9 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vyapari | Automated Invoice Intelligence</title>
     <meta name="description" content="Advanced retail intelligence system for automated invoicing, inventory tracking, and strategic business analysis." />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+            console.log('Unregistered broken service worker');
+          }
+        });
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      window.addEventListener('error', function(e) {
+        document.body.innerHTML += '<div style="position:fixed;top:0;left:0;background:red;color:white;z-index:9999;padding:20px;width:100%;font-family:monospace;overflow:auto;max-height:100vh;"><h3>Fatal Error</h3><pre>' + e.error?.stack + '</pre></div>';
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        document.body.innerHTML += '<div style="position:fixed;top:0;left:0;background:red;color:white;z-index:9999;padding:20px;width:100%;font-family:monospace;overflow:auto;max-height:100vh;"><h3>Unhandled Promise Rejection</h3><pre>' + (e.reason?.stack || e.reason) + '</pre></div>';
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

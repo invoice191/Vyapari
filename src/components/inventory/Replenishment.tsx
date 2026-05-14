@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { replenishmentService, ReplenishmentDraft, InventoryInsight } from "../../services/replenishmentService";
 import { useAuth } from "../../hooks/useAuth";
 import { motion, AnimatePresence } from "motion/react";
@@ -67,7 +67,7 @@ export default function Replenishment() {
     <div className="space-y-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h2 className="text-5xl font-black tracking-tighter text-slate-900 uppercase">Order Advice</h2>
+          <h2 className="text-5xl font-black tracking-tighter text-slate-900 uppercase">Restock Help</h2>
           <div className="flex items-center gap-3 mt-4">
              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">
@@ -82,7 +82,7 @@ export default function Replenishment() {
             className="flex items-center gap-2 px-6 py-4 bg-white border border-slate-200 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:border-neon transition-all"
           >
             <RefreshCcw size={16} className={refreshing ? "animate-spin text-neon" : "text-slate-400"} />
-            {refreshing ? "Checking..." : "Check Stock Now"}
+            {refreshing ? "Checking..." : "Refresh Stock"}
           </button>
           {drafts.length > 0 && (
             <ActionBtn onClick={executeAll} className="!px-10">
@@ -95,7 +95,7 @@ export default function Replenishment() {
       {/* INTELLIGENCE FEED */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Suggested Orders</h3>
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Things to Buy</h3>
           
           {loading ? (
             <div className="p-20 text-center brutal-card bg-white/50">
@@ -129,7 +129,7 @@ export default function Replenishment() {
                        {draft.is_dead_stock && (
                          <div className="flex items-center gap-2 text-rose-500">
                            <Ghost size={16} />
-                           <span className="text-[10px] font-black uppercase tracking-tighter">DEAD STOCK</span>
+                           <span className="text-[10px] font-black uppercase tracking-tighter">OLD STOCK</span>
                          </div>
                        )}
                     </div>
@@ -141,7 +141,7 @@ export default function Replenishment() {
                     
                     <div className="grid grid-cols-2 gap-4 mb-8">
                        <div className="bg-slate-100/50 p-4 rounded-xl border border-slate-100">
-                          <div className="text-[8px] font-black text-slate-400 uppercase mb-1">Stock in Shop</div>
+                          <div className="text-[8px] font-black text-slate-400 uppercase mb-1">Items in Shop</div>
                           <div className="text-lg font-black text-slate-900">{draft.current_stock}</div>
                        </div>
                        <div className="bg-slate-100/50 p-4 rounded-xl border border-slate-100">
@@ -154,10 +154,10 @@ export default function Replenishment() {
 
                     <div className="mb-8 p-5 bg-neon/5 rounded-2xl border border-neon/10">
                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-[9px] font-black text-neon uppercase tracking-widest">Suggested Order</span>
+                          <span className="text-[9px] font-black text-neon uppercase tracking-widest">Amount to Buy</span>
                           <TrendingDown className="text-neon" size={14} />
                        </div>
-                       <div className="text-2xl font-black text-slate-900">{draft.eoq_quantity} <span className="text-xs text-slate-400 uppercase">Items</span></div>
+                       <div className="text-2xl font-black text-slate-900">{draft.suggested_quantity} <span className="text-xs text-slate-400 uppercase">Items</span></div>
                     </div>
 
                     {draft.substitution_id && (

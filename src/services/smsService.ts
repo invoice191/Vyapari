@@ -1,4 +1,4 @@
-﻿import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 
 export interface SMSPayload {
   phone: string;
@@ -13,7 +13,7 @@ export const smsService = {
    * Global flag to prevent actual API costs during testing.
    * Set to TRUE to log to console only.
    */
-  SIMULATION_MODE: true,
+  SIMULATION_MODE: false,
 
   /**
    * Sends a message via the Supabase Edge Function (Twilio)

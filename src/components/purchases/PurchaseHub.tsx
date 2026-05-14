@@ -188,7 +188,7 @@ const PurchaseOrderList = ({ orders, loading, onCreateNew, onVendorClick, onOrde
 };
 
 // COMPONENT: CreatePurchaseOrder Modal/Slide-over
-const CreatePurchaseOrder = ({ isOpen, onClose, onSuccess }: any) => {
+const CreatePurchaseOrder = ({ isOpen, onClose, onSuccess, prefill }: any) => {
   const { contacts, products } = useGlobalData();
   const { business, user } = useAuth();
   const [formData, setFormData] = useState({
@@ -199,6 +199,22 @@ const CreatePurchaseOrder = ({ isOpen, onClose, onSuccess }: any) => {
   });
 
   const [items, setItems] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (prefill && isOpen) {
+      setFormData(prev => ({
+        ...prev,
+        supplierId: prefill.supplier_id || '',
+      }));
+      if (prefill.items) {
+        setItems(prefill.items.map((i: any) => ({
+          productId: i.product_id || '',
+          quantity: i.quantity || 1,
+          unitCost: i.unit_cost || 0
+        })));
+      }
+    }
+  }, [prefill, isOpen]);
   const [loading, setLoading] = useState(false);
 
   const suppliers = contacts.filter((c: any) => c.type === 'supplier' || c.type === 'both');
@@ -549,6 +565,21 @@ export default function PurchaseHub() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [prefill, setPrefill] = useState<any>(null);
+
+  useEffect(() => {
+    const handleGlobalNav = (e: any) => {
+      if (e.detail?.module === 'purchases' && e.detail?.props) {
+        const { mode, prefill } = e.detail.props;
+        if (mode === 'create') {
+          setPrefill(prefill);
+          setIsCreating(true);
+        }
+      }
+    };
+    window.addEventListener('app:navigate', handleGlobalNav);
+    return () => window.removeEventListener('app:navigate', handleGlobalNav);
+  }, []);
 
   const fetchData = async () => {
     if (!business?.id) return;
@@ -769,8 +800,9 @@ export default function PurchaseHub() {
         {isCreating && (
           <CreatePurchaseOrder 
             isOpen={isCreating} 
-            onClose={() => setIsCreating(false)} 
+            onClose={() => { setIsCreating(false); setPrefill(null); }} 
             onSuccess={fetchData}
+            prefill={prefill}
           />
         )}
         {selectedOrder && (

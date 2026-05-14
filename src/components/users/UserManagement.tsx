@@ -10,12 +10,13 @@ import { userService, UserProfile } from "../../services/userService";
 import { auditService } from "../../services/auditService";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
+import { EmployeeDashboard } from "./EmployeeDashboard";
 
 const ROLE_MAP: Record<string, { label: string, color: string, icon: any }> = {
   "owner": { label: "System Owner", color: "text-indigo-600 bg-indigo-50 border-indigo-100", icon: ShieldCheck },
+  "manager": { label: "Operations Manager", color: "text-amber-600 bg-amber-50 border-amber-100", icon: Users },
+  "staff": { label: "Sales & Cashier", color: "text-blue-600 bg-blue-50 border-blue-100", icon: UserPlus },
   "banker": { label: "Banker / Auditor", color: "text-emerald-600 bg-emerald-50 border-emerald-100", icon: Shield },
-  "employee": { label: "Operational Staff", color: "text-amber-600 bg-amber-50 border-amber-100", icon: Users },
-  "salesperson": { label: "Field Sales", color: "text-blue-600 bg-blue-50 border-blue-100", icon: UserPlus },
 };
 
 export default function UserManagement() {
@@ -28,8 +29,9 @@ export default function UserManagement() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState<UserProfile | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<UserProfile | null>(null);
+  const [showDashboard, setShowDashboard] = useState<UserProfile | null>(null);
 
-  const [formData, setFormData] = useState({ name: "", email: "", role: "employee" });
+  const [formData, setFormData] = useState({ name: "", email: "", role: "staff" });
   const [savingUser, setSavingUser] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
 
@@ -80,7 +82,7 @@ export default function UserManagement() {
 
       setSaveStatus('success');
       setTimeout(() => {
-        setFormData({ name: "", email: "", role: "employee" });
+        setFormData({ name: "", email: "", role: "staff" });
         setShowAddModal(false);
         setSavingUser(false);
         setSaveStatus('idle');
@@ -158,7 +160,7 @@ export default function UserManagement() {
           </div>
           
           <div className="flex gap-2 p-1.5 bg-slate-50 rounded-[2.2rem] border border-slate-100">
-            {["All", "owner", "banker", "employee", "salesperson"].map(r => (
+            {["All", "owner", "manager", "staff", "banker"].map(r => (
               <button 
                 key={r}
                 onClick={() => setRoleFilter(r)}
@@ -175,7 +177,7 @@ export default function UserManagement() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
           <AnimatePresence>
             {filtered.map((u) => {
-              const RoleIcon = ROLE_MAP[u.role || 'employee']?.icon || Users;
+              const RoleIcon = ROLE_MAP[u.role || 'staff']?.icon || Users;
               return (
                 <motion.div 
                   layout
@@ -203,10 +205,10 @@ export default function UserManagement() {
                     </div>
                   </div>
 
-                  <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl border ${ROLE_MAP[u.role || 'employee']?.color || 'bg-slate-100'} mb-8`}>
+                  <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl border ${ROLE_MAP[u.role || 'staff']?.color || 'bg-slate-100'} mb-8`}>
                     <RoleIcon size={16} />
                     <span className="text-[10px] font-black uppercase tracking-widest">
-                      {ROLE_MAP[u.role || 'employee']?.label || 'Unknown Role'}
+                      {ROLE_MAP[u.role || 'staff']?.label || 'Unknown Role'}
                     </span>
                   </div>
 
@@ -224,19 +226,27 @@ export default function UserManagement() {
                     </div>
                   </div>
 
-                  <div className="mt-8 flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="mt-8 flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button 
-                      onClick={() => userService.suspendUser(u.id, profile?.business_id || '', u.status).then(loadUsers)}
-                      className="flex-1 py-3 bg-white border border-slate-200 rounded-xl text-[9px] font-black uppercase tracking-widest hover:border-amber-500 hover:text-amber-600 transition-all"
+                      onClick={() => setShowDashboard(u)}
+                      className="w-full py-3 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-neon hover:text-slate-900 transition-all shadow-md"
                     >
-                      {u.status === 'Suspended' ? 'Unsuspend' : 'Suspend'}
+                      View Employee Dashboard
                     </button>
-                    <button 
-                      onClick={() => setShowDeleteConfirm(u)}
-                      className="p-3 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-all border border-rose-100"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={() => userService.suspendUser(u.id, profile?.business_id || '', u.status).then(loadUsers)}
+                        className="flex-1 py-3 bg-white border border-slate-200 rounded-xl text-[9px] font-black uppercase tracking-widest hover:border-amber-500 hover:text-amber-600 transition-all"
+                      >
+                        {u.status === 'Suspended' ? 'Unsuspend' : 'Suspend'}
+                      </button>
+                      <button 
+                        onClick={() => setShowDeleteConfirm(u)}
+                        className="p-3 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition-all border border-rose-100"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               );
@@ -505,6 +515,16 @@ export default function UserManagement() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Employee Dashboard */}
+      <AnimatePresence>
+        {showDashboard && (
+          <EmployeeDashboard 
+            user={showDashboard} 
+            onClose={() => setShowDashboard(null)} 
+          />
         )}
       </AnimatePresence>
     </div>

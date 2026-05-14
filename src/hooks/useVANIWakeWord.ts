@@ -1,4 +1,4 @@
-﻿import { useRef, useCallback } from 'react';
+import { useRef, useCallback } from 'react';
 
 export function useVANIWakeWord(onWake: () => void) {
   const recognitionRef = useRef<any>(null);
@@ -22,6 +22,9 @@ export function useVANIWakeWord(onWake: () => void) {
     recognition.lang = 'hi-IN';
     recognitionRef.current = recognition;
     listeningRef.current = true;
+    recognition.onstart = () => {
+      retryCountRef.current = 0;
+    };
 
     recognition.onresult = (event: any) => {
       const latest = event.results[event.results.length - 1][0].transcript

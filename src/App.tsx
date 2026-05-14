@@ -11,6 +11,7 @@ import Inventory from "./components/inventory/Inventory";
 import Ledger from "./components/ledger/Ledger";
 import AuditLogs from "./components/audit/AuditLogs";
 import Settings from "./components/modules/Settings/Settings";
+import AutoPilot from "./components/automation/AutoPilot";
 import UserManagement from "./components/users/UserManagement";
 import ContactsList from "./components/contacts/ContactsList";
 import CommandCenter from "./modules/CommandCenter";
@@ -24,6 +25,7 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import PaymentPortal from "./pages/PaymentPortal";
 import Onboarding from "./components/onboarding/Onboarding";
+import InvoiceAIConsole from "./components/invoices/InvoiceAIConsole";
 
 import VANI from "./components/VANI/VANI";
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -35,6 +37,7 @@ import { ModuleErrorBoundary } from "./components/ModuleErrorBoundary";
 import { useRealtime } from "./hooks/useRealtime";
 import { vaniService } from "./services/vaniService";
 import { vaniExecutor } from "./services/vaniExecutor";
+import { useAutomationDaemon } from "./hooks/useAutomationDaemon";
 import { RoleGuard } from "./components/common/RoleGuard";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -44,26 +47,27 @@ import { Navbar } from "./components/layout/Navbar";
 
 const MODULES = [
   { key: "dashboard", label: "Dashboard", icon: "--" },
-  { key: "command", label: "Command Center", icon: "--" },
+  { key: "command", label: "Home", icon: "--" },
   { key: "reports", label: "Reports", icon: "--" },
-  { key: "dss", label: "DSS", icon: "--" },
-  { key: "prediction", label: "Simulation", icon: "--" },
-  { key: "ocr", label: "OCR", icon: "--" },
+  { key: "dss", label: "Business Tips", icon: "--" },
+  { key: "prediction", label: "Business Testing", icon: "--" },
+  { key: "ocr", label: "Snap a Photo", icon: "--" },
   { key: "invoices", label: "Invoices", icon: "--" },
   { key: "inventory", label: "Inventory", icon: "--" },
-  { key: "ledger", label: "Financial Ledger", icon: "--" },
+  { key: "ledger", label: "Accounting", icon: "--" },
   { key: "banker", label: "Bankers View", icon: "--" },
 ];
 
 const SYSTEM_MODULES = [
   { key: "settings", label: "Settings", icon: "--" },
-  { key: "users", label: "User Management", icon: "---" },
-  { key: "audit", label: "Audit Logs", icon: "--" },
+  { key: "users", label: "Staff", icon: "---" },
+  { key: "audit", label: "System Logs", icon: "--" },
 ];
 
 function App() {
   const { user, profile, business, loading, signIn: login, signOut: logout, fetchProfileAndBusiness } = useAuth();
   useRealtime();
+  useAutomationDaemon(60); // Runs every 60 minutes
   const [showLanding, setShowLanding] = useState(true);
   const [active, setActive] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -144,32 +148,35 @@ function App() {
   const renderModule = () => {
     switch (active) {
       case "dashboard": return <ModuleErrorBoundary moduleName="Home"><Dashboard /></ModuleErrorBoundary>;
+      case "autopilot": return <ModuleErrorBoundary moduleName="Auto-Pilot"><AutoPilot /></ModuleErrorBoundary>;
       case "command":   return <ModuleErrorBoundary moduleName="Home"><RoleGuard module="Command Center"><CommandCenter /></RoleGuard></ModuleErrorBoundary>;
       case "reports":   return <ModuleErrorBoundary moduleName="My Reports"><RoleGuard module="Reports"><Reports /></RoleGuard></ModuleErrorBoundary>;
       case "dss":       return <ModuleErrorBoundary moduleName="Smart Tips"><RoleGuard module="DSS"><DSS /></RoleGuard></ModuleErrorBoundary>;
       case "prediction":return <ModuleErrorBoundary moduleName="What-If Calculator"><RoleGuard module="Simulation"><Prediction /></RoleGuard></ModuleErrorBoundary>;
       case "ocr":       return <ModuleErrorBoundary moduleName="What I Bought"><OCR /></ModuleErrorBoundary>;
       case "invoices":  return <ModuleErrorBoundary moduleName="Bills & Orders"><Invoices /></ModuleErrorBoundary>;
+      case "invoice_ai": return <ModuleErrorBoundary moduleName="Invoice AI"><InvoiceAIConsole /></ModuleErrorBoundary>;
       case "pos":       return <ModuleErrorBoundary moduleName="POS Counter Mode"><POSCounterMode /></ModuleErrorBoundary>;
       case "inventory": return <ModuleErrorBoundary moduleName="My Stock"><Inventory /></ModuleErrorBoundary>;
       case "purchases": return <ModuleErrorBoundary moduleName="Vendor Orders"><PurchaseHub /></ModuleErrorBoundary>;
       case "contacts":  return <ModuleErrorBoundary moduleName="My Customers & Suppliers"><ContactsList /></ModuleErrorBoundary>;
-      case "ledger":    return <ModuleErrorBoundary moduleName="Money In & Out"><Ledger /></ModuleErrorBoundary>;
-      case "accounting": return <ModuleErrorBoundary moduleName="Financial Audit"><AccountingHub /></ModuleErrorBoundary>;
+      case "ledger":    return <ModuleErrorBoundary moduleName="Money History"><Ledger /></ModuleErrorBoundary>;
+      case "accounting": return <ModuleErrorBoundary moduleName="Accountant View"><AccountingHub /></ModuleErrorBoundary>;
       case "banker":    return <ModuleErrorBoundary moduleName="Loan Readiness Report"><RoleGuard module="Bankers View"><BankersView /></RoleGuard></ModuleErrorBoundary>;
       case "settings":  return <ModuleErrorBoundary moduleName="Settings"><Settings /></ModuleErrorBoundary>;
-      case "users":     return <ModuleErrorBoundary moduleName="Users"><RoleGuard module="Settings"><UserManagement /></RoleGuard></ModuleErrorBoundary>;
+      case "users":     return <ModuleErrorBoundary moduleName="My Team"><RoleGuard module="Settings"><UserManagement /></RoleGuard></ModuleErrorBoundary>;
       case "audit":     return <ModuleErrorBoundary moduleName="Activity History"><RoleGuard module="Settings"><AuditLogs /></RoleGuard></ModuleErrorBoundary>;
       default:          return <ModuleErrorBoundary moduleName="Home"><Dashboard /></ModuleErrorBoundary>;
     }
   };
 
   const moduleTitles: Record<string, string> = {
-    dashboard: "Home", command: "Home Dashboard", reports: "My Reports",
-    dss: "Smart Tips", prediction: "What-If Calculator",
-    ocr: "What I Bought", invoices: "Bills & Orders",
-    inventory: "My Stock", contacts: "My Customers & Suppliers", ledger: "Money In & Out", banker: "Loan Readiness Report",
-    settings: "Settings", users: "User Management", audit: "Activity History",
+    dashboard: "Home", autopilot: "Auto Reminders", command: "Business Overview", reports: "Reports",
+    dss: "Business Tips", prediction: "Business Testing",
+    ocr: "Snap a Photo", invoices: "Bills & Orders",
+    inventory: "My Stock", contacts: "Customers & Suppliers", ledger: "Money History", banker: "Loan Ready Check",
+    invoice_ai: "Invoice AI",
+    settings: "Settings", users: "My Team", audit: "Activity Log",
   };
 
 
@@ -244,7 +251,7 @@ function App() {
           )}
         </AnimatePresence>
 
-        <main className="flex-1 p-6 sm:p-10 min-w-0 relative">
+        <main className="flex-1 p-4 sm:p-10 min-w-0 relative">
           <div className="max-w-[1600px] mx-auto">
             <AnimatePresence mode="wait">
               <motion.div

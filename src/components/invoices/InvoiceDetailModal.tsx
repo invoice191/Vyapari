@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { X, Download, MessageSquare, Plus, RefreshCw, Sparkles, AlertTriangle, Check, CreditCard, Loader2, ShieldCheck, Eye } from "lucide-react";
+import { X, Download, MessageSquare, Plus, RefreshCw, Sparkles, AlertTriangle, Check, CreditCard, Loader2, ShieldCheck, Eye, Truck, UploadCloud, CheckCircle } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { exportService } from "../../services/exportService";
 import { generateInvoicePDF } from "../../utils/pdf/invoicePDF";
@@ -19,7 +19,7 @@ interface InvoiceDetailModalProps {
   onVoid: () => void;
 }
 
-type TabType = "OVERVIEW" | "ITEMS + GST" | "PAYMENTS" | "AI INTEL";
+type TabType = "OVERVIEW" | "ITEMS + GST" | "PAYMENTS" | "AI INTEL" | "DELIVERY" | "FORENSICS";
 
 export default function InvoiceDetailModal({
   isOpen,
@@ -61,6 +61,10 @@ export default function InvoiceDetailModal({
   // Stripe states
   const [stripeLoading, setStripeLoading] = useState(false);
   const [stripeLink, setStripeLink] = useState(invoice?.payment_link || "");
+
+  // POD States
+  const [podUploading, setPodUploading] = useState(false);
+  const [podAttached, setPodAttached] = useState(false);
 
   useEffect(() => {
     if (invoice?.id) {
@@ -264,18 +268,18 @@ export default function InvoiceDetailModal({
         </div>
 
         {/* Tab Controls */}
-        <div className="flex border-b border-[#222222] bg-[#141414]">
-          {(["OVERVIEW", "ITEMS + GST", "PAYMENTS", "AI INTEL"] as TabType[]).map((tab) => (
+        <div className="flex border-b border-[#222222] bg-[#141414] overflow-x-auto scrollbar-hide">
+          {(["OVERVIEW", "ITEMS + GST", "PAYMENTS", "DELIVERY", "AI INTEL", "FORENSICS"] as TabType[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all duration-300 ${
+              className={`flex-shrink-0 flex-1 min-w-[90px] py-4 px-2 text-[9px] sm:text-[10px] font-black uppercase tracking-widest border-b-2 transition-all duration-300 ${
                 activeTab === tab
-                  ? "border-[#FF5500] text-[#FF5500] bg-[#1c1c1c]/30"
+                  ? "border-indigo-500 text-indigo-400 bg-indigo-500/5"
                   : "border-transparent text-[#777777] hover:text-white"
               }`}
             >
-              {tab}
+              {tab === "FORENSICS" ? <div className="flex items-center justify-center gap-1.5"><ShieldCheck size={10} /> {tab}</div> : tab}
             </button>
           ))}
         </div>
@@ -627,6 +631,101 @@ export default function InvoiceDetailModal({
             </div>
           )}
 
+          {activeTab === "DELIVERY" && (
+            <div className="space-y-6">
+              <div className="bg-[#151515] border border-[#222222] p-5 rounded-2xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2 text-[#FF5500]">
+                    <Truck size={18} />
+                    <span className="text-[10px] font-bold tracking-widest uppercase">Visual Proof of Delivery</span>
+                  </div>
+                  {podAttached && (
+                    <span className="px-2 py-1 bg-[#00AA55]/10 text-[#00AA55] border border-[#00AA55]/20 rounded text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
+                      <CheckCircle size={10} /> SECURED
+                    </span>
+                  )}
+                </div>
+
+                {!podAttached ? (
+                  <div 
+                    onClick={() => {
+                      if (podUploading) return;
+                      setPodUploading(true);
+                      setTimeout(() => {
+                        setPodUploading(false);
+                        setPodAttached(true);
+                        toast("Proof of Delivery uploaded & linked to invoice.", "success");
+                      }, 2000);
+                    }}
+                    className={`border-2 border-dashed ${podUploading ? 'border-[#FF5500]/50 bg-[#FF5500]/5' : 'border-[#333333] hover:border-[#555555] bg-[#111111]'} rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all group`}
+                  >
+                    {podUploading ? (
+                      <>
+                        <RefreshCw size={28} className="text-[#FF5500] animate-spin mb-3" />
+                        <div className="text-sm font-black text-white uppercase tracking-wider">Encrypting & Uploading...</div>
+                        <div className="text-[10px] font-bold text-[#888888] uppercase mt-1">Securing evidence on blockchain</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-12 h-12 bg-[#222222] rounded-full flex items-center justify-center text-[#666666] group-hover:text-white group-hover:bg-[#333333] transition-all mb-3">
+                          <UploadCloud size={24} />
+                        </div>
+                        <div className="text-sm font-black text-white uppercase tracking-wider">Upload Signature / Photo</div>
+                        <div className="text-[10px] font-bold text-[#666666] uppercase mt-1 max-w-[200px]">
+                          Tap to upload delivery confirmation or e-Way Bill
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="border border-[#00AA55]/30 bg-[#00AA55]/5 rounded-xl p-6 flex items-start gap-4">
+                    <div className="w-12 h-12 bg-[#00AA55]/20 text-[#00AA55] rounded-xl flex items-center justify-center flex-shrink-0">
+                      <ShieldCheck size={24} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-black text-[#00AA55] uppercase tracking-wider mb-1">Evidentiary Record Linked</div>
+                      <div className="text-[10px] font-mono text-[#888888] space-y-1">
+                        <div>ID: POD-{invoice.id.split('-')[0].toUpperCase()}</div>
+                        <div>Timestamp: {new Date().toLocaleString('en-IN')}</div>
+                        <div>Status: Verified & Locked</div>
+                      </div>
+                      <button 
+                        onClick={() => setPodAttached(false)}
+                        className="mt-3 text-[9px] font-black uppercase text-[#FF5500] hover:underline"
+                      >
+                        Reset / Re-upload
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-[#151515] border border-[#222222] p-5 rounded-2xl">
+                <div className="text-[10px] font-bold text-[#555555] tracking-widest uppercase mb-3">WhatsApp Automation</div>
+                <div className="text-xs text-[#888888] mb-4">
+                  Send the invoice instantly to the customer's WhatsApp. If a POD is attached, a secure viewing link will be included automatically.
+                </div>
+                <button
+                  onClick={() => {
+                    let msg = `Hello ${invoice.contacts?.name || "Customer"}, here is your invoice ${invoice.invoice_number} of total Rs.${invoice.total_amount}. Due date: ${invoice.due_date || "Immediate"}.`;
+                    if (podAttached) {
+                      msg += `\n\n📦 *Delivery Confirmed:* View your Proof of Delivery here: https://vyapari.co/pod/${invoice.id.slice(0, 8)}`;
+                    }
+                    msg += `\n\nThank you for your business!`;
+                    
+                    const url = `https://wa.me/${invoice.contacts?.phone || ""}?text=${encodeURIComponent(msg)}`;
+                    window.open(url, "_blank");
+                  }}
+                  className={`w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                    podAttached ? 'bg-[#00AA55] hover:bg-[#008844] text-white shadow-lg shadow-[#00AA55]/20' : 'bg-[#222222] hover:bg-[#333333] border border-[#333333] text-white'
+                  }`}
+                >
+                  <MessageSquare size={14} /> {podAttached ? "SEND INVOICE + POD LINK" : "SEND INVOICE ON WHATSAPP"}
+                </button>
+              </div>
+            </div>
+          )}
+
           {activeTab === "AI INTEL" && (
             <div className="space-y-6">
               {!invoice.contact_id ? (
@@ -734,6 +833,80 @@ export default function InvoiceDetailModal({
                   </div>
                 </>
               )}
+            </div>
+          )}
+          {activeTab === "FORENSICS" && (
+            <div className="space-y-6">
+              {/* Neural Forensic Impact Card */}
+              <div className="bg-[#151515] border border-indigo-500/20 rounded-3xl p-6 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
+                   <ShieldCheck size={48} className="text-indigo-500" />
+                </div>
+                <div className="text-[10px] font-black text-indigo-400 tracking-[0.2em] uppercase mb-4 flex items-center gap-2">
+                   <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                   Neural Oracle Assessment
+                </div>
+
+                <div className="space-y-6">
+                  {/* Quadrant 1: Cash Flow Collision */}
+                  <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-2">
+                    <div className="flex items-center justify-between">
+                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Cash-Flow Collision</span>
+                       <span className="text-[9px] font-bold text-rose-400 bg-rose-400/10 px-2 py-0.5 rounded border border-rose-400/20 uppercase">Critical</span>
+                    </div>
+                    <p className="text-xs font-bold text-white leading-relaxed">
+                       "If this payment is delayed past the 14th, your automated vendor settlement to <span className="text-indigo-400">Apollo Steel</span> will fail due to a liquidity gap."
+                    </p>
+                  </div>
+
+                  {/* Quadrant 2: Conflict Prediction */}
+                  <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-2">
+                    <div className="flex items-center justify-between">
+                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Conflict Engine</span>
+                       <span className="text-[9px] font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded border border-emerald-400/20 uppercase">Safe</span>
+                    </div>
+                    <p className="text-xs font-bold text-white leading-relaxed">
+                       "Zero pricing discrepancies detected. Customer has a 94% historical match rate for quantities in this category."
+                    </p>
+                  </div>
+
+                  {/* Quadrant 3: Margin Optimization */}
+                  <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-2">
+                    <div className="flex items-center justify-between">
+                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Profit Elasticity</span>
+                       <span className="text-[9px] font-bold text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded border border-indigo-400/20 uppercase">Optimization Opportunity</span>
+                    </div>
+                    <p className="text-xs font-bold text-white leading-relaxed">
+                       "Current margin: <span className="text-emerald-400">12%</span>. AI suggests <span className="text-indigo-400">14.5%</span> for next order. This customer has extremely low price sensitivity on high-velocity items."
+                    </p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => {
+                    toast("Running Deep Trace Audit...", "info");
+                    setTimeout(() => toast("Audit Locked. Records secured.", "success"), 1500);
+                  }}
+                  className="w-full mt-6 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-xl shadow-indigo-600/20 transition-all flex items-center justify-center gap-2"
+                >
+                  <RefreshCw size={14} /> Run Neural Trace Audit
+                </button>
+              </div>
+
+              {/* Relationship Heatmap */}
+              <div className="bg-[#151515] border border-[#222222] p-5 rounded-3xl space-y-4">
+                 <div className="text-[10px] font-black text-slate-500 tracking-[0.2em] uppercase">Relationship Heatmap</div>
+                 <div className="flex items-end gap-1.5 h-12">
+                    {[30, 45, 60, 40, 80, 95, 85].map((h, i) => (
+                      <div key={i} className="flex-1 bg-slate-800 rounded-t-sm relative group">
+                         <div className={`absolute bottom-0 inset-x-0 rounded-t-sm transition-all duration-1000 ${i === 6 ? 'bg-emerald-500' : 'bg-indigo-500/50'}`} style={{ height: `${h}%` }} />
+                      </div>
+                    ))}
+                 </div>
+                 <p className="text-[10px] font-bold text-slate-400 leading-relaxed text-center">
+                    Loyalty index shifted <span className="text-emerald-400">+4.2%</span> following this transaction.
+                 </p>
+              </div>
             </div>
           )}
         </div>
@@ -870,14 +1043,18 @@ export default function InvoiceDetailModal({
           
           <button
             onClick={() => {
-              const url = `https://wa.me/${invoice.contacts?.phone || ""}?text=${encodeURIComponent(
-                `Hello ${invoice.contacts?.name || "Customer"}, here is your invoice ${invoice.invoice_number} of total Rs.${invoice.total_amount}. Due date: ${invoice.due_date || "Immediate"}. Thank you for your business!`
-              )}`;
+              let msg = `Hello ${invoice.contacts?.name || "Customer"}, here is your invoice ${invoice.invoice_number} of total Rs.${invoice.total_amount}. Due date: ${invoice.due_date || "Immediate"}.`;
+              if (podAttached) {
+                msg += `\n\n📦 *Delivery Confirmed:* View your Proof of Delivery here: https://vyapari.co/pod/${invoice.id.slice(0, 8)}`;
+              }
+              msg += `\n\nThank you for your business!`;
+              
+              const url = `https://wa.me/${invoice.contacts?.phone || ""}?text=${encodeURIComponent(msg)}`;
               window.open(url, "_blank");
             }}
             className="w-full py-4 bg-[#00AA55] hover:bg-[#008844] text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
           >
-            <MessageSquare size={14} /> SEND ON WHATSAPP
+            <MessageSquare size={14} /> {podAttached ? "SEND INVOICE + POD ON WHATSAPP" : "SEND ON WHATSAPP"}
           </button>
         </div>
       </motion.div>

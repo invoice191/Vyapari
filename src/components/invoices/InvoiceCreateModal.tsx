@@ -1,6 +1,9 @@
-﻿import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Plus, Trash2, RefreshCw, Lock, AlertTriangle, CheckCircle, Repeat } from 'lucide-react';
+import { 
+  X, Plus, Trash2, RefreshCw, Lock, AlertTriangle, CheckCircle, Repeat, Zap, ShieldCheck, 
+  Camera, Upload, Image as ImageIcon 
+} from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useSmartAutocomplete } from '../../hooks/useSmartAutocomplete';
@@ -38,6 +41,9 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
   const [recurringInterval, setRecurringInterval] = useState<'weekly'|'biweekly'|'monthly'|'quarterly'>('monthly');
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [vpodImage, setVpodImage] = useState<File | null>(null);
+  const [vpodPreview, setVpodPreview] = useState<string | null>(null);
+  const [uploadingVpod, setUploadingVpod] = useState(false);
   const [dupeChecked, setDupeChecked] = useState(false);
   const [businessData, setBusinessData] = useState<any>(null);
   const [invoiceSeq, setInvoiceSeq] = useState<{ prefix: string; last_number: number } | null>(null);
@@ -45,6 +51,7 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
   const [managerOverride, setManagerOverride] = useState(false);
   const [showOverridePrompt, setShowOverridePrompt] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'paid' | 'unpaid'>('paid');
+  const [aiDiscountApplied, setAiDiscountApplied] = useState(false);
 
 
   // Inline Customer Addition
@@ -88,6 +95,43 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
       toast(e.message || "Failed to add customer", "error");
     } finally {
       setContactSaving(false);
+    }
+  };
+
+  const handleVpodChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setVpodImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setVpodPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadVpod = async (invoiceNo: string) => {
+    if (!vpodImage) return null;
+    setUploadingVpod(true);
+    try {
+      const fileExt = vpodImage.name.split('.').pop();
+      const fileName = `${businessId}/${invoiceNo}_${Date.now()}.${fileExt}`;
+      const { data, error } = await supabase.storage
+        .from('vpod-proofs')
+        .upload(fileName, vpodImage);
+
+      if (error) throw error;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('vpod-proofs')
+        .getPublicUrl(data.path);
+        
+      return publicUrl;
+    } catch (err) {
+      console.error("vPOD Upload Failed:", err);
+      return null;
+    } finally {
+      setUploadingVpod(false);
     }
   };
 
@@ -166,6 +210,34 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
       .order('name').limit(200).then(({ data }) => setProducts(data ?? []));
   }, [isOpen, businessId]);
 
+  // Reset Payment Status if risk is too high
+  useEffect(() => {
+    if (paymentScore?.risk_level === 'high' && !managerOverride) {
+      setPaymentStatus('paid'); // Force upfront payment
+    }
+  }, [paymentScore?.risk_level, managerOverride]);
+
+  const applyDynamicDiscount = () => {
+    if (aiDiscountApplied || total === 0) return;
+    
+    // AI determines the exact discount needed to secure cash flow today
+    const dynamicRate = paymentScore?.risk_level === 'high' ? 4.5 : 2.0; 
+    const discountAmount = -(total * (dynamicRate / 100));
+    
+    setLineItems(prev => [...prev, {
+      product_id: 'dynamic-discount', // Pseudo ID
+      name: `⚡ AI Early-Payment Discount (${dynamicRate}%)`,
+      quantity: 1,
+      unit_price: discountAmount,
+      cost_price: 0,
+      tax_rate: 0, // Discounts usually don't have tax in this simple model, or are post-tax
+      unit: 'discount'
+    }]);
+    setAiDiscountApplied(true);
+    setPaymentStatus('paid'); // Securing the cash
+    toast(`Dynamic Early-Payment Discount of ${dynamicRate}% applied to secure immediate cash flow.`, "success");
+  };
+
   // Prefill from "bill like last time"
   useEffect(() => {
     if (prefill?.items) {
@@ -240,9 +312,13 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
     setSaving(true);
     setSaveStatus('saving');
     try {
-      console.log("[InvoiceCreate] Executing Atomic Sale RPC...");
-      
-      const { data, error } = await supabase.rpc('complete_sale_v4', {
+      // 1. Upload vPOD if exists
+      let uploadedVpodUrl = null;
+      if (vpodImage) {
+        uploadedVpodUrl = await uploadVpod(`TEMP_${Date.now()}`);
+      }
+
+      const { data, error } = await supabase.rpc('complete_sale_v5', {
         p_business_id: businessId,
         p_user_id: profile.id,
         p_contact_id: selectedContact?.id || null,
@@ -257,7 +333,9 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
           cost_price: it.cost_price,
           tax_rate: it.tax_rate
         })),
-        p_payment_status: paymentStatus
+        p_payment_status: paymentStatus,
+        p_vpod_url: uploadedVpodUrl,
+        p_customer_name: walkInName || selectedContact?.name || null
       });
 
       if (error) throw error;
@@ -481,13 +559,25 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
 
             {/* Customer Credit Card / Suggestions banner inline (saves space) */}
             {selectedContact && (
-              <div className="flex gap-2 items-center text-[10px]">
-                <div className="flex-1 bg-slate-50 px-3 py-1.5 border border-slate-100 rounded-lg font-bold text-slate-600">
-                  Customer Active Credit Limit Mapping & CLV active.
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2 items-center text-[10px]">
+                  <div className="flex-1 bg-slate-50 px-3 py-1.5 border border-slate-100 rounded-lg font-bold text-slate-600 flex items-center gap-2">
+                    <ShieldCheck size={14} className="text-indigo-500" />
+                    Customer Active Credit Limit Mapping & CLV active.
+                  </div>
+                  {paymentScore?.suggestion && (
+                    <div className={`px-3 py-1.5 rounded-lg font-black uppercase flex items-center gap-2 ${
+                      paymentScore.risk_level === 'high' ? 'bg-red-50 border border-red-200 text-red-600' :
+                      paymentScore.risk_level === 'medium' ? 'bg-amber-50 border border-amber-200 text-amber-600' :
+                      'bg-emerald-50 border border-emerald-200 text-emerald-600'
+                    }`}>
+                      <AlertTriangle size={14} /> AI Risk: {paymentScore.risk_level}
+                    </div>
+                  )}
                 </div>
-                {paymentScore?.suggestion && (
-                  <div className="bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-lg font-black text-indigo-600 uppercase">
-                    AI: {paymentScore.suggestion}
+                {paymentScore?.risk_level === 'high' && !managerOverride && (
+                  <div className="bg-red-50 border border-red-100 p-2.5 rounded-lg text-[10px] font-black text-red-600 uppercase flex items-center gap-2 animate-pulse">
+                    <Lock size={12} /> Credit Restricted: 100% Upfront Payment Required due to high default risk.
                   </div>
                 )}
               </div>
@@ -632,6 +722,24 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
                 </div>
               )}
 
+              {/* Dynamic Discount Trigger */}
+              {total > 0 && !aiDiscountApplied && paymentScore && (
+                <button 
+                  onClick={applyDynamicDiscount}
+                  className="w-full p-3 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl flex items-center justify-between group hover:from-indigo-100 hover:to-blue-100 transition-all"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-indigo-500 rounded-lg flex items-center justify-center text-white shadow-md">
+                      <Zap size={12} />
+                    </div>
+                    <span className="text-[10px] font-black text-indigo-900 uppercase tracking-widest">
+                      Generate Dynamic Cash-Flow Discount
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-bold text-indigo-600 uppercase">Click to Apply</span>
+                </button>
+              )}
+
               {/* Invoice Total & GST Breakdown */}
               <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl space-y-3">
                 <div className="flex justify-between items-center border-b border-slate-800 pb-2">
@@ -731,18 +839,56 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
               </button>
               <button
                 type="button"
-                onClick={() => setPaymentStatus('unpaid')}
+                onClick={() => {
+                  if (paymentScore?.risk_level === 'high' && !managerOverride) {
+                    toast("Credit is locked for this customer. Manager override required.", "error");
+                    return;
+                  }
+                  setPaymentStatus('unpaid');
+                }}
+                disabled={paymentScore?.risk_level === 'high' && !managerOverride}
                 className={`py-3 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${
                   paymentStatus === 'unpaid' 
                     ? 'border-amber-500 bg-amber-50 text-amber-700 shadow-sm' 
                     : 'border-slate-100 bg-slate-50/50 text-slate-400 grayscale opacity-60'
-                }`}
+                } ${paymentScore?.risk_level === 'high' && !managerOverride ? 'cursor-not-allowed opacity-30' : ''}`}
               >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${paymentStatus === 'unpaid' ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-400'}`}>
-                  <AlertTriangle size={18} />
+                  {paymentScore?.risk_level === 'high' && !managerOverride ? <Lock size={18} /> : <AlertTriangle size={18} />}
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-widest">Mark as Unpaid</span>
               </button>
+            </div>
+            {/* vPOD - Visual Proof of Delivery */}
+            <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-600">
+                    <Camera size={12} />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-700">Proof of Delivery (vPOD)</span>
+                </div>
+                {vpodPreview && (
+                  <button onClick={() => { setVpodImage(null); setVpodPreview(null); }} className="text-[9px] font-bold text-rose-500 uppercase">Clear</button>
+                )}
+              </div>
+              
+              {!vpodPreview ? (
+                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Upload className="w-6 h-6 text-slate-400 mb-1" />
+                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tight">Snap photo of delivery</p>
+                  </div>
+                  <input type="file" className="hidden" accept="image/*" onChange={handleVpodChange} capture="environment" />
+                </label>
+              ) : (
+                <div className="relative w-full h-32 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                  <img src={vpodPreview} alt="vPOD" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-all">
+                    <ImageIcon className="text-white" size={24} />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Actions (Tighter padding) */}
@@ -753,7 +899,7 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
               </button>
               <button
                 onClick={handleSave}
-                disabled={saving || !selectedContact || lineItems.length === 0}
+                disabled={saving || (!selectedContact && !walkInName.trim()) || lineItems.length === 0}
                 className="flex-grow py-2.5 bg-[#0A84FF] hover:bg-[#0070E3] text-white rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-md shadow-[#0A84FF]/20"
               >
                 {saving ? (

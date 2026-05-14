@@ -192,7 +192,7 @@ export default function POSCounterMode() {
     setHeldBills([...heldBills, held]);
     setCart([]);
     setActiveCustomer(null);
-    toast.success("Transaction stashed in Suspense queue.");
+    toast.success("Bill saved for later.");
   };
 
   const resumeBill = (held: any) => {
@@ -282,8 +282,8 @@ export default function POSCounterMode() {
           <div className="hidden md:flex items-center gap-3 px-4 py-2.5 bg-slate-900/60 rounded-2xl border border-slate-800/80 shadow-inner select-none transition-all">
             <div className={`w-3 h-3 rounded-full shadow-lg ${isScannerActive ? 'bg-emerald-500 animate-pulse shadow-emerald-500/40' : 'bg-slate-600'}`} />
             <div className="flex flex-col text-left leading-tight">
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Laser Terminal</span>
-              <span className="text-[11px] font-bold text-white">{isScannerActive ? "ONLINE" : "SLEEP"}</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Scanner Status</span>
+              <span className="text-[11px] font-bold text-white">{isScannerActive ? "WORKING" : "OFF"}</span>
             </div>
             <button 
               onClick={() => setIsScannerActive(!isScannerActive)}
@@ -299,7 +299,7 @@ export default function POSCounterMode() {
             <Search size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-indigo-400/60 pointer-events-none" />
             <input 
               type="text"
-              placeholder="Search item database by name, barcode, or internal SKU..."
+              placeholder="Find items by name, barcode, or code..."
               className="w-full h-full bg-slate-900/80 hover:bg-slate-900 border border-slate-800 rounded-2xl pl-14 pr-12 text-base font-semibold text-slate-100 placeholder-slate-600 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/80 transition-all shadow-sm"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
@@ -342,7 +342,7 @@ export default function POSCounterMode() {
             onClick={() => setSelectedCategory(null)}
             className={`px-5 h-9 flex items-center justify-center font-bold text-[10px] uppercase tracking-wider rounded-full transition-all whitespace-nowrap shadow-sm border ${!selectedCategory ? 'bg-white text-slate-950 border-white scale-[1.02]' : 'bg-slate-900/60 hover:bg-slate-800 text-slate-400 border-slate-800'}`}
           >
-            Show All Units
+            All Items
           </button>
           
           {/* Render dynamic categories array if loaded, fallback to product collection logic */}
@@ -372,7 +372,7 @@ export default function POSCounterMode() {
                 className="h-full flex flex-col items-center justify-center text-slate-600 space-y-3 p-8 text-center"
               >
                 <Package size={48} strokeWidth={1.5} className="text-slate-800 animate-pulse"/>
-                <p className="text-sm font-bold tracking-wide text-slate-500">No product matches active viewport criteria.</p>
+                <p className="text-sm font-bold tracking-wide text-slate-500">No items found.</p>
                 <span className="text-xs text-slate-700 uppercase font-black tracking-widest">Try another search or clear filters</span>
               </motion.div>
             ) : viewMode === 'grid' ? (
@@ -467,7 +467,7 @@ export default function POSCounterMode() {
                       </div>
 
                       <div className="w-32 text-right">
-                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Unit MSRP</span>
+                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block">Price</span>
                         <span className="text-base font-black text-indigo-400">₹{Number(prod.selling_price || 0).toLocaleString()}</span>
                       </div>
 
@@ -505,9 +505,9 @@ export default function POSCounterMode() {
                 {activeCustomer ? <User size={22} /> : <UserPlus size={22} />}
               </div>
               <div className="flex flex-col text-left leading-tight">
-                <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em]">Active Buyer Profile</span>
+                <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em]">Customer</span>
                 <h3 className="text-sm font-black text-slate-100 truncate uppercase tracking-tight py-0.5">
-                  {activeCustomer?.name || 'Retail Walk-in Guest'}
+                  {activeCustomer?.name || 'Walk-in Customer'}
                 </h3>
                 {activeCustomer && <span className="text-[10px] text-indigo-400 font-bold">{activeCustomer.phone || 'No phone provided'}</span>}
               </div>
@@ -583,8 +583,8 @@ export default function POSCounterMode() {
               <div className="w-20 h-20 rounded-full bg-indigo-500/5 border border-indigo-500/10 flex items-center justify-center mb-4 shadow-inner">
                 <ScanBarcode size={48} strokeWidth={1} className="text-indigo-400" />
               </div>
-              <p className="font-black text-xs uppercase tracking-[0.2em] text-white">Cart Registry Dormant</p>
-              <p className="text-[10px] text-slate-400 mt-1">Scan symbology or tap items left to populate</p>
+              <p className="font-black text-xs uppercase tracking-[0.2em] text-white">Cart is Empty</p>
+              <p className="text-[10px] text-slate-400 mt-1">Scan or tap items to start billing</p>
             </div>
           ) : (
             <AnimatePresence initial={false}>
@@ -645,8 +645,8 @@ export default function POSCounterMode() {
           {/* SUMMARY STATS CARD */}
           <div className="bg-slate-950/40 border border-slate-800/40 rounded-2xl p-4 space-y-2 shadow-inner">
             <div className="flex justify-between text-[10px] font-bold">
-              <span className="text-slate-500 uppercase tracking-wider">Gross Qty Total</span>
-              <span className="text-slate-300 font-black">{cart.reduce((s,i)=>s+i.qty, 0)} Items</span>
+              <span className="text-slate-500 uppercase tracking-wider">Total Items</span>
+              <span className="text-slate-300 font-black">{cart.reduce((s,i)=>s+i.qty, 0)}</span>
             </div>
             <div className="flex justify-between text-[10px] font-bold">
               <span className="text-slate-500 uppercase tracking-wider">Estimated GST Tax</span>
@@ -665,7 +665,7 @@ export default function POSCounterMode() {
           {heldBills.length > 0 && (
             <div className="py-3 px-4 bg-amber-500/5 border border-amber-500/20 rounded-xl flex items-center gap-3">
               <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-amber-400 flex-shrink-0 animate-pulse">
-                <Clock size={12}/> Queue ({heldBills.length})
+                <Clock size={12}/> Saved Bills ({heldBills.length})
               </div>
               <div className="flex gap-2 overflow-x-auto pb-0.5 max-w-full scrollbar-hide">
                 {heldBills.map(h => (
@@ -688,14 +688,14 @@ export default function POSCounterMode() {
               disabled={cart.length === 0}
               className="h-12 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 font-black text-[10px] uppercase tracking-widest shadow-md transition-all disabled:opacity-30 flex items-center justify-center gap-2"
             >
-              <PauseCircle size={15}/> Hold Ticket
+              <PauseCircle size={15}/> Save Bill
             </button>
             <button 
               onClick={() => setCart([])} 
               disabled={cart.length === 0}
               className="h-12 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-900 hover:border-rose-500/30 hover:text-rose-400 text-slate-400 font-black text-[10px] uppercase tracking-widest shadow-md transition-all disabled:opacity-30 flex items-center justify-center gap-2"
             >
-              <Trash2 size={15}/> Wipe Cart
+              <Trash2 size={15}/> Clear All
             </button>
             
             <button 
@@ -703,7 +703,7 @@ export default function POSCounterMode() {
               disabled={cart.length === 0}
               className="col-span-2 h-16 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] shadow-[0_15px_40px_rgba(79,70,229,0.25)] hover:shadow-[0_20px_50px_rgba(79,70,229,0.35)] active:scale-98 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:-translate-y-0"
             >
-              <Zap size={16} /> PROCESS GATEWAY PAY
+              <Zap size={16} /> COLLECT PAYMENT
             </button>
           </div>
         </div>
@@ -728,7 +728,7 @@ export default function POSCounterMode() {
               <div className="px-8 pt-8 pb-6 text-center border-b border-slate-800/40 relative bg-slate-950/20">
                 <button onClick={()=>setIsCheckingOut(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors p-1.5 bg-slate-900 border border-slate-800 rounded-lg"><X size={16}/></button>
                 <h2 className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-2.5 flex items-center justify-center gap-1.5">
-                  <Wallet size={12}/> Settlement Ledger
+                  <Wallet size={12}/> Payment Summary
                 </h2>
                 <div className="text-4xl font-black tracking-tighter text-white">₹{cartTotal.toLocaleString('en-IN')}</div>
                 <p className="text-[10px] text-slate-500 uppercase font-bold mt-1.5">
@@ -740,7 +740,7 @@ export default function POSCounterMode() {
                 {/* Mode Tenders */}
                 <div className="space-y-4">
                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                    Select Primary Settlement Tender <ArrowRight size={10}/>
+                    How will they pay? <ArrowRight size={10}/>
                   </label>
                   
                   <div className="grid grid-cols-3 gap-3">
@@ -775,7 +775,7 @@ export default function POSCounterMode() {
                   {isProcessing ? (
                     <div className="w-5 h-5 border-3 border-slate-900 border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <>COMMIT TRANSACTION <Check size={16}/></>
+                    <>FINISH SALE <Check size={16}/></>
                   )}
                 </button>
               </div>

@@ -7,6 +7,7 @@ export default function CommandPalette({ active, onSelect }: { active: string, o
 
   const commands = [
     { key: "dashboard", label: "Open Dashboard", icon: "--" },
+    { key: "command", label: "Execute Monsoon Arrival Strategy", icon: "--" },
     { key: "invoices", label: "Create New Invoice", icon: "--" },
     { key: "inventory", label: "Check Stock Levels", icon: "--" },
     { key: "reports", label: "Generate Tax Report", icon: "--" },

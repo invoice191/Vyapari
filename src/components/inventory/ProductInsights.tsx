@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, 
@@ -107,12 +107,20 @@ export default function ProductInsights({
           </div>
         </div>
         
-        <button 
-          onClick={onClose}
-          className="relative z-10 p-2 hover:bg-white/10 rounded-full text-slate-400 transition-colors"
-        >
-          <X size={24} />
-        </button>
+        <div className="relative z-10 flex items-center gap-3">
+          <button 
+            onClick={onDownloadReport}
+            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white text-[10px] font-black uppercase tracking-[0.15em] transition-all"
+          >
+            <Download size={14} /> Export Report
+          </button>
+          <button 
+            onClick={onClose}
+            className="p-2 hover:bg-white/10 rounded-full text-slate-400 transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
       </div>
 
       {/* Navigation Tabs */}

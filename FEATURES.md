@@ -164,3 +164,19 @@ This guide explains how every part of the **Vyapari** app works in simple, every
 ### What it does for you:
 - **Understand Normal Talk**: Understands how you talk naturally and automatically opens the right screen or takes the right action.
 - **Speaks Back to You**: Speaks back politely to confirm what it did or read out a quick summary of your daily sales.
+
+---
+
+## 12. Zero-Touch Automation (Autonomous Shop)
+**What it is for:** Letting the app handle boring paperwork and verification automatically so you can focus on your customers.
+**How to use it:** Turn on the "Auto-Pilot" settings. The app will automatically match payments and verify deliveries for you.
+
+### Simple Parts:
+- **Auto-Payment Matcher (`AutoRecon`)**: Automatically matches money coming into your bank with your unpaid bills.
+- **Photo Delivery Check (`vPOD`)**: Uses AI to look at delivery photos and confirm the customer received their items.
+
+### What it does for you:
+1. **No-Type Reconciliation**: You don't have to manually mark bills as "Paid"—the app does it for you when it sees the money in your account.
+2. **Instant Delivery Proof**: Automatically updates your bills to "Delivered" as soon as a delivery photo is uploaded, saving you hours of phone calls.
+3. **Smart Credit Blocking**: Automatically stops sales on credit to customers who haven't paid their old bills or are high-risk.
+4. **Early-Bird Discounts**: Automatically offers small discounts to customers who pay early, helping you keep more cash in your shop's drawer.

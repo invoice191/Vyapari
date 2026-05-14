@@ -1,4 +1,4 @@
-﻿import { supabase } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 
 export interface AuditLogEntry {
   id?: string;
@@ -117,7 +117,7 @@ export const auditService = {
     }
   },
 
-  exportLogs: async (businessId: string) => {
+  exportLogs: async (businessId: string, businessName = "Vyapari Business") => {
     const { data, error } = await supabase
       .from('audit_logs')
       .select('*')
@@ -126,26 +126,61 @@ export const auditService = {
 
     if (error) throw error;
 
-    const headers = ['Timestamp', 'User ID', 'Action', 'Module', 'IP Address', 'Details'];
+    const { jsPDF } = await import("jspdf");
+    const { default: autoTable } = await import("jspdf-autotable");
+    const doc = new jsPDF();
+
+    // Branded Header
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("VYAPARI SECURITY AUDIT", 15, 20);
+    doc.setFontSize(10);
+    doc.setTextColor(159, 239, 0); // Neon
+    doc.text(`CONFIDENTIAL SECURITY LOGS FOR: ${businessName.toUpperCase()}`, 15, 30);
+    
+    doc.setTextColor(255, 255, 255);
+    doc.text(`DATE: ${new Date().toLocaleString()}`, 150, 30);
+
+    const headers = [['Timestamp', 'User', 'Action', 'Module', 'IP Address', 'Severity']];
     const rows = data.map(log => [
-      log.timestamp,
-      log.user_id,
-      log.action,
-      log.module,
-      log.ip_address,
-      JSON.stringify(log.metadata || log.details)
+      new Date(log.timestamp).toLocaleString('en-IN'),
+      log.user_email || log.user_id.slice(0, 8),
+      log.action.replace(/_/g, ' ').toUpperCase(),
+      log.module.toUpperCase(),
+      log.ip_address || '0.0.0.0',
+      log.severity || 'INFO'
     ]);
 
-    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `audit_log_${businessId}_${new Date().toISOString()}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    autoTable(doc, {
+      startY: 50,
+      head: headers,
+      body: rows,
+      theme: 'grid',
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 8, cellPadding: 3 },
+      columnStyles: { 0: { cellWidth: 35 }, 5: { fontStyle: 'bold' } },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 5) {
+          const val = data.cell.raw;
+          if (val === 'Critical') data.cell.styles.textColor = [220, 38, 38];
+          if (val === 'Warning') data.cell.styles.textColor = [217, 119, 6];
+        }
+      }
+    });
+
+    // Footer
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text(`Vyapari Intelligence Platform - Audit Page ${i} of ${pageCount}`, 105, 285, { align: 'center' });
+    }
+
+    doc.save(`Vyapari_Audit_Logs_${businessId}_${new Date().toISOString().slice(0,10)}.pdf`);
   },
 
   clearLogs: async (businessId?: string) => {

@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { C } from "../../lib/constants";
 import { ResponsiveContainer, AreaChart, Area } from "recharts";
 import { motion } from "motion/react";

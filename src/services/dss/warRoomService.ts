@@ -1,4 +1,4 @@
-﻿import { Product, Invoice } from "../types";
+import { Product, Invoice } from "../types";
 
 export interface TacticalAlert {
   id: string;
@@ -127,7 +127,31 @@ export const warRoomService = {
       });
     });
 
-    // 4. Ranking and Top 3
+    // 5. Monsoon Season Tactical Prep
+    const currentMonth = now.getMonth() + 1; // 1-indexed
+    if (currentMonth >= 6 && currentMonth <= 9) {
+       // Check for low stock in monsoon categories
+       const monsoonCategories = ["Rainwear", "Umbrella", "Waterproof", "Agricultural", "Seeds", "Pesticides"];
+       const lowRainStock = products.filter(p => 
+         monsoonCategories.some(cat => p.name.toLowerCase().includes(cat.toLowerCase())) &&
+         (Number(p.quantity) || 0) < 20 // Dynamic buffer
+       );
+       
+       if (lowRainStock.length > 0) {
+         alerts.push({
+           id: `monsoon-prep-${now.getTime()}`,
+           severity: 'CRITICAL',
+           title: 'Monsoon Supply Shift',
+           body: `${lowRainStock.length} monsoon-critical items are below the season safety buffer. Supply chain delays forecast at 45% risk.`,
+           impact: 'Seasonal Revenue Loss',
+           action: 'Bulk Restock Now',
+           module: 'Strategic',
+           timestamp: now.toISOString()
+         });
+       }
+    }
+
+    // 6. Ranking and Top 3
     // Severity priority: CRITICAL > WATCH > OPPORTUNITY
     const severityMap = { CRITICAL: 3, WATCH: 2, OPPORTUNITY: 1 };
     const rankedAlerts = [...alerts].sort((a, b) => severityMap[b.severity] - severityMap[a.severity]);

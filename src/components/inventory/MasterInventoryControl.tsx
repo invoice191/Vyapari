@@ -15,6 +15,7 @@ import { BarChart, Bar, AreaChart, Area, ResponsiveContainer } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { downloadPDF } from '../../utils/pdf/downloadPDF';
+import { reportExporter } from "../../services/reportExporter";
 
 export default function MasterInventoryControl() {
   const { profile, business } = useAuth();
@@ -63,7 +64,7 @@ export default function MasterInventoryControl() {
     let nextY = 65;
     const kpis = [
       { label: "CURRENT STOCK", value: `${getStockQty(product)} Units` },
-      { label: "DAILY SPEED", value: `${prodIntel?.velocity_per_day || '0.0'} Units` },
+      { label: "SELLING SPEED", value: `${prodIntel?.velocity_per_day || '0.0'} Units` },
       { label: "PROFIT MARGIN", value: `${margin_val}%` }
     ];
 
@@ -81,7 +82,7 @@ export default function MasterInventoryControl() {
 
     // 3. TRANSACTION LEDGER
     doc.setFontSize(8); doc.setTextColor(...SLATE_500); doc.setFont('helvetica', 'bold');
-    doc.text('INSTITUTIONAL TRANSACTION LEDGER (TOP 10)', margin, nextY - 4);
+    doc.text('RECENT SALES HISTORY (TOP 10)', margin, nextY - 4);
 
     const invoiceData = productInvoices.slice(0, 10).map(inv => [
       `INV-${inv.invoice_number}`,
@@ -104,7 +105,7 @@ export default function MasterInventoryControl() {
 
     // 4. LOYALTY ADVOCATES
     doc.setFontSize(8); doc.setTextColor(...SLATE_500); doc.setFont('helvetica', 'bold');
-    doc.text('LOYALTY ADVOCATE MATRIX (TOP BUYERS)', margin, nextY - 4);
+    doc.text('TOP CUSTOMERS FOR THIS ITEM', margin, nextY - 4);
 
     const buyerData = topBuyers.map(c => [
       c.name,
@@ -126,22 +127,27 @@ export default function MasterInventoryControl() {
     nextY = (doc as any).lastAutoTable.finalY + 15;
 
     // 5. STRATEGIC RECOMMENDATION (UI Box)
-    if (nextY < h - 45) {
-      doc.setFillColor(...INDIGO_LIGHT);
-      doc.rect(margin, nextY, w - (margin * 2), 22, 'F');
-      doc.setFillColor(...NAVY);
-      doc.rect(margin, nextY, 1.5, 22, 'F');
-      
-      doc.setFontSize(8); doc.setTextColor(...NAVY); doc.setFont('helvetica', 'bold');
-      doc.text('STRATEGIC RECOMMENDATION', margin + 5, nextY + 6);
-      
-      doc.setFontSize(9); doc.setTextColor(55, 65, 81); doc.setFont('helvetica', 'normal');
-      const recText = prodIntel?.is_dead_stock 
-        ? "CRITICAL: DEAD STOCK DETECTED. Immediate liquidation via 15% discount campaign recommended to release locked operational capital."
-        : "STABLE: POSITIVE GROWTH TREND. Maintain current inventory buffer and monitor weekly velocity for replenishment spikes.";
-      const recLines = doc.splitTextToSize(recText, w - 50);
-      doc.text(recLines, margin + 5, nextY + 13);
+    const recText = prodIntel?.is_dead_stock 
+      ? "ACTION NEEDED: OLD STOCK DETECTED. We suggest a 15% discount to sell these items quickly and free up your cash."
+      : "GOOD STATUS: GROWING WELL. Keep your current stock levels and watch for sudden sales spikes.";
+    const recLines = doc.splitTextToSize(recText, w - 50);
+    const recHeight = (recLines.length * 5) + 15;
+
+    if (nextY + recHeight > h - 15) {
+      doc.addPage();
+      nextY = 25;
     }
+
+    doc.setFillColor(...INDIGO_LIGHT);
+    doc.rect(margin, nextY, w - (margin * 2), recHeight, 'F');
+    doc.setFillColor(...NAVY);
+    doc.rect(margin, nextY, 1.5, recHeight, 'F');
+    
+    doc.setFontSize(8); doc.setTextColor(...NAVY); doc.setFont('helvetica', 'bold');
+    doc.text('SMART AI ADVICE', margin + 5, nextY + 6);
+    
+    doc.setFontSize(9); doc.setTextColor(55, 65, 81); doc.setFont('helvetica', 'normal');
+    doc.text(recLines, margin + 5, nextY + 13);
 
     // 6. FOOTER
     doc.setFontSize(7); doc.setTextColor(...SLATE_500); doc.setFont('helvetica', 'normal');
@@ -160,129 +166,40 @@ export default function MasterInventoryControl() {
       return;
     }
 
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const NAVY: [number, number, number] = [30, 42, 94];
-    const SLATE: [number, number, number] = [100, 116, 139];
-    const WHITE: [number, number, number] = [255, 255, 255];
-    const GREEN: [number, number, number] = [16, 185, 129];
-    const AMBER: [number, number, number] = [245, 158, 11];
-    const RED: [number, number, number] = [239, 68, 68];
-
-    const w = doc.internal.pageSize.getWidth();
-    const h = doc.internal.pageSize.getHeight();
-    const margin = 15;
-    const biz = business?.name?.toUpperCase() || 'VYAPARI';
-    const now = new Date();
-
-    // -- Header band --
-    doc.setFillColor(...NAVY);
-    doc.rect(0, 0, w, 28, 'F');
-
-    doc.setFontSize(7); doc.setTextColor(180, 190, 210); doc.setFont('helvetica', 'bold');
-    doc.text(`${biz} - OFFICIAL STOCK REGISTRY`, margin, 9);
-    doc.text(`GENERATED: ${now.toLocaleDateString('en-IN')} ${now.toLocaleTimeString('en-IN')}`, w - margin, 9, { align: 'right' });
-
-    doc.setFontSize(18); doc.setTextColor(...WHITE); doc.setFont('helvetica', 'bold');
-    doc.text('MASTER STOCK LIST', margin, 21);
-
-    doc.setFontSize(8); doc.setTextColor(180, 190, 210);
-    doc.text(`Total SKUs: ${products.length}`, w - margin, 21, { align: 'right' });
-
-    // -- KPI Summary row --
-    const totalItems = products.length;
-    const outOfStock = products.filter(p => getStockQty(p) <= 0).length;
-    const lowStock = products.filter(p => getStockQty(p) > 0 && getStockQty(p) <= (p.min_stock_level || p.reorder_level || 5)).length;
     const totalValue = products.reduce((s, p) => s + (getStockQty(p) * (p.selling_price || 0)), 0);
+    const lowStockCount = products.filter(p => getStockQty(p) <= (p.min_stock_level || 5)).length;
 
-    const kpis = [
-      { label: 'TOTAL SKUs', value: String(totalItems), color: NAVY },
-      { label: 'OUT OF STOCK', value: String(outOfStock), color: RED },
-      { label: 'LOW STOCK', value: String(lowStock), color: AMBER },
-      { label: 'STOCK VALUE', value: `INR ${totalValue.toLocaleString('en-IN')}`, color: GREEN },
-    ];
-    const boxW = (w - margin * 2) / 4;
-    kpis.forEach((kpi, i) => {
-      const x = margin + i * boxW;
-      doc.setDrawColor(220, 225, 235);
-      doc.setLineWidth(0.2);
-      doc.rect(x, 32, boxW, 16);
-      doc.setFontSize(7); doc.setTextColor(...SLATE); doc.setFont('helvetica', 'bold');
-      doc.text(kpi.label, x + 3, 38);
-      doc.setFontSize(12); doc.setTextColor(...kpi.color); doc.setFont('helvetica', 'bold');
-      doc.text(kpi.value, x + 3, 46);
+    reportExporter.downloadPDF({
+      type: 'inventory',
+      title: 'Master Inventory Audit',
+      businessName: business?.name || 'Vyapari Retail',
+      dateRange: { from: new Date().toISOString(), to: new Date().toISOString() },
+      rows: filteredProducts.map((p, i) => ({
+        ...p,
+        sr: i + 1,
+        qty_display: `${getStockQty(p)} ${p.unit || 'pcs'}`,
+        margin_pct: p.selling_price > 0 ? `${Math.round(((p.selling_price - (p.cost_price || 0)) / p.selling_price) * 100)}%` : 'N/A',
+        stock_value: getStockQty(p) * (p.selling_price || 0),
+        status: getStockQty(p) <= 0 ? 'OUT' : getStockQty(p) <= (p.min_stock_level || 5) ? 'LOW' : 'GOOD'
+      })),
+      columns: [
+        { key: 'sr', label: '#', type: 'text' },
+        { key: 'name', label: 'Item Name', type: 'text' },
+        { key: 'sku', label: 'SKU', type: 'text' },
+        { key: 'qty_display', label: 'Qty', type: 'text' },
+        { key: 'selling_price', label: 'Sell Price', type: 'currency' },
+        { key: 'margin_pct', label: 'Profit', type: 'text' },
+        { key: 'stock_value', label: 'Value', type: 'currency' },
+        { key: 'status', label: 'Status', type: 'text' }
+      ],
+      generatedBy: profile?.full_name || 'System',
+      kpis: [
+        { label: 'Total Value', value: `Rs.${(totalValue/1000).toFixed(1)}K` },
+        { label: 'Low Stock', value: String(lowStockCount) },
+        { label: 'Total SKUs', value: String(products.length) }
+      ]
     });
-
-    // -- Product Table --
-    const tableBody = filteredProducts.map((p, i) => {
-      const qty = getStockQty(p);
-      const minStock = p.min_stock_level || p.reorder_level || 5;
-      const status = qty <= 0 ? 'OUT OF STOCK' : qty <= minStock ? 'LOW STOCK' : 'IN STOCK';
-      const margin_pct = p.selling_price > 0
-        ? `${Math.round(((p.selling_price - (p.cost_price || 0)) / p.selling_price) * 100)}%`
-        : 'N/A';
-      return [
-        String(i + 1),
-        p.name || '-',
-        p.sku || '-',
-        String(qty),
-        p.unit || 'pcs',
-        `INR ${(p.selling_price || 0).toLocaleString('en-IN')}`,
-        `INR ${(p.cost_price || 0).toLocaleString('en-IN')}`,
-        margin_pct,
-        `INR ${(qty * (p.selling_price || 0)).toLocaleString('en-IN')}`,
-        status,
-      ];
-    });
-
-    autoTable(doc, {
-      startY: 52,
-      head: [['#', 'Product Name', 'SKU', 'Qty', 'Unit', 'Sell Price', 'Cost Price', 'Margin', 'Stock Value', 'Status']],
-      body: tableBody,
-      theme: 'grid',
-      styles: { fontSize: 8, cellPadding: 2.5, font: 'helvetica', valign: 'middle' },
-      headStyles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold', fontSize: 7.5 },
-      columnStyles: {
-        0: { cellWidth: 8, halign: 'center' },
-        1: { cellWidth: 55 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 12, halign: 'center' },
-        4: { cellWidth: 12, halign: 'center' },
-        5: { cellWidth: 22, halign: 'right' },
-        6: { cellWidth: 22, halign: 'right' },
-        7: { cellWidth: 16, halign: 'center' },
-        8: { cellWidth: 26, halign: 'right' },
-        9: { cellWidth: 24, halign: 'center' },
-      },
-      didParseCell: (data) => {
-        if (data.column.index === 9 && data.section === 'body') {
-          const val = String(data.cell.raw);
-          if (val === 'OUT OF STOCK') data.cell.styles.textColor = RED;
-          else if (val === 'LOW STOCK') data.cell.styles.textColor = AMBER;
-          else data.cell.styles.textColor = GREEN;
-          data.cell.styles.fontStyle = 'bold';
-        }
-        if (data.section === 'body' && data.row.index % 2 === 0) {
-          data.cell.styles.fillColor = [248, 249, 252];
-        }
-      },
-      margin: { left: margin, right: margin },
-    });
-
-    // -- Footer --
-    const pageCount = (doc as any).internal.getNumberOfPages();
-    for (let pg = 1; pg <= pageCount; pg++) {
-      doc.setPage(pg);
-      doc.setDrawColor(...SLATE); doc.setLineWidth(0.1);
-      doc.line(margin, h - 10, w - margin, h - 10);
-      doc.setFontSize(7); doc.setTextColor(...SLATE); doc.setFont('helvetica', 'normal');
-      doc.text(`${biz} - Master Stock Registry - Confidential`, margin, h - 6);
-      doc.text(`Page ${pg} of ${pageCount}`, w - margin, h - 6, { align: 'right' });
-    }
-
-    // Force PDF MIME download
-    const filename = `${biz.replace(/[^a-z0-9]/gi, '_')}_Stock_List_${now.toISOString().split('T')[0]}.pdf`;
-    downloadPDF(doc, filename);
-    toast(`Stock List exported - ${filteredProducts.length} products`, 'success');
+    toast("Inventory Report Downloaded", "success");
   };
 
   const [search, setSearch] = useState("");
@@ -720,7 +637,7 @@ export default function MasterInventoryControl() {
     
     if (filter === "Low Stock") return getStockQty(p) <= getMinStock(p);
     if (filter === "Out of Stock") return getStockQty(p) <= 0;
-    if (filter === "Dead Stock") return intelligence[p.id]?.is_dead_stock;
+    if (filter === "Old Stock") return intelligence[p.id]?.is_dead_stock;
     return true;
   });
 
@@ -755,7 +672,7 @@ export default function MasterInventoryControl() {
                 Inventory Live
               </div>
             </div>
-            <h1 className="text-5xl font-black tracking-tighter uppercase leading-none">My Stock <span className="text-indigo-500">Inventory</span></h1>
+            <h1 className="text-5xl font-black tracking-tighter uppercase leading-none">My Stock <span className="text-indigo-500">Tracker</span></h1>
             <p className="text-slate-400 mt-6 text-sm font-medium max-w-lg leading-relaxed uppercase tracking-[0.2em] text-[9px]">
               Complete control over your products, stock speed, and profit tracking.
             </p>

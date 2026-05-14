@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Info, Play, Download, CheckCircle2, AlertTriangle, 
@@ -70,7 +70,7 @@ export default function EnginePanel({
           <div>
             <div className="flex items-center gap-3">
               <h3 className="text-xl font-black uppercase tracking-tight text-white italic">{title}</h3>
-              <Badge className="border-indigo-500/30 text-indigo-400 text-[8px] uppercase">Active_Engine</Badge>
+              <Badge className="border-indigo-500/30 text-indigo-400 text-[8px] uppercase">Active</Badge>
             </div>
             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">{description}</p>
           </div>
@@ -108,13 +108,13 @@ export default function EnginePanel({
               onClick={() => setViewMode('chart')}
               className={`px-6 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${viewMode === 'chart' ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
             >
-              Neural_Visual
+              View Chart
             </button>
             <button 
               onClick={() => setViewMode('table')}
               className={`px-6 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${viewMode === 'table' ? 'bg-white text-slate-900 shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
             >
-              Data_Terminal
+              View Data Table
             </button>
           </div>
           <div className="flex gap-3">
@@ -136,7 +136,7 @@ export default function EnginePanel({
       {/* -- INSIGHTS -- */}
       <div className="p-8 bg-black/20 border-t border-white/5 relative z-10">
         <h4 className="text-[9px] font-black uppercase tracking-[0.4em] text-indigo-400 mb-6 flex items-center gap-2">
-           <Zap size={12} fill="currentColor" /> Neural_Deductions
+           <Zap size={12} fill="currentColor" /> Key Findings
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {insights.map((insight, i) => (
@@ -165,10 +165,10 @@ export default function EnginePanel({
       {/* -- FOOTER ACTIONS -- */}
       <div className="p-8 flex justify-between items-center border-t border-white/5 bg-slate-950/40 relative z-10">
         <button onClick={onExport} className="px-6 py-4 bg-white/5 hover:bg-white/10 text-slate-300 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border border-white/10 flex items-center gap-3 transition-all">
-          <FileDown size={16} /> Export_Report
+          <FileDown size={16} /> Download Report
         </button>
         <button onClick={onApply} className="px-8 py-4 bg-white text-slate-900 hover:bg-indigo-400 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border border-white shadow-2xl flex items-center gap-3 transition-all">
-          Execute_Directive <ChevronRight size={16} />
+          Take Action <ChevronRight size={16} />
         </button>
       </div>
     </motion.div>
@@ -298,7 +298,7 @@ function EngineChart({ type, data }: { type: string, data: any[] }) {
        <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-slate-700 mb-6">
           <Activity size={32} />
        </div>
-       <h4 className="text-xs font-black text-slate-500 uppercase tracking-[0.4em]">Visualizing_Engine_Telemetry</h4>
+       <h4 className="text-xs font-black text-slate-500 uppercase tracking-[0.4em]">Analyzing Data</h4>
        <p className="text-[10px] font-bold text-slate-600 mt-2 uppercase tracking-widest italic">Scanning 365 days of {type} cycles...</p>
     </div>
   );
@@ -308,7 +308,7 @@ function EngineDataTable({ type, data }: { type: string, data: any[] }) {
   if (!data || data.length === 0) return (
     <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-700">
        <Database size={40} className="mb-4 opacity-20" />
-       <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40">Null_Telemetry_Data</span>
+       <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40">No Data Available</span>
     </div>
   );
 
@@ -371,12 +371,12 @@ function EngineEmptyState({ title, icon, current, required, message }: { title: 
            <ShieldAlert size={48} />
          </div>
          
-         <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4 italic">{title}_Node_Locked</h3>
+         <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4 italic">{title} Locked</h3>
          <p className="text-slate-500 text-sm font-bold max-w-sm mx-auto mb-12 uppercase tracking-widest leading-relaxed">"{message}"</p>
          
          <div className="max-w-md mx-auto p-10 bg-black/40 rounded-[2.5rem] border border-white/5">
             <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.4em] mb-4 text-slate-500">
-              <span>Telemetry_Readiness</span>
+              <span>Data Readiness</span>
               <span className="text-indigo-400">{current} / {required} Nodes</span>
             </div>
             <div className="h-3 bg-white/5 rounded-full overflow-hidden border border-white/5">
@@ -389,7 +389,7 @@ function EngineEmptyState({ title, icon, current, required, message }: { title: 
          </div>
          
          <button className="mt-12 px-12 py-5 bg-white text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-white shadow-2xl hover:bg-indigo-400 hover:text-white transition-all flex items-center gap-3 mx-auto">
-           <ExternalLink size={16} /> Expand Telemetry Buffer
+           <ExternalLink size={16} /> Add More Data
          </button>
       </div>
     </div>

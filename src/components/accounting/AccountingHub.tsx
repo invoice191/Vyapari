@@ -137,9 +137,9 @@ export default function AccountingHub() {
             <div className="w-11 h-11 bg-indigo-600 text-white flex items-center justify-center rounded-2xl shadow-[0_10px_20px_-5px_rgba(79,70,229,0.4)]">
               <Landmark size={22} />
             </div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900 uppercase">Ledger Analytics</h1>
+            <h1 className="text-3xl font-black tracking-tight text-slate-900 uppercase">Money History</h1>
           </div>
-          <p className="text-slate-400 font-bold text-xs uppercase tracking-widest pl-14">Statutory Reporting & Balance Intelligence</p>
+          <p className="text-slate-400 font-bold text-xs uppercase tracking-widest pl-14">Business Health & Tax Reports</p>
         </motion.div>
 
         <div className="flex items-center gap-3 bg-white/60 backdrop-blur-md p-2 rounded-2xl border border-white/80 shadow-sm">
@@ -162,15 +162,15 @@ export default function AccountingHub() {
       {/* NAVIGATION */}
       <div className="flex gap-2 border-b border-slate-200 overflow-x-auto scrollbar-hide">
         <NavTab id="pl" label="Profit & Loss" icon={TrendingUp} />
-        <NavTab id="bs" label="Balance Sheet" icon={PieChart} />
-        <NavTab id="compliance" label="Compliance & Export" icon={DownloadCloud} />
+        <NavTab id="bs" label="What I Own & Owe" icon={PieChart} />
+        <NavTab id="compliance" label="Send to Accountant" icon={DownloadCloud} />
       </div>
 
       {/* MAIN CONTENT RENDERER */}
       {loading ? (
         <div className="py-32 flex flex-col items-center justify-center gap-4">
           <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-          <span className="font-black text-[10px] uppercase tracking-widest text-slate-400">Auditing Blockchain Node...</span>
+          <span className="font-black text-[10px] uppercase tracking-widest text-slate-400">Calculating records...</span>
         </div>
       ) : (
         <AnimatePresence mode="wait">
@@ -185,26 +185,26 @@ export default function AccountingHub() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Master summary Cards */}
                 <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <SummaryBox label="Total Revenue" val={plData.revenue} color="emerald" trend="up" />
+                  <SummaryBox label="Total Sales" val={plData.revenue} color="emerald" trend="up" />
                   <SummaryBox label="Gross Profit" val={plData.grossProfit} color="indigo" sub={`${plData.grossMargin.toFixed(1)}% Margin`} />
-                  <SummaryBox label="Direct COGS" val={plData.cogs} color="amber" />
-                  <SummaryBox label="Net Earnings" val={plData.netProfit} color={plData.netProfit >= 0 ? "emerald" : "red"} highlight={true} />
+                  <SummaryBox label="Cost of Items" val={plData.cogs} color="amber" />
+                  <SummaryBox label="Net Savings" val={plData.netProfit} color={plData.netProfit >= 0 ? "emerald" : "red"} highlight={true} />
                 </div>
 
                 {/* Vertical P&L Structure */}
                 <div className="lg:col-span-2 bg-white/80 backdrop-blur-xl border border-white/60 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/30">
                   <h3 className="font-black text-[11px] uppercase tracking-[0.2em] text-slate-400 mb-8 flex items-center gap-2">
-                    <Receipt size={14}/> Statement of Income Operations
+                    <Receipt size={14}/> How much did I make?
                   </h3>
                   
                   <div className="space-y-6">
-                    <LineItem label="Trading Sales Volume" val={plData.revenue} />
-                    <LineItem label="Cost of Goods Sold (COGS)" val={-plData.cogs} indent />
+                    <LineItem label="Total Sales" val={plData.revenue} />
+                    <LineItem label="Cost of Items Sold" val={-plData.cogs} indent />
                     <hr className="border-slate-100 border-dashed" />
                     <LineItem label="Gross Trading Profit" val={plData.grossProfit} bold />
                     
                     <div className="pt-6">
-                      <h4 className="text-[9px] font-black text-slate-400 uppercase mb-4 ml-2">Operating Overheads</h4>
+                      <h4 className="text-[9px] font-black text-slate-400 uppercase mb-4 ml-2">Other Shop Expenses</h4>
                       {Object.entries(plData.expenses).map(([cat, amt]: any) => (
                         <LineItem key={cat} label={cat} val={-amt} indent />
                       ))}
@@ -226,12 +226,12 @@ export default function AccountingHub() {
                   <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl translate-x-10 -translate-y-10" />
                   <div className="relative z-10">
                     <ShieldCheck className="mb-4 opacity-60" size={32} />
-                    <h3 className="text-2xl font-black tracking-tighter leading-tight">Capital Efficiency Score</h3>
-                    <p className="text-indigo-200 text-xs font-bold mt-2 uppercase tracking-wider">Analyzing cash cycle velocities...</p>
+                    <h3 className="text-2xl font-black tracking-tighter leading-tight">Business Score</h3>
+                    <p className="text-indigo-200 text-xs font-bold mt-2 uppercase tracking-wider">Checking your business speed...</p>
                     
                     <div className="mt-12">
                       <div className="text-6xl font-black tracking-tighter">{((plData.netProfit / (plData.revenue || 1)) * 100).toFixed(0)}%</div>
-                      <div className="text-[10px] font-black uppercase tracking-widest text-indigo-200 mt-2">Operational Conversion Rate</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-indigo-200 mt-2">Profit Success Rate</div>
                     </div>
                   </div>
                   <div className="relative z-10 mt-8 p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/20 text-xs font-bold">
@@ -247,14 +247,14 @@ export default function AccountingHub() {
                 <div className="bg-white rounded-[2.5rem] p-8 border border-white shadow-xl border-t-4 border-t-emerald-500">
                   <div className="flex justify-between items-end mb-8">
                     <div>
-                      <h3 className="font-black text-3xl tracking-tight text-slate-900 uppercase">Assets</h3>
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Resource Allocation</span>
+                      <h3 className="font-black text-3xl tracking-tight text-slate-900 uppercase">What I Own</h3>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Business Value</span>
                     </div>
                     <span className="text-2xl font-black text-emerald-600">{formatCurr(bsData.assets.total)}</span>
                   </div>
                   <div className="space-y-4">
-                    <AssetLiabilityRow icon={Wallet} label="Unrealized Inventory Value" val={bsData.assets.inventory} />
-                    <AssetLiabilityRow icon={Receipt} label="Pending Receivables" val={bsData.assets.receivables} />
+                    <AssetLiabilityRow icon={Wallet} label="Stock in Shop" val={bsData.assets.inventory} />
+                    <AssetLiabilityRow icon={Receipt} label="Money to Collect" val={bsData.assets.receivables} />
                   </div>
                 </div>
 
@@ -262,22 +262,22 @@ export default function AccountingHub() {
                 <div className="bg-white rounded-[2.5rem] p-8 border border-white shadow-xl border-t-4 border-t-rose-500">
                   <div className="flex justify-between items-end mb-8">
                     <div>
-                      <h3 className="font-black text-3xl tracking-tight text-slate-900 uppercase">Liabilities</h3>
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Financial Obligations</span>
+                      <h3 className="font-black text-3xl tracking-tight text-slate-900 uppercase">What I Owe</h3>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bills & Loans</span>
                     </div>
                     <span className="text-2xl font-black text-rose-600">{formatCurr(bsData.liabilities.total)}</span>
                   </div>
                   <div className="space-y-4">
-                    <AssetLiabilityRow icon={Briefcase} label="Outstanding Payables" val={bsData.liabilities.payables} color="rose" />
-                    <AssetLiabilityRow icon={Landmark} label="Term Loans & Debt" val={bsData.liabilities.loans} color="rose" />
+                    <AssetLiabilityRow icon={Briefcase} label="Money to Pay Suppliers" val={bsData.liabilities.payables} color="rose" />
+                    <AssetLiabilityRow icon={Landmark} label="Bank Loans" val={bsData.liabilities.loans} color="rose" />
                   </div>
                 </div>
 
                 {/* NET EQUITY BANNER */}
                 <div className="lg:col-span-2 bg-slate-900 rounded-[2rem] p-8 flex justify-between items-center shadow-xl shadow-slate-300">
                   <div>
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Retained Earnings / Net Equity Position</div>
-                    <div className="text-indigo-400 text-xs font-bold uppercase">Assets Less Liabilities</div>
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Your Business Worth</div>
+                    <div className="text-indigo-400 text-xs font-bold uppercase">What you have left after paying all bills</div>
                   </div>
                   <div className="text-right">
                     <div className={`text-4xl font-black tracking-tight ${bsData.equity >= 0 ? 'text-white' : 'text-red-400'}`}>
@@ -295,8 +295,8 @@ export default function AccountingHub() {
                     <DownloadCloud size={36} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Master XML Engine</h2>
-                    <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest mt-2">Inject directly into Tally Prime using ISO 20022.</p>
+                    <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Tally Export</h2>
+                    <p className="text-slate-500 font-bold text-[10px] uppercase tracking-widest mt-2">Export your data directly into Tally for your accountant.</p>
                   </div>
                   <button 
                     onClick={handleTallyExport}
@@ -312,8 +312,8 @@ export default function AccountingHub() {
                     <FileJson size={36} />
                   </div>
                   <div className="relative z-10">
-                    <h2 className="text-xl font-black text-white uppercase tracking-tight">GSTR-1 Gov Portal</h2>
-                    <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2">Compile JSON structure for official Government Upload.</p>
+                    <h2 className="text-xl font-black text-white uppercase tracking-tight">GST Export</h2>
+                    <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2">Get the GST file ready for the government portal.</p>
                   </div>
                   <button 
                     onClick={handleGSTR1Export}

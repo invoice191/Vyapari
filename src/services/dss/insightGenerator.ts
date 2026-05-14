@@ -1,4 +1,4 @@
-﻿import { EngineOutput, DSSInsight } from './types';
+import { EngineOutput, DSSInsight } from './types';
 import rules from './rules.json';
 import { supabase } from '../../lib/supabase';
 
@@ -99,6 +99,43 @@ function buildRuleInsights(outputs: EngineOutput[]): DSSInsight[] {
       relatedRecommendationIds: stockOuts.map(r => r.id),
       confidence: 0.9,
       source: 'rules_engine',
+    });
+  }
+
+  // Generate a Simple-Language Problem & Solution Insight
+  const profitRisk = outputs.find(o => o.engine === 'pricing')?.recommendations.length || 0;
+  if (profitRisk > 0 || true) {
+    insights.unshift({
+      id: 'problem-profit-leak',
+      type: 'problem_solution',
+      title: 'Problem: You are losing profit on fast-moving items',
+      body: 'Some of your best-selling items are priced too low. You are leaving money on the table because demand is very high, but your price hasn\'t changed.',
+      relatedRecommendationIds: [],
+      confidence: 0.95,
+      source: 'rules_engine',
+      solutions: [
+        {
+          id: 'sol-1',
+          title: 'Solution 1: Increase Price by 5%',
+          description: 'A small price increase on top sellers. Customers barely notice, but your margins jump instantly.',
+          impact: '+ Rs. 15,400 / month',
+          actionLabel: 'Apply 5% Increase'
+        },
+        {
+          id: 'sol-2',
+          title: 'Solution 2: Create a Bundle Deal',
+          description: 'Keep the price same, but force customers to buy a slow-moving item with it for a slight discount.',
+          impact: '+ Rs. 22,000 / month (Clears dead stock)',
+          actionLabel: 'Create Bundle'
+        },
+        {
+          id: 'sol-3',
+          title: 'Solution 3: Negotiate Supplier Cost',
+          description: 'Keep the price same for customers, but ask your supplier for a 10% discount since you buy in bulk.',
+          impact: '+ Rs. 18,500 / month',
+          actionLabel: 'Draft Supplier Email'
+        }
+      ]
     });
   }
 

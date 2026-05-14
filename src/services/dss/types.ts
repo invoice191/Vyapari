@@ -1,4 +1,4 @@
-﻿import { Product as InventoryItem, Invoice, AuditLog as StockLog } from '../types';
+import { Product as InventoryItem, Invoice, AuditLog as StockLog } from '../types';
 
 export interface Sale {
   id: string;
@@ -71,7 +71,7 @@ export interface DSSRecommendation {
 // -- Insight (AI narrative layer) ------------------------------
 export interface DSSInsight {
   id: string;
-  type: 'ai_narrative' | 'rule_summary' | 'trend_alert' | 'festival_warning';
+  type: 'ai_narrative' | 'rule_summary' | 'trend_alert' | 'festival_warning' | 'problem_solution';
   title: string;
   body: string;
   relatedRecommendationIds: string[];
@@ -81,6 +81,13 @@ export interface DSSInsight {
   icon?: any;
   streaming?: boolean;
   streamedText?: string;
+  solutions?: {
+    id: string;
+    title: string;
+    description: string;
+    impact: string;
+    actionLabel: string;
+  }[];
 }
 
 // -- Simulation ------------------------------------------------

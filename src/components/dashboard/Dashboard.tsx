@@ -56,6 +56,7 @@ export default function Dashboard() {
   const [aiInsights, setAiInsights] = useState<any[]>([]);
   const [tier3Loading, setTier3Loading] = useState(false);
   const [tier3Error, setTier3Error] = useState(false);
+  const [pendingReconciliations, setPendingReconciliations] = useState<any[]>([]);
 
   // Load custom analytical datasets
   const { atRisk, lost, hibernating, loading: rfmLoading } = useRFM(profile?.business_id);
@@ -163,6 +164,13 @@ export default function Dashboard() {
       fetchTier1();
       fetchTier2();
       fetchLock.current = false;
+      
+      // Fetch pending reconciliations
+      supabase.from('reconciliation_attempts')
+        .select('*, ledger_entries(description, amount), invoices(invoice_number)')
+        .eq('business_id', profile.business_id)
+        .eq('status', 'pending')
+        .then(({ data }) => setPendingReconciliations(data || []));
     }
   }, [profile?.business_id, invoices, products, dbCategories, contacts, ledger]);
 
@@ -358,7 +366,8 @@ export default function Dashboard() {
   }, [products, dbCategories]);
 
   return (
-    <div className="space-y-12">
+    <>
+      <div className="space-y-12">
       {/* Professional Dark Welcome Banner */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -379,12 +388,12 @@ export default function Dashboard() {
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">System Ready</span>
               </div>
               <div className="h-[1px] w-12 bg-white/10" />
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Executive Terminal</div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Business Hub</div>
             </div>
             
             <h1 className="text-4xl lg:text-5xl font-black tracking-tighter text-white mb-4 leading-none">
               Welcome back,<br/>
-              <span className="text-indigo-400">Vyapari</span>
+              <span className="text-indigo-400">Owner</span>
             </h1>
             
             <p className="text-slate-400 text-sm font-medium tracking-wide max-w-md opacity-80">
@@ -409,6 +418,37 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* Autonomous Pulse Overlay */}
+        <AnimatePresence>
+          {pendingReconciliations.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="mt-10 p-6 bg-indigo-600/20 border border-indigo-400/30 rounded-3xl backdrop-blur-md flex items-center justify-between"
+            >
+              <div className="flex items-center gap-6">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 relative">
+                  <RefreshCw size={24} className="animate-spin-slow" />
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 border-2 border-slate-950 rounded-full flex items-center justify-center text-[8px] font-black">
+                    {pendingReconciliations.length}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-1">AI Helper</div>
+                  <div className="text-sm font-bold text-white">AI identified ₹{pendingReconciliations.reduce((a,b) => a + Number(b.ledger_entries?.amount || 0), 0).toLocaleString()} in new payments.</div>
+                  <div className="text-[10px] font-medium text-indigo-300/80 uppercase tracking-wider">Ready for one-tap reconciliation.</div>
+                </div>
+              </div>
+              <button 
+                onClick={() => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'ledger', props: { mode: 'reconcile' } } }))}
+                className="px-6 py-3 bg-white text-indigo-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-xl"
+              >
+                Reconcile Now
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
 
@@ -429,9 +469,9 @@ export default function Dashboard() {
             <div>
                <div className="flex items-center gap-2 mb-1.5">
                   <Badge status="Pulse Active" />
-                  <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{pulse.category} Intelligence</span>
+                  <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{pulse.category} Tips</span>
                </div>
-               <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">{pulse.festival} Readiness <span className="text-indigo-600">{pulse.daysLeft > 0 ? `In ${pulse.daysLeft} Days` : 'ACTIVE'}</span></h3>
+               <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">{pulse.festival} Prep <span className="text-indigo-600">{pulse.daysLeft > 0 ? `In ${pulse.daysLeft} Days` : 'ACTIVE'}</span></h3>
                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-tight max-w-lg">
                  {pulse.recommendation} Analysis indicates a high velocity opportunity for your <strong className="text-indigo-600">{pulse.category}</strong> inventory.
                </p>
@@ -442,7 +482,7 @@ export default function Dashboard() {
                onClick={() => setShowPulseAudit(true)}
                className="!px-6 !py-3 !text-[9px] bg-slate-900 text-white"
              >
-               AUDIT_FESTIVAL_STOCK
+               CHECK_FESTIVAL_STOCK
              </ActionBtn>
              <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors">
                 <ArrowUpRight size={20} />
@@ -455,17 +495,18 @@ export default function Dashboard() {
       <div>
         <div className="flex items-center gap-2 mb-4 ml-1">
            <div className="w-1 h-1 rounded-full bg-indigo-500 animate-ping" />
-           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Tap a card for neural drilldown</span>
+           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Tap a card for a detailed look</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {renderCard("Revenue", `Rs.${((tier1Data?.today_revenue || 0) / 1000).toFixed(1)}K`, 12.4, "Daily Sales", "--", C.orange, spark(42000), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'reports' } })), 0.1)}
-          {renderCard("Money In", `Rs.${(moneyIn / 1000).toFixed(1)}K`, 8.5, "Total Inflow", "--", C.green, getLedgerSpark('credit'), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'ledger' } })), 0.15)}
-          {renderCard("Money Out", `Rs.${(moneyOut / 1000).toFixed(1)}K`, -2.4, "Total Outflow", "--", C.rose, getLedgerSpark('debit'), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'ledger' } })), 0.2)}
-          {renderCard("Pending Bills", (tier1Data?.active_invoices_count || 0).toString(), 8.2, "To Collect", "--", C.blue, spark(250), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'invoices' } })), 0.25)}
-          {renderCard("Low Stock", (tier1Data?.low_stock_count || 0).toString(), -2.1, "To Restock", "--", "#f59e0b", spark(90), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'inventory' } })), 0.3)}
-          {renderCard("Late Payments", (tier1Data?.overdue_count || 0).toString(), 5.6, "Overdue", "--", C.purple, spark(1800), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'ledger' } })), 0.35)}
+          {renderCard("Total Sales", `Rs.${((tier1Data?.today_revenue || 0) / 1000).toFixed(1)}K`, 12.4, "Daily Sales", "--", C.orange, spark(42000), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'reports' } })), 0.1)}
+          {renderCard("Collected", `Rs.${(moneyIn / 1000).toFixed(1)}K`, 8.5, "Total Received", "--", C.green, getLedgerSpark('credit'), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'ledger' } })), 0.15)}
+          {renderCard("Spent", `Rs.${(moneyOut / 1000).toFixed(1)}K`, -2.4, "Total Paid", "--", C.rose, getLedgerSpark('debit'), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'ledger' } })), 0.2)}
+          {renderCard("Bills to Collect", (tier1Data?.active_invoices_count || 0).toString(), 8.2, "Outstanding", "--", C.blue, spark(250), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'invoices' } })), 0.25)}
+          {renderCard("Low Stock", (tier1Data?.low_stock_count || 0).toString(), -2.1, "Stock Alerts", "--", "#f59e0b", spark(90), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'inventory' } })), 0.3)}
+          {renderCard("Overdue Bills", (tier1Data?.overdue_count || 0).toString(), 5.6, "Past Due Date", "--", C.purple, spark(1800), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'ledger' } })), 0.35)}
         </div>
-    </div>
+        </div>
+
 
 
       {/* Predictive Analytics & Signals Block */}
@@ -489,9 +530,9 @@ export default function Dashboard() {
           
           <div className="space-y-4 max-h-[250px] overflow-y-auto pr-2">
             {rfmLoading ? (
-              <div className="text-[12px] font-bold text-ink/40 uppercase animate-pulse">Computing Segments...</div>
+              <div className="text-[12px] font-bold text-ink/40 uppercase animate-pulse">Finding Customers...</div>
             ) : (atRisk.length === 0 && lost.length === 0) ? (
-              <div className="text-[12px] font-bold text-ink/40 uppercase py-6 text-center">No high churn-risk customers found. Excellent!</div>
+              <div className="text-[12px] font-bold text-ink/40 uppercase py-6 text-center">Everyone is buying regularly. Excellent!</div>
             ) : (
               [...hibernating, ...atRisk, ...lost].slice(0, 5).map((customer) => (
                 <div key={customer.contact_id} className="flex justify-between items-center p-3 border border-slate-100 bg-slate-50 rounded-xl hover:border-indigo-100 transition-colors">
@@ -531,7 +572,7 @@ export default function Dashboard() {
 
           <div className="space-y-4 max-h-[250px] overflow-y-auto pr-2">
             {velocityLoading ? (
-              <div className="text-[12px] font-bold text-ink/40 uppercase animate-pulse">Running Stock Velocity Models...</div>
+              <div className="text-[12px] font-bold text-ink/40 uppercase animate-pulse">Checking Shop Speed...</div>
             ) : velocityData.length === 0 ? (
               <div className="text-[12px] font-bold text-ink/40 uppercase py-6 text-center">No velocity logs found. Check inventory updates.</div>
             ) : (
@@ -575,7 +616,7 @@ export default function Dashboard() {
 
           <div className="space-y-4 max-h-[250px] overflow-y-auto pr-2">
             {anomalyLoading ? (
-              <div className="text-[12px] font-bold text-ink/40 uppercase animate-pulse">Running Outlier Detection...</div>
+              <div className="text-[12px] font-bold text-ink/40 uppercase animate-pulse">Checking for unusual things...</div>
             ) : anomalies.length === 0 ? (
               <div className="text-[12px] font-bold text-ink/40 uppercase py-6 text-center">No active anomalies detected in current cycle.</div>
             ) : (
@@ -607,7 +648,7 @@ export default function Dashboard() {
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         <div className="lg:col-span-2 glass-card !p-8 min-w-0">
-          <SectionHeader title="Money Tracking" subtitle="See how your business grows"
+          <SectionHeader title="Money Records" subtitle="Track your daily business growth"
             action={
               <button 
                 onClick={() => setShowFilters(!showFilters)}
@@ -722,7 +763,7 @@ export default function Dashboard() {
                       onClick={() => setShowFilters(false)}
                       className="w-full py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition-all"
                     >
-                      Apply Matrix
+                      Apply Filters
                     </button>
                   </div>
                 </div>
@@ -736,7 +777,7 @@ export default function Dashboard() {
                 <div className="flex flex-col items-center gap-4">
                   <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
                   <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">
-                    {isFiltering ? 'Calculating Neural Matrix...' : 'Synchronizing Projection Matrix...'}
+                    {isFiltering ? 'Searching...' : 'Making your graph...'}
                   </span>
                 </div>
               </div>
@@ -744,8 +785,8 @@ export default function Dashboard() {
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">--</div>
                 <div className="text-center">
-                  <p className="text-[12px] font-black text-slate-900 uppercase tracking-widest">No Sales Data Logged</p>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Start invoicing to see neural projections</p>
+                  <p className="text-[12px] font-black text-slate-900 uppercase tracking-widest">No Sales Data Yet</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Start billing to see your growth</p>
                 </div>
               </div>
             ) : null}
@@ -881,7 +922,7 @@ export default function Dashboard() {
               {drilldownLoading ? (
                 <div className="col-span-3 py-20 text-center flex flex-col items-center gap-6">
                   <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs font-black uppercase tracking-[0.4em] text-slate-400">Extracting Neural Patterns...</span>
+                  <span className="text-xs font-black uppercase tracking-[0.4em] text-slate-400">Finding Patterns...</span>
                 </div>
               ) : (
                 <>
@@ -1110,7 +1151,7 @@ export default function Dashboard() {
                   <div className="p-8 bg-slate-900 rounded-[2.5rem] text-slate-300 space-y-4 shadow-xl">
                     <div className="flex items-center gap-3 text-indigo-400">
                        <Zap size={18} fill="currentColor" />
-                       <span className="text-[10px] font-black uppercase tracking-widest">Neural Simulation</span>
+                       <span className="text-[10px] font-black uppercase tracking-widest">Business Simulation</span>
                     </div>
                     <p className="text-[12px] font-medium leading-relaxed italic">
                       "I have simulated 4,000 scenarios. Your current inventory footprint covers 92% of the high-velocity demand. I recommend a <span className="text-white font-black">5% aggressive price hike</span> on top items during Peak."
@@ -1171,13 +1212,13 @@ export default function Dashboard() {
                   )}
                 </div>
 
-                {/* COLUMN 3: DEEP COGNITIVE INTELLIGENCE */}
+                {/* COLUMN 3: DETAILED BUSINESS LOOK */}
                 <div className="p-6 space-y-8 bg-slate-50/10 overflow-y-auto custom-scrollbar">
                   {selectedAuditProduct ? (
                     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8">
                        <div className="flex justify-between items-start">
                           <div>
-                             <div className="text-[10px] font-black uppercase text-indigo-600 tracking-widest">Cognitive Report</div>
+                             <div className="text-[10px] font-black uppercase text-indigo-600 tracking-widest">Detailed Report</div>
                              <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">{selectedAuditProduct.name}</h3>
                           </div>
                           <div className="text-right">
@@ -1250,5 +1291,6 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 }

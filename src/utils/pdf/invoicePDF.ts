@@ -1,4 +1,4 @@
-﻿import jsPDF from "jspdf";
+import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { 
   downloadPDF, 
@@ -265,15 +265,28 @@ export const generateInvoicePDF = (
                  + 6;
   const totalsX = pageWidth - 70;
 
-  // Totals box
-  doc.setFillColor(248, 250, 252);
-  doc.rect(totalsX - 4, finalY - 4, 
-           68, 52, "F");
+  // Check for page break before totals
+  const totalsHeight = 60; // Approximate height of totals box + padding
+  const pageHeight = doc.internal.pageSize.height;
+  
+  if (finalY + totalsHeight > pageHeight - 20) {
+    doc.addPage();
+    // Reset Y for the new page
+    doc.setFillColor(248, 250, 252);
+    doc.rect(totalsX - 4, 14, 68, 52, "F");
+    var ty = 20;
+  } else {
+    // Totals box
+    doc.setFillColor(248, 250, 252);
+    doc.rect(totalsX - 4, finalY - 4, 
+             68, 52, "F");
+    var ty = finalY + 2;
+  }
 
   doc.setFontSize(9);
   doc.setTextColor(71, 85, 105);
+  doc.setFont("helvetica", "normal");
 
-  let ty = finalY + 2;
   doc.text("Subtotal:", totalsX, ty);
   doc.text(
     `Rs.${data.subtotal.toLocaleString("en-IN")}`,
@@ -370,20 +383,26 @@ export const generateInvoicePDF = (
 
   //  NOTES 
   if (data.notes) {
-    ty += 10;
+    // Check if notes fit on current page
+    const notesLines = doc.splitTextToSize(data.notes, 180);
+    const notesHeight = (notesLines.length * 5) + 10;
+    
+    if (ty + notesHeight > pageHeight - 25) {
+      doc.addPage();
+      ty = 20;
+    }
+
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(15, 23, 42);
     doc.text("NOTES:", 14, ty);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(71, 85, 105);
-    doc.text(data.notes, 14, ty + 5, {
-      maxWidth: 180,
-    });
+    doc.text(notesLines, 14, ty + 5);
+    ty += notesHeight;
   }
 
   //  THANK YOU 
-  const pageHeight = doc.internal.pageSize.height;
   doc.setFontSize(9);
   doc.setFont("helvetica", "italic");
   doc.setTextColor(148, 163, 184);

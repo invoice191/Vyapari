@@ -144,12 +144,22 @@ export const exportService = {
 
     // 4. Recommendation Seal
     const finalY = (doc as any).lastAutoTable.finalY || 240;
+    
+    // Neural Audit Seal
+    doc.setDrawColor(159, 239, 0);
+    doc.setLineWidth(0.5);
+    doc.circle(105, finalY + 45, 20, 'S');
+    doc.setFontSize(6);
+    doc.text("NEURAL AUDIT", 105, finalY + 40, { align: 'center' });
+    doc.setFontSize(10);
+    doc.text("VERIFIED", 105, finalY + 48, { align: 'center' });
+
     doc.setFontSize(12);
     doc.setTextColor(159, 239, 0);
-    doc.text("NEURAL AUDIT SEAL: VERIFIED", 105, finalY + 20, { align: 'center' });
+    doc.text("INSTITUTIONAL GRADE CERTIFIED", 105, finalY + 75, { align: 'center' });
     doc.setFontSize(8);
     doc.setTextColor(200, 200, 200);
-    doc.text("This document certifies that the business entity has passed institutional-grade solvency benchmarks.", 105, finalY + 30, { align: 'center', maxWidth: 150 });
+    doc.text("This document certifies that the business entity has passed institutional-grade solvency benchmarks.", 105, finalY + 82, { align: 'center', maxWidth: 150 });
 
     const safeBizName = businessName.replace(/[^a-zA-Z0-9-]/g, '_');
     const filename = `Financial_Passport_${safeBizName}.pdf`;
@@ -191,67 +201,75 @@ export const exportService = {
       };
 
       // 1. HEADER & LOGO
-      doc.setDrawColor(0);
-      doc.setLineWidth(0.8);
-      const cx = 22, cy = 25;
-      doc.circle(cx, cy, 7);
-      doc.setLineWidth(1.5);
-      for(let i=0; i<12; i++) {
-        const angle = (i * 30) * Math.PI / 180;
-        doc.line(cx + Math.cos(angle)*6, cy + Math.sin(angle)*6, cx + Math.cos(angle)*9, cy + Math.sin(angle)*9);
-      }
-      doc.circle(cx, cy, 3, 'F');
-      doc.setFontSize(6);
-      doc.setFont("helvetica", "bold");
-      const firstName = businessName.split(' ')[0] || "LOGO";
-      doc.text(firstName.toUpperCase(), cx, cy + 12, { align: 'center' });
-
-      doc.setFontSize(22);
-      doc.text(businessName.toUpperCase(), 40, 24);
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
-      doc.text("(Wholesale Electronics Supplier)", 40, 29);
-      const headerAddr = doc.splitTextToSize(safeStr(business?.address || "14/B, Nehru Place, Mumbai"), 90);
-      doc.text(headerAddr, 40, 34);
+      doc.setFillColor(15, 23, 42); // Deep Slate
+      doc.rect(0, 0, 210, 45, 'F');
       
-      const phoneEmailY = 34 + (headerAddr.length * 4);
-      doc.text(`Phone: ${safeStr(business?.phone)} | Email: ${safeStr(business?.email)}`, 40, phoneEmailY);
-
-      doc.setFontSize(16);
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(24);
       doc.setFont("helvetica", "bold");
-      doc.text("TAX INVOICE", 195, 22, { align: 'right' });
+      doc.text(businessName.toUpperCase(), 15, 25);
+      
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
-      doc.text(`Invoice No: ${safeStr(invoice.invoice_number)}`, 195, 29, { align: 'right' });
-      doc.text(`Date: ${safeStr(invoice.invoice_date)}`, 195, 34, { align: 'right' });
+      doc.setTextColor(160, 170, 190);
+      const headerAddr = doc.splitTextToSize(safeStr(business?.address), 100);
+      doc.text(headerAddr, 15, 32);
+      doc.text(`PH: ${safeStr(business?.phone)}  |  EM: ${safeStr(business?.email)}`, 15, 32 + (headerAddr.length * 4));
+
+      // Right Side Header Info
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
       doc.setFont("helvetica", "bold");
-      doc.text(`GSTIN: ${safeStr(business?.gstin)}`, 195, 39, { align: 'right' });
-      doc.text(`SAC/HSN: 8471`, 195, 44, { align: 'right' });
+      doc.text("TAX INVOICE", 195, 20, { align: 'right' });
+      
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text(`NO: ${safeStr(invoice.invoice_number)}`, 195, 28, { align: 'right' });
+      doc.text(`DATE: ${safeStr(invoice.invoice_date)}`, 195, 33, { align: 'right' });
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(159, 239, 0); // Neon Lime for GSTIN
+      doc.text(`GSTIN: ${safeStr(business?.gstin)}`, 195, 38, { align: 'right' });
 
-      doc.setLineWidth(0.3);
-      doc.line(10, 50, 200, 50);
-      currentY = 58;
-
-      // 2. BILLING (VERTICAL STACK)
+      // 2. BILLING
+      currentY = 55;
+      doc.setTextColor(15, 23, 42);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.text("CUSTOMER DETAILS", 15, currentY);
+      doc.setDrawColor(230, 230, 230);
+      doc.line(15, currentY + 2, 70, currentY + 2);
+      
+      currentY += 8;
       doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      doc.text("Billed To:", 10, currentY);
       const contactName = safeStr(invoice.contacts?.name || "WALK-IN CUSTOMER");
-      doc.text(contactName.toUpperCase(), 10, currentY + 6);
+      doc.text(contactName.toUpperCase(), 15, currentY);
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
-      const bAddr = doc.splitTextToSize(safeStr(invoice.contacts?.address), 180);
-      doc.text(bAddr, 10, currentY + 11);
+      const bAddr = doc.splitTextToSize(safeStr(invoice.contacts?.address), 80);
+      doc.text(bAddr, 15, currentY + 5);
       
-      const gstinY = currentY + 11 + (bAddr.length * 4) + 2;
+      const gstinY = currentY + 5 + (bAddr.length * 4) + 2;
       doc.setFont("helvetica", "bold");
-      doc.text(`GSTIN: ${safeStr(invoice.contacts?.gstin)}`, 10, gstinY);
+      doc.text(`GSTIN: ${safeStr(invoice.contacts?.gstin)}`, 15, gstinY);
 
-      currentY = gstinY + 10;
-      doc.text("Shipped To:", 10, currentY);
-      doc.setFont("helvetica", "normal");
-      doc.text("Same as Billing Address", 10, currentY + 6);
-      currentY += 15;
+      // Status Stamp (Premium)
+      if (invoice.status === 'paid') {
+        doc.setDrawColor(16, 185, 129);
+        doc.setLineWidth(1);
+        doc.roundedRect(140, 55, 40, 15, 2, 2, 'S');
+        doc.setTextColor(16, 185, 129);
+        doc.setFontSize(14);
+        doc.text("PAID", 160, 65, { align: 'center' });
+      } else {
+        doc.setDrawColor(244, 63, 94);
+        doc.setLineWidth(1);
+        doc.roundedRect(140, 55, 40, 15, 2, 2, 'S');
+        doc.setTextColor(244, 63, 94);
+        doc.setFontSize(14);
+        doc.text("PENDING", 160, 65, { align: 'center' });
+      }
+
+      currentY = gstinY + 15;
 
       // 3. TABLE
       const tableBody = (items || []).map((it, idx) => {

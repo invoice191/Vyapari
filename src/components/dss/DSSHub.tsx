@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Zap, Target, ShieldCheck, Flag, TrendingUp, 
@@ -78,7 +78,7 @@ export default function DSSHub() {
           <div className="lg:col-span-8">
             <div className="flex items-center gap-4 mb-6">
               <div className="px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                <Brain size={12} /> Vyapari Smart Advice v2.0
+                <Brain size={12} /> Smart Assistant
               </div>
               <div className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
                 Analyzed at {analysis?.analysedAt.toLocaleTimeString()}
@@ -134,7 +134,7 @@ export default function DSSHub() {
               <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
               <div className="flex items-center gap-3 mb-6">
                 <Brain className="text-emerald-400" size={20} />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">Shop Smart Summary</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">Smart Summary</span>
               </div>
               <div className="min-h-[300px] font-mono text-sm leading-relaxed text-emerald-100/80 whitespace-pre-wrap">
                 {aiText}
@@ -152,9 +152,31 @@ export default function DSSHub() {
               </h4>
               <div className="space-y-4">
                 {insights.map(insight => (
-                  <div key={insight.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-1">{insight.title}</div>
-                    <p className="text-xs text-slate-600 font-medium">{insight.body}</p>
+                  <div key={insight.id} className={`p-4 rounded-2xl ${insight.type === 'problem_solution' ? 'bg-indigo-950/20 border border-indigo-500/30' : 'bg-slate-50 border border-slate-100'}`}>
+                    <div className={`text-[10px] font-black uppercase tracking-widest mb-2 ${insight.type === 'problem_solution' ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                      {insight.title}
+                    </div>
+                    <p className={`text-xs font-medium mb-4 ${insight.type === 'problem_solution' ? 'text-slate-300 leading-relaxed' : 'text-slate-600'}`}>
+                      {insight.body}
+                    </p>
+                    
+                    {insight.solutions && insight.solutions.length > 0 && (
+                      <div className="space-y-3 mt-4">
+                        <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Available Solutions:</div>
+                        {insight.solutions.map((sol, idx) => (
+                          <div key={sol.id} className="p-4 bg-slate-900 rounded-xl border border-white/5 hover:border-indigo-500/50 transition-all group/sol cursor-pointer">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="text-[11px] font-black text-white">{sol.title}</span>
+                              <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">{sol.impact}</span>
+                            </div>
+                            <p className="text-[10px] text-slate-400 mb-4">{sol.description}</p>
+                            <button className="w-full py-2 bg-white/5 group-hover/sol:bg-indigo-600 text-[9px] font-black uppercase tracking-widest text-slate-300 group-hover/sol:text-white rounded-lg transition-colors flex items-center justify-center gap-2">
+                              {sol.actionLabel} <ChevronRight size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -265,7 +287,7 @@ function RecommendationCard({ rec, index }: { rec: DSSRecommendation, index: num
               className="!px-8 !py-4 !rounded-2xl shadow-xl border border-neon text-neon hover:bg-neon hover:text-slate-900"
               onClick={async () => {
                 if (rec.action.type === 'restock') {
-                  toast("Deploying VANI Procurement Agent to negotiate with suppliers...", "info");
+                  toast("Sending restock request to suppliers...", "info");
                   // In real app: await supabase.functions.invoke('agentic-procurement', { body: { productId: rec.affectedItemId } });
                 } else {
                   toast(`Executing: ${rec.action.label}`, "info");
@@ -309,7 +331,7 @@ function RecommendationCard({ rec, index }: { rec: DSSRecommendation, index: num
                   <div className="bg-slate-950 p-6 rounded-2xl border border-white/5 space-y-4">
                     <div className="flex items-center gap-2">
                        <ShieldCheck className="text-emerald-400" size={14} />
-                       <span className="text-[10px] font-black uppercase text-emerald-400 tracking-widest">Why Vyapari Recommends This</span>
+                       <span className="text-[10px] font-black uppercase text-emerald-400 tracking-widest">Why we recommend this</span>
                     </div>
                     <div className="text-sm font-medium text-slate-300 leading-relaxed">
                       {rec.explanation.logic}

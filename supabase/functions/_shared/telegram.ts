@@ -1,4 +1,4 @@
-const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN') || '8658673137:AAHK2B-5RMoJPKiOTnU2OygCOhpriOwn4fo';
+const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
 
 export async function sendMessage(chatId: string | number, text: string, options: any = {}) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;

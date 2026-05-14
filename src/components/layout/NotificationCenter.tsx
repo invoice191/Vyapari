@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Bell, 
@@ -25,9 +25,12 @@ interface Notification {
   module?: string;
 }
 
+type NotificationTab = 'active' | 'history';
+
 export const NotificationCenter: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   const { profile } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [activeTab, setActiveTab] = useState<NotificationTab>('active');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -168,29 +171,48 @@ export const NotificationCenter: React.FC<{ isOpen: boolean; onClose: () => void
           >
             {/* Header */}
             <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 backdrop-blur-md">
-              <div className="flex items-center gap-3">
-                 <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
-                 <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Modifications</h2>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                   <div className={`w-2 h-2 rounded-full ${activeTab === 'active' ? 'bg-indigo-600 animate-pulse' : 'bg-slate-400'}`} />
+                   <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Alert Center</h2>
+                </div>
+                <div className="flex items-center gap-3 mt-1">
+                  <button 
+                    onClick={() => setActiveTab('active')}
+                    className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md transition-all ${activeTab === 'active' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 hover:bg-slate-100'}`}
+                  >
+                    Active Signals
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('history')}
+                    className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md transition-all ${activeTab === 'history' ? 'bg-slate-200 text-slate-700' : 'text-slate-400 hover:bg-slate-100'}`}
+                  >
+                    Alert History
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                 <button 
-                  onClick={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
-                  className="text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:bg-indigo-50 px-2 py-1 rounded-md transition-colors"
-                 >
-                   Mark all as read
-                 </button>
+              <div className="flex flex-col items-end gap-2">
                  <button 
                   onClick={onClose}
                   className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200/50 text-slate-400 transition-colors"
                 >
                   <X size={16} />
                 </button>
+                 {activeTab === 'active' && (
+                   <button 
+                    onClick={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
+                    className="text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:bg-indigo-50 px-2 py-1 rounded-md transition-colors"
+                   >
+                     Mark all as read
+                   </button>
+                 )}
               </div>
             </div>
 
-
             <div className="flex-1 overflow-y-auto p-2 space-y-1 max-h-[500px] custom-scrollbar">
-               <div className="px-3 py-2 text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">Latest Signals</div>
+               <div className="px-3 py-2 text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                 {activeTab === 'active' ? 'Latest Signals' : 'Archived Events'}
+               </div>
               {loading ? (
                 <div className="flex flex-col items-center justify-center h-full space-y-4 opacity-50">
                   <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
@@ -207,18 +229,20 @@ export const NotificationCenter: React.FC<{ isOpen: boolean; onClose: () => void
                   </div>
                 </div>
               ) : (
-                notifications.map((notif, idx) => (
+                notifications
+                  .filter(n => activeTab === 'active' ? !n.read : true)
+                  .map((notif, idx) => (
                   <motion.div
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
                     key={notif.id}
                     className={`relative p-4 rounded-2xl border border-transparent ${
-                      notif.read ? 'opacity-50' : 'bg-slate-50 border-slate-100 shadow-sm'
+                      notif.read ? 'opacity-50 grayscale flex-shrink-0' : 'bg-slate-50 border-slate-100 shadow-sm'
                     } group hover:bg-white hover:border-indigo-100 hover:shadow-lg transition-all cursor-pointer overflow-hidden`}
                     onClick={() => {
                       markRead(notif.id);
-                      if (notif.module) {
+                      if (notif.module && activeTab === 'active') {
                         window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: notif.module } }));
                         onClose();
                       }

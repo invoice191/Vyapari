@@ -247,6 +247,8 @@ JSON Response:
     ],
     "status": "success"
   }
+}
+
 8. INTENT: AUDIT_SEARCH (Hinglish)
 Transcript: "VANI, pichle mahine ki transactions mein koi anomaly dikhao"
 JSON Response:
@@ -268,6 +270,79 @@ JSON Response:
       { "label": "Severity", "value": "High" }
     ],
     "status": "warning"
+  }
+}
+
+9. INTENT: STRATEGIC_PLAN (Hinglish)
+Transcript: "VANI, agle mahine ki strategy kya honi chahiye sales grow karne ke liye?"
+JSON Response:
+{
+  "intent": "STRATEGIC_PLAN",
+  "confidence": 0.95,
+  "params": {
+    "goal": "grow sales",
+    "timeframe": "month"
+  },
+  "spoken_response": "Analyzing roadmap for sales growth. Checking historical trends and competitor indexing.",
+  "language_detected": "mixed",
+  "requires_confirmation": false,
+  "summary_card": {
+    "title": "Strategic Plan",
+    "subtitle": "Sales Growth Simulation",
+    "items": [
+      { "label": "Goal", "value": "Grow Sales" },
+      { "label": "Timeframe", "value": "1 Month" }
+    ],
+    "status": "success"
+  }
+}
+
+10. INTENT: WHATSAPP_SEND (Hindi)
+Transcript: "VANI, Ramesh ko unka invoice WhatsApp kar do"
+JSON Response:
+{
+  "intent": "WHATSAPP_SEND",
+  "confidence": 0.98,
+  "params": {
+    "contact_name": "Ramesh",
+    "type": "invoice"
+  },
+  "spoken_response": "Ramesh ko invoice WhatsApp par bhej raha hoon.",
+  "language_detected": "hi",
+  "requires_confirmation": false,
+  "summary_card": {
+    "title": "WhatsApp Sent",
+    "subtitle": "Invoice Link",
+    "items": [
+      { "label": "Recipient", "value": "Ramesh" },
+      { "label": "Channel", "value": "WhatsApp" }
+    ],
+    "status": "success"
+  }
+}
+
+11. INTENT: CREATE_INVOICE (Formal English)
+Transcript: "VANI, generate a draft invoice for Priya for three boxes of steel rods at twelve hundred rupees each"
+JSON Response:
+{
+  "intent": "CREATE_INVOICE",
+  "confidence": 0.99,
+  "params": {
+    "contact_name": "Priya",
+    "items": [{ "name": "steel rods", "qty": 3, "price": 1200 }],
+    "total": 3600
+  },
+  "spoken_response": "Generating a draft invoice for Priya: three boxes of steel rods. Total is ₹3,600.",
+  "language_detected": "en",
+  "requires_confirmation": false,
+  "summary_card": {
+    "title": "Create Invoice",
+    "subtitle": "Steel Rods for Priya",
+    "items": [
+      { "label": "Client", "value": "Priya" },
+      { "label": "Total", "value": "₹3,600" }
+    ],
+    "status": "success"
   }
 }
 
@@ -305,7 +380,7 @@ serve(async (req) => {
       .replace('{TRANSCRIPT}', transcript)
       .replace('{CONTEXT_JSON}', JSON.stringify(contextData || {}));
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
     
     console.log(`[VANI-BRAIN] Invoking Gemini with transcript: "${transcript}" (Mode: ${personalityMode})`);
     
@@ -353,7 +428,7 @@ serve(async (req) => {
     let text = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!text) {
-      throw new Error("AI returned empty response");
+      throw new Error("AI returned empty response.");
     }
 
     text = text.trim();

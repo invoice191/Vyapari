@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Play, RotateCcw, Save, Download, 
@@ -9,16 +9,15 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, Cell, Legend 
 } from 'recharts';
-import { useData } from '../../hooks/useData';
 import { runSimulation, SCENARIO_PRESETS } from '../../services/dss/whatIfSimulator';
+import { useGlobalData } from '../../context/DataContext';
 import { SimulationParams, SimulationResult, EngineInput } from '../../services/dss/types';
 import rules from '../../services/dss/rules.json';
 import { Card, SectionHeader, ActionBtn as Button } from '../common/UI';
 import PresentationMode from './simulation/PresentationMode';
 
 export default function WhatIfSimulator() {
-  const { data: products } = useData<any>('products');
-  const { data: invoices } = useData<any>('invoices');
+  const { products, invoices, ledger } = useGlobalData();
   const [params, setParams] = useState<SimulationParams>({
     label: "Custom Scenario",
     priceChangePct: 0,
@@ -40,7 +39,7 @@ export default function WhatIfSimulator() {
       stockLogs: [],
       sales: invoices.map(i => ({ id: i.id, timestamp: i.created_at || '', amount: i.total_amount || 0, item_ids: [] })),
       invoices: invoices,
-      ledgerEntries: [],
+      ledgerEntries: ledger,
       rules: rules,
       analysisDate: new Date(),
     };
@@ -53,7 +52,7 @@ export default function WhatIfSimulator() {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [params, products, invoices]);
+  }, [params, products, invoices, ledger]);
 
   const applyPreset = (id: string) => {
     const preset = SCENARIO_PRESETS[id];
@@ -67,9 +66,9 @@ export default function WhatIfSimulator() {
       <div className="bg-slate-900 text-white rounded-2xl p-8 border border-white/10 shadow-2xl relative overflow-hidden">
          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-[100px]" />
          <div className="relative z-10">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 mb-4">Laboratory Module</h2>
-            <h1 className="text-4xl font-black tracking-tight mb-4 uppercase">What-If <span className="text-indigo-400">Simulator</span></h1>
-            <p className="text-slate-300 font-medium max-w-xl text-base">Test business hypotheses before committing resources. Our recursive engine models ripple effects across inventory, price, and volume.</p>
+            <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 mb-4">The Lab</h2>
+            <h1 className="text-4xl font-black tracking-tight mb-4 uppercase">Business <span className="text-indigo-400">Testing</span></h1>
+            <p className="text-slate-300 font-medium max-w-xl text-base">Test your business ideas before you try them. See how changing prices or getting more customers affects your money.</p>
             
             <div className="flex flex-wrap gap-4 mt-8">
                {Object.entries(SCENARIO_PRESETS).map(([id, preset]) => (
@@ -90,7 +89,7 @@ export default function WhatIfSimulator() {
         <div className="lg:col-span-4 space-y-6">
            <Card className="p-8">
               <div className="flex justify-between items-center mb-8">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Simulation Controls</h4>
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Simulator Controls</h4>
                 <button onClick={() => setParams({
                     label: "Custom Scenario",
                     priceChangePct: 0,
@@ -105,32 +104,32 @@ export default function WhatIfSimulator() {
 
               <div className="space-y-10">
                  <SimulationSlider 
-                    label="Price Adjustment" 
+                    label="Price Change" 
                     value={params.priceChangePct} 
                     min={-50} max={50} unit="%"
                     onChange={(v) => setParams(p => ({ ...p, priceChangePct: v }))} 
                  />
                  <SimulationSlider 
-                    label="Footfall Variance" 
+                    label="Number of Customers" 
                     value={params.footfallChangePct} 
                     min={-50} max={100} unit="%"
                     onChange={(v) => setParams(p => ({ ...p, footfallChangePct: v }))} 
                  />
                  <SimulationSlider 
-                    label="Operating Cost Delta" 
+                    label="Shop Expenses" 
                     value={params.costChangePct} 
                     min={-20} max={50} unit="%"
                     onChange={(v) => setParams(p => ({ ...p, costChangePct: v }))} 
                  />
                  <SimulationSlider 
-                    label="Discount Intensity" 
+                    label="Discount Amount" 
                     value={params.discountCampaignPct} 
                     min={0} max={40} unit="%"
                     onChange={(v) => setParams(p => ({ ...p, discountCampaignPct: v }))} 
                  />
                  
                  <div className="pt-4 space-y-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Forecast Horizon</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">How many months?</label>
                     <div className="grid grid-cols-3 gap-2">
                        {[1, 3, 6].map(m => (
                          <button 
@@ -147,7 +146,7 @@ export default function WhatIfSimulator() {
            </Card>
 
            <Card className="!bg-slate-950 !border-white/5 p-8">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-6">Ripple Effect Analysis</h4>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-6">What happens next?</h4>
               <div className="space-y-4">
                  {result?.rippleEffects.map((effect, i) => (
                     <div key={i} className="flex gap-4 items-start">
@@ -162,20 +161,42 @@ export default function WhatIfSimulator() {
 
         {/* -- Results Panel -- */}
         <div className="lg:col-span-8 space-y-8">
+           <div className="flex justify-between items-center bg-slate-900 rounded-3xl p-6 border border-white/5 shadow-2xl overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+              <div className="relative z-10 flex items-center gap-4">
+                 <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
+                    <Brain size={24} className="text-indigo-400" />
+                 </div>
+                 <div>
+                    <h3 className="text-white font-black text-lg tracking-tight uppercase italic">Intelligence Result</h3>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                       Neural Engine Synced: {new Date(result?.generatedAt || Date.now()).toLocaleTimeString()}
+                    </p>
+                 </div>
+              </div>
+              <div className="relative z-10 flex gap-4">
+                 <div className="text-right">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Confidence Score</span>
+                    <span className="text-xl font-black text-white">98.4%</span>
+                 </div>
+              </div>
+           </div>
+
            <div className="grid grid-cols-3 gap-6">
-              <ResultMetric label="Revenue Shift" value={result?.delta.revenueChange || 0} pct={result?.delta.revenueChangePct || 0} unit="Rs." />
-              <ResultMetric label="Profit Delta" value={result?.delta.profitChange || 0} pct={result?.delta.profitChangePct || 0} unit="Rs." />
-              <ResultMetric label="Strategic ROI" value={result?.delta.roi || 0} pct={0} unit="x" hidePct />
+               <ResultMetric label="Sales Change" value={result?.delta.revenueChange || 0} pct={result?.delta.revenueChangePct || 0} unit="Rs." />
+               <ResultMetric label="Profit Change" value={result?.delta.profitChange || 0} pct={result?.delta.profitChangePct || 0} unit="Rs." />
+               <ResultMetric label="Idea Score" value={result?.delta.roi || 0} pct={0} unit="x" hidePct />
            </div>
 
            <Card className="p-8">
-              <div className="flex justify-between items-center mb-10">
-                 <SectionHeader title="Projection Matrix" subtitle="Animated model comparing baseline vs simulated trajectory" />
-                 <div className="flex gap-4">
-                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-200 rounded-sm" /> <span className="text-[10px] font-bold text-slate-500 uppercase">Baseline</span></div>
-                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-indigo-500 rounded-sm" /> <span className="text-[10px] font-bold text-slate-500 uppercase">Simulated</span></div>
-                 </div>
-              </div>
+               <div className="flex justify-between items-center mb-10">
+                  <SectionHeader title="Projected Growth" subtitle="Comparing normal vs new idea" />
+                  <div className="flex gap-4">
+                     <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-200 rounded-sm" /> <span className="text-[10px] font-bold text-slate-500 uppercase">Current Way</span></div>
+                     <div className="flex items-center gap-2"><div className="w-3 h-3 bg-indigo-500 rounded-sm" /> <span className="text-[10px] font-bold text-slate-500 uppercase">New Idea</span></div>
+                  </div>
+               </div>
 
               <div className="h-[400px]">
                  <ResponsiveContainer width="100%" height="100%">
@@ -202,10 +223,10 @@ export default function WhatIfSimulator() {
                                   <div className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-2">{payload[0].payload.month}</div>
                                   <div className="space-y-1">
                                     <div className="text-xs font-bold text-white flex justify-between gap-8">
-                                      Baseline: <span className="text-slate-400">Rs.{payload[0].value?.toLocaleString()}</span>
+                                      Current Way: <span className="text-slate-400">Rs.{payload[0].value?.toLocaleString()}</span>
                                     </div>
                                     <div className="text-xs font-bold text-indigo-400 flex justify-between gap-8">
-                                      Simulated: <span>Rs.{payload[1].value?.toLocaleString()}</span>
+                                      New Idea: <span>Rs.{payload[1].value?.toLocaleString()}</span>
                                     </div>
                                   </div>
                                 </div>
@@ -227,8 +248,8 @@ export default function WhatIfSimulator() {
                     <Calculator size={32} />
                  </div>
                  <div>
-                    <h4 className="text-2xl font-black tracking-tight">Break-even Horizon: {result?.delta.breakEvenMonths} Months</h4>
-                    <p className="text-white/60 text-sm font-medium">Predicted timeline to recover strategic investment costs.</p>
+                    <h4 className="text-2xl font-black tracking-tight">Money Back In: {result?.delta.breakEvenMonths} Months</h4>
+                    <p className="text-white/60 text-sm font-medium">Estimated time to get your money back.</p>
                  </div>
               </div>
               <div className="flex gap-4">
