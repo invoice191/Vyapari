@@ -31,29 +31,45 @@ export function runForecastEngine(input: EngineInput): EngineOutput {
      months.push({ key, actual: monthlyRevenue.get(key) || 0, isFuture: false });
   }
 
-  // Simple Linear Projection for next 3 months
+  // 2. Dynamic Weighting (Past vs Present)
+  const last7Days = new Date();
+  last7Days.setDate(last7Days.getDate() - 7);
+  const recentRev = input.invoices
+    .filter(i => new Date(i.invoice_date || i.created_at || 0) >= last7Days)
+    .reduce((s, i) => s + (Number(i.total_amount) || 0), 0);
+  
+  const dailyRunRate = recentRev / 7;
+  const projectedPresentMo = dailyRunRate * 30;
+
+  // 3. Simple Linear Projection for next 3 months (Future)
   const last3Months = months.slice(-3).map(m => m.actual);
-  const avg = last3Months.reduce((a, b) => a + b, 0) / 3;
-  const trend = (last3Months[2] - last3Months[0]) / 3;
+  const historicAvg = last3Months.reduce((a, b) => a + b, 0) / 3;
+  const historicTrend = (last3Months[2] - last3Months[0]) / 3;
+  
+  // Blend Present Run-rate with Historic Trend (60/40 weighting)
+  const blendedAvg = (projectedPresentMo * 0.6) + (historicAvg * 0.4);
 
   for (let i = 1; i <= 3; i++) {
     const d = new Date();
     d.setMonth(d.getMonth() + i);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     
     // Seasonality adjustment
     const monthIndex = d.getMonth() + 1;
     const isFestival = rules.forecast.festivalMonths.includes(monthIndex);
     const seasonality = isFestival ? rules.forecast.festivalBoostFactor : 1.0;
     
-    const prediction = Math.max(0, (avg + (trend * i)) * seasonality);
+    // Expanding Uncertainty: Future further out has wider bounds
+    const uncertaintyFactor = 1 + (i * 0.1); 
+    const prediction = Math.max(0, (blendedAvg + (historicTrend * i)) * seasonality);
+    
     months.push({ 
-      key, 
+      key: monthKey, 
       actual: Math.round(prediction), 
       isFuture: true, 
       isFestival,
-      lowerBound: Math.round(prediction * 0.8),
-      upperBound: Math.round(prediction * 1.2)
+      lowerBound: Math.round(prediction * (0.9 / uncertaintyFactor)),
+      upperBound: Math.round(prediction * (1.1 * uncertaintyFactor))
     });
   }
 
@@ -77,7 +93,7 @@ export function runForecastEngine(input: EngineInput): EngineOutput {
 
   forecasts.push(businessForecast);
 
-  if (trend > 0) {
+  if (historicTrend > 0) {
     recommendations.push({
       id: 'forecast-growth-trend',
       engine: 'forecast',
@@ -85,11 +101,11 @@ export function runForecastEngine(input: EngineInput): EngineOutput {
       score: 65,
       confidence: 0.7,
       title: 'Growth Forecast: Upward Trend',
-      headline: `Revenue projected to grow by ${((trend/avg)*100).toFixed(1)}% over next 90 days`,
+      headline: `Revenue projected to grow by ${((historicTrend / blendedAvg) * 100).toFixed(1)}% over next 90 days`,
       detail: `Based on your recent 6-month performance, we anticipate a steady climb in sales. Ensure you have working capital ready for increased inventory requirements.`,
       impactEstimate: {
         metric: 'Projected Growth',
-        value: Math.round(trend * 3),
+        value: Math.round(historicTrend * 3),
         unit: 'Rs.',
         direction: 'positive',
       },
@@ -99,8 +115,8 @@ export function runForecastEngine(input: EngineInput): EngineOutput {
         deepLink: '/analytics',
       },
       evidence: [
-        `Avg Monthly Revenue: Rs.${Math.round(avg).toLocaleString()}`,
-        `Current Trend: +Rs.${Math.round(trend).toLocaleString()}/mo`,
+        `Avg Monthly Revenue: Rs.${Math.round(blendedAvg).toLocaleString()}`,
+        `Current Trend: +Rs.${Math.round(historicTrend).toLocaleString()}/mo`,
         `Festive Boost: ${rules.forecast.festivalBoostFactor}x included`
       ],
       createdAt: new Date(),

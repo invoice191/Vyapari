@@ -32,12 +32,14 @@ serve(async (req) => {
     const cleanImageData = imageData.replace(/^data:.*?;base64,/, "").replace(/\s/g, "");
 
     const prompt = `
-      Perform a deep visual audit and detailed text extraction from this invoice image.
-      1. Read ALL text in the document carefully.
-      2. Locate the vendor name and address to identify the vendor entity.
-      3. Find the billing date and total amount.
-      4. Identify and extract each and every line item listed in the items table.
-      Assign a confidence score to each extracted value based on its clarity.
+      Perform a high-fidelity visual audit and text extraction from this invoice image, specifically optimized for the Indian retail ecosystem.
+      1. SCRIPT SUPPORT: Accurately read and transliterate text in English, Hindi (Devanagari), Marathi, and Gujarati. 
+         - IMPORTANT: Support Devanagari numerals (०, १, २, ३, ४, ५, ६, ७, ८, ९) and convert them to standard integers.
+      2. ENTITY EXTRACTION: Identify Vendor Name, GSTIN (15-digit format), Bill Date, and Bill Number.
+      3. LINE ITEMS: Extract every line item with HSN/SAC codes if present.
+      4. TAXATION: Identify GST breakdown (CGST, SGST, IGST) per line item or total.
+      5. VALIDATION: Ensure individual item totals match (Qty * Price).
+      6. CONFIDENCE: Provide a per-field confidence score (0.0 to 1.0).
     `;
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -77,8 +79,10 @@ serve(async (req) => {
                 type: "object",
                 properties: {
                   name: { type: "object", properties: { value: { type: "string" }, confidence: { type: "number" } }, required: ["value"] },
+                  hsn_code: { type: "object", properties: { value: { type: "string", nullable: true }, confidence: { type: "number" } } },
                   quantity: { type: "object", properties: { value: { type: "number" }, confidence: { type: "number" } }, required: ["value"] },
                   unit_price: { type: "object", properties: { value: { type: "number" }, confidence: { type: "number" } }, required: ["value"] },
+                  tax_rate: { type: "object", properties: { value: { type: "number" }, confidence: { type: "number" } } },
                   total: { type: "object", properties: { value: { type: "number" }, confidence: { type: "number" } }, required: ["value"] }
                 },
                 required: ["name", "quantity", "unit_price", "total"]
@@ -193,20 +197,29 @@ serve(async (req) => {
       }
     }
 
-    // --- Standardize Output for Vyapari UI Compatibility ---
+    // --- Mathematical Cross-Validation (Gap 4) ---
+    const itemsSum = (extractedData.items || []).reduce((acc: number, item: any) => acc + (item.total?.value || 0), 0);
+    const grandTotal = extractedData.grand_total?.value || 0;
+    const isMathematicallyConsistent = Math.abs(itemsSum - grandTotal) < (grandTotal * 0.01); // 1% tolerance for roundings
+    
     const formattedData = {
       vendor: extractedData.vendor_name?.value || "Unknown Vendor",
       vendor_gstin: extractedData.vendor_gstin?.value || null,
       date: extractedData.bill_date?.value || new Date().toLocaleDateString('en-IN'),
       invoice_no: extractedData.bill_number?.value || `AI-SCAN-${Math.floor(Math.random() * 100000)}`,
-      total_amount: extractedData.grand_total?.value || 0,
+      total_amount: grandTotal,
       confidence: Math.round((extractedData.overall_confidence || 0.85) * 100),
+      is_validated: isMathematicallyConsistent,
+      validation_error: isMathematicallyConsistent ? null : `Mathematical mismatch: Sum of items (Rs.${itemsSum}) does not match Grand Total (Rs.${grandTotal})`,
       items: (extractedData.items || []).map((item: any) => ({
         description: item.name?.value || "Extracted Item",
+        hsn_code: item.hsn_code?.value || null,
         quantity: item.quantity?.value || 1,
         unit_price: item.unit_price?.value || 0,
+        tax_rate: item.tax_rate?.value || null,
         total: item.total?.value || 0,
-        // Keep advanced intelligence flags attached to the standardized items array
+        confidence: Math.round((item.name?.confidence || 0.8) * 100),
+        // Keep advanced intelligence flags
         margin_erosion: item.margin_erosion,
         erosion_pct: item.erosion_pct,
         price_trend: item.price_trend,

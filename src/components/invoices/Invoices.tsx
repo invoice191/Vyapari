@@ -17,9 +17,11 @@ import { useToast } from "../common/Toast";
 import InvoiceAIConsole from "./InvoiceAIConsole";
 import InvoiceAnalytics from "./InvoiceAnalytics";
 import RecurringInvoices from "./RecurringInvoices";
-import { Sparkles } from "lucide-react";
+import AutoReconciliation from "./AutoReconciliation";
+import { Sparkles, Activity } from "lucide-react";
 
 import { useGlobalData } from "../../context/DataContext";
+import { reportExporter } from "../../services/reportExporter";
 
 export default function Invoices() {
   const { profile, business } = useAuth();
@@ -44,11 +46,11 @@ export default function Invoices() {
     } else if (reminderTone === 'professional') {
       setEditableMsg(`Dear ${cName}, we hope this message finds you well. This is a formal notification regarding outstanding Invoice #${iNum} for INR ${amt}, due on ${dDate}. Please settle at your earliest convenience. Kind regards, the Accounts Team at ${bName}.`);
     } else if (reminderTone === 'urgent') {
-      setEditableMsg(`-- URGENT: Invoice #${iNum} for INR ${amt} is overdue. Immediate settlement is required to prevent adverse credit evaluation on your buyer solvency profile. Settle now to maintain optimal relations with ${bName}.`);
+      setEditableMsg(`-- URGENT: Invoice #${iNum} for INR ${amt} is overdue. Immediate settlement is required to prevent any impact on your credit evaluation. Settle now to maintain your healthy business relationship with ${bName}.`);
     } else if (reminderTone === 'incentive') {
       const discountAmount = Math.round((remindInvoice.total_amount || 0) * (customDiscount / 100));
       const payableAmount = (remindInvoice.total_amount || 0) - discountAmount;
-      setEditableMsg(`--- Early Settle Offer! Settle Invoice #${iNum} (INR ${amt}) within 24 hours to secure a ${customDiscount}% prompt-payment incentive (Save INR ${discountAmount.toLocaleString("en-IN")}). Pay only INR ${payableAmount.toLocaleString("en-IN")}! - ${bName}`);
+      setEditableMsg(`--- Early Settle Offer! Settle Invoice #${iNum} (INR ${amt}) within 24 hours to secure a ${customDiscount}% early payment discount (Save INR ${discountAmount.toLocaleString("en-IN")}). Pay only INR ${payableAmount.toLocaleString("en-IN")}! - ${bName}`);
     }
   }, [remindInvoice, reminderTone, customDiscount, business]);
   const businessId = profile?.business_id ?? "";
@@ -71,8 +73,35 @@ export default function Invoices() {
   const [showDunning, setShowDunning] = useState(false);
   const [isNlThinking, setIsNlThinking] = useState(false);
   const [showInvoiceAI, setShowInvoiceAI] = useState(false);
+  const [showAutoReconcile, setShowAutoReconcile] = useState(false);
   const [hoveredInvoice, setHoveredInvoice] = useState<any>(null);
-  const [peekPos, setPeekPos] = useState({ x: 0, y: 0 });
+  const handleExportPDF = () => {
+    reportExporter.downloadPDF({
+      type: 'sales',
+      title: 'Sales & Invoice Summary',
+      businessName: business?.name || 'My Business',
+      dateRange: { from: invoices[invoices.length-1]?.invoice_date || new Date().toISOString(), to: new Date().toISOString() },
+      rows: invoices.map(inv => ({
+        ...inv,
+        customer: inv.contacts?.name || 'Walk-in',
+        outstanding: inv.total_amount - (inv.amount_paid || 0),
+        status_display: (inv.status || 'Sent').toUpperCase()
+      })),
+      columns: [
+        { key: 'invoice_number', label: 'Invoice #', type: 'text' },
+        { key: 'customer', label: 'Customer', type: 'text' },
+        { key: 'invoice_date', label: 'Date', type: 'date' },
+        { key: 'total_amount', label: 'Total', type: 'currency' },
+        { key: 'outstanding', label: 'Pending', type: 'currency' },
+        { key: 'status_display', label: 'Status', type: 'text' }
+      ],
+      generatedBy: profile?.full_name || 'System',
+      kpis: [
+        { label: 'Total Sales', value: `Rs.${(invoices.reduce((a,b)=>a+b.total_amount,0)/1000).toFixed(1)}K` },
+        { label: 'Total Pending', value: `Rs.${(invoices.reduce((a,b)=>a+(b.total_amount - (b.amount_paid||0)),0)/1000).toFixed(1)}K` }
+      ]
+    });
+  };
 
   useEffect(() => {
     // refresh() is handled by DataProvider on mount
@@ -215,13 +244,13 @@ export default function Invoices() {
   const handleExportLogs = async () => {
     if (!isOwner) return;
     try {
-      await auditService.exportLogs(businessId);
+      await auditService.exportLogs(businessId, business?.name || "Vyapari Business");
     } catch (e) {
       toast("Export failed.", "error");
     }
   };
 
-  const [activeTab, setActiveTab] = useState<'list' | 'analytics' | 'recurring'>('list');
+  const [activeTab, setActiveTab] = useState<'list' | 'analytics' | 'recurring' | 'ai'>('list');
 
   if (loading) return <div className="p-10 text-center text-xs font-black uppercase text-ink/40 animate-pulse">Loading Invoice Intelligence...</div>;
 
@@ -231,9 +260,9 @@ export default function Invoices() {
       <div className="flex justify-center">
         <div className="bg-slate-100 p-1.5 rounded-2xl flex gap-1 border border-slate-200">
           {[
-            { id: 'list', label: 'All Invoices', icon: <FileText size={14} /> },
-            { id: 'analytics', label: 'Analytics Hub', icon: <Sparkles size={14} /> },
-            { id: 'recurring', label: 'Recurring Templates', icon: <Repeat size={14} /> }
+            { id: 'list', label: 'All Bills', icon: <FileText size={14} /> },
+            { id: 'analytics', label: 'Sales Insight', icon: <Sparkles size={14} /> },
+            { id: 'recurring', label: 'Automatic Bills', icon: <Repeat size={14} /> }
           ].map(tab => (
             <button
               key={tab.id}
@@ -259,6 +288,14 @@ export default function Invoices() {
         ) : activeTab === 'recurring' ? (
           <motion.div key="recurring" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
              <RecurringInvoices />
+          </motion.div>
+        ) : activeTab === 'ai' ? (
+          <motion.div key="ai" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}>
+             <InvoiceAIConsole 
+               invoices={invoices} 
+               contacts={contacts} 
+               fetchInvoices={() => refresh('invoices')} 
+             />
           </motion.div>
         ) : (
           <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-10">
@@ -286,7 +323,7 @@ export default function Invoices() {
                 <FileText size={24} />
               </div>
               <div className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[10px] font-black uppercase tracking-widest text-indigo-400">
-                Finance Live
+                 Money Live
               </div>
             </div>
             <h1 className="text-5xl font-black tracking-tighter uppercase leading-none">Bills & <span className="text-indigo-500">Orders</span></h1>
@@ -349,22 +386,6 @@ export default function Invoices() {
         </div>
       </div>
 
-      <AnimatePresence>
-        {showInvoiceAI && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
-          >
-            <InvoiceAIConsole 
-              invoices={invoices} 
-              contacts={contacts} 
-              fetchInvoices={() => refresh('invoices')} 
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Controls */}
       <motion.div 
@@ -420,14 +441,24 @@ export default function Invoices() {
                 Filters
               </button>
               
-              <button 
-                onClick={() => setShowInvoiceAI(!showInvoiceAI)}
-                className={`px-4 py-2 rounded-2xl border transition-all flex items-center gap-2.5 font-black text-[10px] uppercase tracking-widest ${showInvoiceAI ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-500/20" : "bg-white text-indigo-600 border-indigo-100 hover:border-indigo-200 shadow-sm"}`}
+               <button 
+                onClick={() => setActiveTab('ai')}
+                className={`px-4 py-2 rounded-2xl border transition-all flex items-center gap-2.5 font-black text-[10px] uppercase tracking-widest ${activeTab === 'ai' ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-500/20" : "bg-white text-indigo-600 border-indigo-100 hover:border-indigo-200 shadow-sm"}`}
               >
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${showInvoiceAI ? 'bg-white/20' : 'bg-indigo-50'}`}>
-                  <Sparkles size={14} className={showInvoiceAI ? "animate-pulse" : ""} />
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${activeTab === 'ai' ? 'bg-white/20' : 'bg-indigo-50'}`}>
+                  <Sparkles size={14} className={activeTab === 'ai' ? "animate-pulse" : ""} />
                 </div>
-                InvoiceAI
+                Ask AI Helper
+              </button>
+
+              <button 
+                onClick={() => setShowAutoReconcile(true)}
+                className="px-4 py-2 rounded-2xl border transition-all flex items-center gap-2.5 font-black text-[10px] uppercase tracking-widest bg-white text-emerald-600 border-emerald-100 hover:border-emerald-200 shadow-sm"
+              >
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-emerald-50">
+                  <Activity size={14} />
+                </div>
+                Payment Match
               </button>
 
               <button 
@@ -437,7 +468,7 @@ export default function Invoices() {
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${bulkMode ? 'bg-white/20' : 'bg-emerald-50 text-emerald-600'}`}>
                   <CheckSquare size={14} />
                 </div>
-                Bulk Settle
+                Pay Many
               </button>
 
               <button 
@@ -458,7 +489,7 @@ export default function Invoices() {
                 <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center">
                   <MessageSquare size={14} />
                 </div>
-                Batch Nudge
+                Send Reminders
               </button>
 
               {isOwner && (
@@ -472,6 +503,16 @@ export default function Invoices() {
                   Export Audit
                 </button>
               )}
+              
+              <button 
+                onClick={handleExportPDF}
+                className="px-4 py-2 rounded-2xl bg-white text-indigo-600 border border-indigo-100 hover:border-indigo-300 shadow-sm font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2.5"
+              >
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center">
+                  <Download size={14} />
+                </div>
+                Download Sales
+              </button>
             </div>
 
             <ActionBtn onClick={() => { setPrefill(null); setShowCreate(true); }} className="!py-3 !px-10 !text-[12px] !rounded-2xl !bg-[#0A84FF] !text-white shadow-xl flex items-center gap-3">
@@ -608,7 +649,7 @@ export default function Invoices() {
                             {inv.invoice_number}
                             {inv.created_via === 'ocr' && (
                               <span className="px-1.5 py-0.5 bg-neon text-ink text-[7px] font-black uppercase rounded tracking-widest animate-pulse">
-                                NEURAL_SCAN
+                                 AI_SCANNED
                               </span>
                             )}
                           </div>
@@ -658,7 +699,7 @@ export default function Invoices() {
                             <div className="w-6 h-6 rounded-lg bg-white/50 flex items-center justify-center">
                               <MessageSquare size={12} />
                             </div>
-                            <span className="text-[9px] font-black uppercase tracking-widest">Remind</span>
+                             <span className="text-[9px] font-black uppercase tracking-widest">Remind Him</span>
                           </button>
                         )}
                         <button 
@@ -774,6 +815,11 @@ export default function Invoices() {
         onClose={() => { setShowCreate(false); setPrefill(null); }}
         onCreated={() => refresh('invoices')}
         prefill={prefill}
+      />
+
+      <AutoReconciliation
+        isOpen={showAutoReconcile}
+        onClose={() => setShowAutoReconcile(false)}
       />
 
       {/* Smart Reminders Customizer (Market-Beating Feature) */}
