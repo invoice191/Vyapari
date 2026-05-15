@@ -121,8 +121,7 @@ export const invoiceService = {
         }
       }
 
-        });
-      }
+
 
       // c. Real-Time Transaction Stream (User Requested: "Every Entry")
       const { data: creator } = await supabase.from('profiles').select('full_name').eq('id', userId).single();
