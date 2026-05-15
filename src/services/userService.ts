@@ -1,4 +1,4 @@
-﻿import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 
 export interface UserProfile {
   id: string;
@@ -47,22 +47,30 @@ export const userService = {
     if (error) throw error;
   },
 
-  createUser: async (user: { full_name: string; email: string; role: string; business_id: string }) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .insert({
-        id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2),
-        full_name: user.full_name,
-        email: user.email,
-        role: user.role,
-        business_id: user.business_id,
-        status: 'Active',
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+  createUser: async (userData: any) => {
+    try {
+      const apiUrl = `${window.location.origin}/api/provision-staff`;
+      console.log(`[Provisioning Debug] Requesting: ${apiUrl}`);
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_API_AUTH_TOKEN}`
+        },
+        body: JSON.stringify(userData)
+      });
+
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error || 'Provisioning failed');
+
+      return {
+        password: result.password,
+        user_id: result.user_id
+      };
+    } catch (error) {
+      console.error("Provisioning Error:", error);
+      throw error;
+    }
   },
 
   deleteUser: async (userId: string, businessId: string) => {

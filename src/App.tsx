@@ -12,7 +12,8 @@ import Ledger from "./components/ledger/Ledger";
 import AuditLogs from "./components/audit/AuditLogs";
 import Settings from "./components/modules/Settings/Settings";
 import AutoPilot from "./components/automation/AutoPilot";
-import UserManagement from "./components/users/UserManagement";
+import TeamHub from "./components/team/TeamHub";
+import ForcePasswordChange from "./components/auth/ForcePasswordChange";
 import ContactsList from "./components/contacts/ContactsList";
 import CommandCenter from "./modules/CommandCenter";
 import BankersView from "./modules/BankersView";
@@ -65,7 +66,7 @@ const SYSTEM_MODULES = [
 ];
 
 function App() {
-  const { user, profile, business, loading, signIn: login, signOut: logout, fetchProfileAndBusiness } = useAuth();
+  const { user, profile, business, loading, signIn: login, signOut: logout, fetchProfileAndBusiness, needsPasswordChange } = useAuth();
   useRealtime();
   useAutomationDaemon(60); // Runs every 60 minutes
   const [showLanding, setShowLanding] = useState(true);
@@ -164,7 +165,7 @@ function App() {
       case "accounting": return <ModuleErrorBoundary moduleName="Accountant View"><AccountingHub /></ModuleErrorBoundary>;
       case "banker":    return <ModuleErrorBoundary moduleName="Loan Readiness Report"><RoleGuard module="Bankers View"><BankersView /></RoleGuard></ModuleErrorBoundary>;
       case "settings":  return <ModuleErrorBoundary moduleName="Settings"><Settings /></ModuleErrorBoundary>;
-      case "users":     return <ModuleErrorBoundary moduleName="My Team"><RoleGuard module="Settings"><UserManagement /></RoleGuard></ModuleErrorBoundary>;
+      case "users":     return <ModuleErrorBoundary moduleName="My Team"><RoleGuard module="Settings"><TeamHub /></RoleGuard></ModuleErrorBoundary>;
       case "audit":     return <ModuleErrorBoundary moduleName="Activity History"><RoleGuard module="Settings"><AuditLogs /></RoleGuard></ModuleErrorBoundary>;
       default:          return <ModuleErrorBoundary moduleName="Home"><Dashboard /></ModuleErrorBoundary>;
     }
@@ -185,6 +186,9 @@ function App() {
     <div className="min-h-screen flex flex-col selection:bg-neon selection:text-ink relative">
       {/* 3D Visual Experience */}
       <Background3D />
+      
+      {/* Security Intercept for new staff */}
+      {needsPasswordChange && <ForcePasswordChange />}
       
 
 

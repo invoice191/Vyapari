@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, CheckCircle, AlertTriangle, Info, Bell } from 'lucide-react';
 
@@ -19,9 +19,18 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const toast = useCallback((message: string, type: ToastType = 'info') => {
+  const toast = useCallback((message: any, type: ToastType = 'info') => {
     const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, message, type }]);
+    
+    // Convert objects to readable strings
+    let displayMessage = message;
+    if (typeof message === 'object' && message !== null) {
+      displayMessage = message.message || message.error_description || JSON.stringify(message);
+    } else {
+      displayMessage = String(message);
+    }
+
+    setToasts((prev) => [...prev, { id, message: displayMessage, type }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 4000);
@@ -105,4 +114,12 @@ export const useToast = () => {
   const context = useContext(ToastContext);
   if (!context) throw new Error('useToast must be used within ToastProvider');
   return context;
+};
+
+// Global helper to trigger toasts from anywhere
+export const toast = {
+  success: (message: string, title?: string) => window.dispatchEvent(new CustomEvent('app:toast', { detail: { message, type: 'success', title } })),
+  error: (message: string, title?: string) => window.dispatchEvent(new CustomEvent('app:toast', { detail: { message, type: 'error', title } })),
+  warning: (message: string, title?: string) => window.dispatchEvent(new CustomEvent('app:toast', { detail: { message, type: 'warning', title } })),
+  info: (message: string, title?: string) => window.dispatchEvent(new CustomEvent('app:toast', { detail: { message, type: 'info', title } })),
 };

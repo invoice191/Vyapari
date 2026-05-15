@@ -7,7 +7,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { 
   Plus, Search, Download, Calendar, Filter, Wallet, ArrowUpRight, 
   History, TrendingUp, Info, Zap, AlertCircle, CheckCircle, 
-  Loader2, ArrowRight, UploadCloud, FileText
+  Loader2, ArrowRight, UploadCloud, FileText, ArrowDownLeft
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import LedgerEntryModal from "./LedgerEntryModal";
@@ -51,7 +51,8 @@ export default function Ledger() {
         .select('*, ledger_entries(*), invoices(*)')
         .eq('business_id', profile.business_id)
         .eq('status', 'pending')
-        .then(({ data }) => setReconciliationAttempts(data || []));
+        .then(({ data }) => setReconciliationAttempts(data || []))
+        .catch(err => console.error("Error fetching reconciliation attempts in Ledger:", err));
     }
   }, [profile?.business_id, entries]);
 

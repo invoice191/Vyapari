@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "../lib/supabase";
 import { lovable } from "../integrations/lovable";
-import { toast } from "sonner";
+import { useToast } from "../components/common/Toast";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -11,31 +11,35 @@ import { AuthBackground } from "../components/auth/AuthBackground";
 import { HeroPanel } from "../components/auth/HeroPanel";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, Loader2, Fingerprint } from "lucide-react";
 
+import ForgotPasswordModal from "../components/auth/ForgotPasswordModal";
+
 const schema = z.object({
   email: z.string().trim().email("Enter a valid email").max(255),
   password: z.string().min(6, "At least 6 characters").max(72),
 });
 
 const SignIn = () => {
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = schema.safeParse({ email, password });
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
+      toast(parsed.error.issues[0].message, "error");
       return;
     }
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email: parsed.data.email, password: parsed.data.password });
     setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Welcome back, vyapari! --");
+    if (error) return toast(error.message, "error");
+    toast("Welcome back, vyapari! --", "success");
     navigate("/");
   };
 
@@ -44,7 +48,7 @@ const SignIn = () => {
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
     if (result.error) {
       setOauthLoading(false);
-      toast.error("Google sign-in failed");
+      toast("Google sign-in failed", "error");
       return;
     }
     if (result.redirected) return;
@@ -53,20 +57,20 @@ const SignIn = () => {
 
   const handleBiometric = async () => {
     if (!window.PublicKeyCredential) {
-      toast.error("Biometrics not supported on this device.");
+      toast("Biometrics not supported on this device.", "error");
       return;
     }
-    const loadToast = toast.loading("Opening Native Identity Module...");
+    toast("Opening Native Identity Module...", "info");
     try {
       // Native UI Trigger Simulate
       await new Promise(r => setTimeout(r, 1000));
-      toast.success("Biometric Bundle Handshake Complete");
+      toast("Biometric Bundle Handshake Complete", "success");
       // Standard redirect for simulated flow
       navigate("/");
     } catch (e) {
-      toast.error("Biometric rejection received.");
+      toast("Biometric rejection received.", "error");
     } finally {
-      toast.dismiss(loadToast);
+      // toast dismissed automatically
     }
   };
 
@@ -100,7 +104,16 @@ const SignIn = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <button 
+                    type="button"
+                    onClick={() => setShowForgotModal(true)}
+                    className="text-[10px] font-bold text-primary hover:underline uppercase tracking-widest"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                   <Input
@@ -168,6 +181,10 @@ const SignIn = () => {
           </div>
         </div>
       </div>
+      <ForgotPasswordModal 
+        isOpen={showForgotModal} 
+        onClose={() => setShowForgotModal(false)} 
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-﻿import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { Invoice } from "./types";
 
 export const dunningService = {
@@ -29,7 +29,7 @@ export const dunningService = {
   /**
    * Sends a reminder via the SMS/WhatsApp service.
    */
-  sendReminder: async (invoiceId: string, customerPhone: string, message: string, type: 'sms' | 'whatsapp' = 'sms') => {
+  sendReminder: async (invoiceId: string, customerPhone: string, message: string, type: 'sms' | 'whatsapp' = 'sms', businessId?: string, contactId?: string) => {
     try {
       const { smsService } = await import('./smsService');
       
@@ -39,15 +39,17 @@ export const dunningService = {
         if (cleaned.length === 10) return `+91${cleaned}`;
         return phone.startsWith("+") ? phone : `+${phone}`;
       };
-
+ 
       const result = await smsService.sendMessage({
         phone: formatPhone(customerPhone),
         message: message,
         type: type,
         referenceId: invoiceId,
-        referenceType: 'invoice'
+        referenceType: 'invoice',
+        businessId,
+        contactId
       });
-
+ 
       return result;
     } catch (error) {
       console.error("Failed to send dunning reminder:", error);

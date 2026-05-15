@@ -1,4 +1,4 @@
-﻿import React, { Component, ErrorInfo, ReactNode } from "react";
+import React, { Component, ErrorInfo, ReactNode } from "react";
 import { supabase } from "../lib/supabase";
 
 interface Props {
@@ -38,6 +38,8 @@ export class ModuleErrorBoundary extends Component<Props, State> {
       if (logError) {
         console.error('[ErrorBoundary] Failed to log error to audit_logs:', logError);
       }
+    }).catch(err => {
+      console.error('[ErrorBoundary] Unhandled error during audit logging:', err);
     });
   }
 

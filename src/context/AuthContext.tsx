@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 
@@ -12,7 +12,10 @@ interface AuthContextType {
   resendSignUpOtp: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateBusiness: (data: any) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   fetchProfileAndBusiness: (userId: string) => Promise<void>;
+  needsPasswordChange: boolean;
+  setNeedsPasswordChange: (needs: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -33,6 +36,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<any | null>(null);
   const [business, setBusiness] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [needsPasswordChange, setNeedsPasswordChange] = useState(false);
 
   useEffect(() => {
     // 1. Get initial session
@@ -43,13 +47,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setLoading(false);
       }
+    }).catch(err => {
+      console.error("[AuthContext] Session fetch error:", err);
+      setLoading(false);
     });
 
     // 2. Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') setNeedsPasswordChange(true);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfileAndBusiness(session.user.id);
+        fetchProfileAndBusiness(session.user.id).catch(err => {
+          console.error("[AuthContext] Auth change profile fetch error:", err);
+        });
       } else {
         setProfile(null);
         setBusiness(null);
@@ -105,6 +115,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         if (businessError) throw businessError;
         setBusiness(businessData);
+
+        // Check if password change is forced
+        if (profileData.requires_password_change) {
+          setNeedsPasswordChange(true);
+        }
       }
     } catch (err) {
       console.error("[AuthContext] Profile/Business fetch error:", err);
@@ -168,7 +183,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     setLoading(true);
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error("[AuthContext] Sign out error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateBusiness = async (data: any) => {
@@ -189,11 +210,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { error: authError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      if (authError) throw authError;
+
+      // Update profile to remove the force change flag
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ requires_password_change: false })
+        .eq('id', user?.id);
+      
+      if (profileError) throw profileError;
+
+      // Refresh profile state
+      if (user) await fetchProfileAndBusiness(user.id);
+    } catch (err) {
+      console.error("[AuthContext] Update password error:", err);
+      throw err;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, profile, business, loading, 
       signIn, signUp, resendSignUpOtp, signOut, 
-      updateBusiness, fetchProfileAndBusiness 
+      updateBusiness, updatePassword,
+      fetchProfileAndBusiness,
+      needsPasswordChange,
+      setNeedsPasswordChange
     }}>
       {children}
     </AuthContext.Provider>

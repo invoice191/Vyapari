@@ -1,9 +1,10 @@
 import { useRef, useCallback } from 'react';
 
-export function useVANIWakeWord(onWake: () => void) {
+export function useVANIWakeWord(onWake: () => void, lang: string = 'hi-IN') {
   const recognitionRef = useRef<any>(null);
   const listeningRef = useRef(false);
   const retryCountRef = useRef(0);
+  const MAX_RETRIES = 15;
 
   const WAKE_WORDS = [
     'hey vani', 'hey vyapari', 'ok vani',
@@ -19,7 +20,7 @@ export function useVANIWakeWord(onWake: () => void) {
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'hi-IN';
+    recognition.lang = lang;
     recognitionRef.current = recognition;
     listeningRef.current = true;
     recognition.onstart = () => {
@@ -41,9 +42,10 @@ export function useVANIWakeWord(onWake: () => void) {
     recognition.onend = () => {
       // Restart automatically to keep listening, up to 3 times
       if (listeningRef.current) {
-        if (retryCountRef.current >= 3) {
-          console.warn("[WakeWord] Maximum consecutive mic restart retries reached. Stopping listener.");
-          listeningRef.current = false;
+        if (retryCountRef.current >= MAX_RETRIES) {
+          console.warn("[WakeWord] Maximum consecutive mic restart retries reached. Cooldown for 5s.");
+          retryCountRef.current = 0;
+          setTimeout(startWakeWordDetection, 5000); // Wait longer before full restart
           return;
         }
         retryCountRef.current += 1;

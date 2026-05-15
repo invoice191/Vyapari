@@ -170,7 +170,8 @@ export default function Dashboard() {
         .select('*, ledger_entries(description, amount), invoices(invoice_number)')
         .eq('business_id', profile.business_id)
         .eq('status', 'pending')
-        .then(({ data }) => setPendingReconciliations(data || []));
+        .then(({ data }) => setPendingReconciliations(data || []))
+        .catch(err => console.error("Error fetching reconciliation attempts:", err));
     }
   }, [profile?.business_id, invoices, products, dbCategories, contacts, ledger]);
 
@@ -189,7 +190,9 @@ export default function Dashboard() {
           startDate: dateRange.start,
           endDate: dateRange.end
         }).then(setCategories)
-      ]).finally(() => setIsFiltering(false));
+      ])
+      .catch(err => console.error("Error in dashboard filtering:", err))
+      .finally(() => setIsFiltering(false));
     }
   }, [profile?.business_id, selectedProducts, dateRange, invoices, products]);
 

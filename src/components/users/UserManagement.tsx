@@ -31,9 +31,18 @@ export default function UserManagement() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<UserProfile | null>(null);
   const [showDashboard, setShowDashboard] = useState<UserProfile | null>(null);
 
-  const [formData, setFormData] = useState({ name: "", email: "", role: "staff" });
+  const [formData, setFormData] = useState({ 
+    name: "", 
+    email: "", 
+    role: "staff",
+    phone: "",
+    employee_id: `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
+    address: "",
+    emergency_contact: ""
+  });
   const [savingUser, setSavingUser] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [provisionedPassword, setProvisionedPassword] = useState<string | null>(null);
 
   const loadUsers = useCallback(async () => {
     if (profile?.business_id) {
@@ -65,12 +74,20 @@ export default function UserManagement() {
     setSavingUser(true);
     setSaveStatus('saving');
     try {
-      await userService.createUser({
+      const response = await userService.createUser({
         full_name: formData.name,
         email: formData.email,
         role: formData.role,
         business_id: profile.business_id,
+        phone: formData.phone,
+        employee_id: formData.employee_id,
+        address: formData.address,
+        emergency_contact: formData.emergency_contact
       });
+
+      if (response.password) {
+        setProvisionedPassword(response.password);
+      }
 
       await auditService.logAction({
         business_id: profile.business_id,
@@ -82,14 +99,23 @@ export default function UserManagement() {
 
       setSaveStatus('success');
       setTimeout(() => {
-        setFormData({ name: "", email: "", role: "staff" });
+        setFormData({ 
+          name: "", 
+          email: "", 
+          role: "staff",
+          phone: "",
+          employee_id: `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
+          address: "",
+          emergency_contact: ""
+        });
+        setProvisionedPassword(null);
         setShowAddModal(false);
         setSavingUser(false);
         setSaveStatus('idle');
         loadUsers();
-      }, 1500);
-    } catch (err) {
-      console.error(err);
+      }, 5000); // Longer timeout to let them copy the password
+    } catch (err: any) {
+      console.error("[UserManagement] Add user error:", err);
       setSaveStatus('error');
       setTimeout(() => setSavingUser(false), 1500);
     }
@@ -235,7 +261,7 @@ export default function UserManagement() {
                     </button>
                     <div className="flex gap-3">
                       <button 
-                        onClick={() => userService.suspendUser(u.id, profile?.business_id || '', u.status).then(loadUsers)}
+                        onClick={() => userService.suspendUser(u.id, profile?.business_id || '', u.status).then(loadUsers).catch(err => console.error("Suspend failed:", err))}
                         className="flex-1 py-3 bg-white border border-slate-200 rounded-xl text-[9px] font-black uppercase tracking-widest hover:border-amber-500 hover:text-amber-600 transition-all"
                       >
                         {u.status === 'Suspended' ? 'Unsuspend' : 'Suspend'}
@@ -251,6 +277,7 @@ export default function UserManagement() {
                 </motion.div>
               );
             })}
+
           </AnimatePresence>
         </div>
       </div>
@@ -316,6 +343,47 @@ export default function UserManagement() {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Extended Information */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">Employee ID</label>
+                    <input 
+                      value={formData.employee_id}
+                      onChange={e => setFormData({...formData, employee_id: e.target.value})}
+                      className="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl font-black text-sm uppercase focus:border-indigo-500 focus:bg-white outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">Phone Number</label>
+                    <input 
+                      value={formData.phone}
+                      onChange={e => setFormData({...formData, phone: e.target.value})}
+                      placeholder="+91..."
+                      className="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl font-black text-sm uppercase focus:border-indigo-500 focus:bg-white outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">Full Address</label>
+                  <textarea 
+                    value={formData.address}
+                    onChange={e => setFormData({...formData, address: e.target.value})}
+                    placeholder="ENTER RESIDENTIAL ADDRESS..."
+                    className="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl font-black text-xs uppercase focus:border-indigo-500 focus:bg-white outline-none transition-all h-24 resize-none"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1">Emergency Contact</label>
+                  <input 
+                    value={formData.emergency_contact}
+                    onChange={e => setFormData({...formData, emergency_contact: e.target.value})}
+                    placeholder="NAME / PHONE..."
+                    className="w-full bg-slate-50 border-2 border-slate-50 p-4 rounded-2xl font-black text-sm uppercase focus:border-indigo-500 focus:bg-white outline-none transition-all"
+                  />
                 </div>
 
                 <div className="flex gap-4 pt-4">
@@ -405,6 +473,24 @@ export default function UserManagement() {
                             ? `Please check your inputs`
                             : `Provisioning credentials...`}
                         </p>
+                        
+                        {saveStatus === 'success' && provisionedPassword && (
+                          <div className="mt-4 p-4 bg-indigo-50 border-2 border-indigo-100 rounded-2xl">
+                            <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-2">Temporary Password</p>
+                            <div className="flex items-center justify-center gap-3">
+                              <span className="text-lg font-mono font-bold text-slate-900">{provisionedPassword}</span>
+                              <button 
+                                onClick={() => navigator.clipboard.writeText(provisionedPassword)}
+                                className="p-2 bg-white rounded-lg shadow-sm hover:bg-indigo-600 hover:text-white transition-all"
+                              >
+                                <Key size={14} />
+                              </button>
+                            </div>
+                            <p className="text-[8px] text-amber-600 font-bold uppercase mt-3 italic">
+                              * Share this with the employee securely. <br/> They will be forced to change it on login.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   </motion.div>
@@ -506,6 +592,9 @@ export default function UserManagement() {
                       });
                       setShowDeleteConfirm(null);
                       loadUsers();
+                    }).catch(err => {
+                      console.error("Delete failed:", err);
+                      setShowDeleteConfirm(null);
                     });
                   }}
                   className="flex-1 py-5 bg-rose-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-rose-600 transition-all shadow-xl shadow-rose-500/20"

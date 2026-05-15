@@ -1,9 +1,9 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "../lib/supabase";
 import { lovable } from "../integrations/lovable";
-import { toast } from "sonner";
+import { useToast } from "../components/common/Toast";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -20,6 +20,7 @@ const schema = z.object({
 });
 
 const SignUp = () => {
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [form, setForm] = useState({ full_name: "", business_name: "", phone: "", email: "", password: "" });
   const [show, setShow] = useState(false);
@@ -35,7 +36,7 @@ const SignUp = () => {
     e.preventDefault();
     const parsed = schema.safeParse(form);
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
+      toast(parsed.error.issues[0].message, "error");
       return;
     }
     setLoading(true);
@@ -52,8 +53,8 @@ const SignUp = () => {
       },
     });
     setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Account created! Check your email to confirm. --");
+    if (error) return toast(error.message, "error");
+    toast("Account created! Check your email to confirm. --", "success");
     navigate("/signin");
   };
 
@@ -62,7 +63,7 @@ const SignUp = () => {
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
     if (result.error) {
       setOauthLoading(false);
-      toast.error("Google sign-up failed");
+      toast("Google sign-up failed", "error");
       return;
     }
     if (result.redirected) return;

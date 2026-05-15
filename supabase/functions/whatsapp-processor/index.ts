@@ -67,7 +67,7 @@ serve(async (req) => {
 
     // Handle Direct Send Request
     if (payload.direct) {
-      const { phone, message, channel } = payload;
+      const { phone, message, channel, referenceId, referenceType, businessId, contactId } = payload;
       const res = await sendTwilioMessage(phone, message, channel || 'sms');
       
       // Log it
@@ -77,7 +77,10 @@ serve(async (req) => {
         message,
         status: res.success ? 'sent' : 'failed',
         provider: 'twilio',
-        provider_response: res
+        provider_response: res,
+        invoice_id: referenceType === 'invoice' ? referenceId : null,
+        business_id: businessId,
+        contact_id: contactId
       });
 
       return new Response(JSON.stringify(res), {

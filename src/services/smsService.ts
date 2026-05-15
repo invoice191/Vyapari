@@ -6,6 +6,8 @@ export interface SMSPayload {
   type: 'sms' | 'whatsapp';
   referenceId?: string;
   referenceType?: 'invoice' | 'promo' | 'system';
+  businessId?: string;
+  contactId?: string;
 }
 
 export const smsService = {
@@ -33,14 +35,16 @@ export const smsService = {
           message: payload.message,
           channel: payload.type,
           referenceId: payload.referenceId,
-          referenceType: payload.referenceType
+          referenceType: payload.referenceType,
+          businessId: payload.businessId,
+          contactId: payload.contactId
         }
       });
 
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error("Failed to send message:", error);
+      console.error("Failed to send message:", error, payload);
       throw error;
     }
   },
@@ -58,6 +62,8 @@ export const smsService = {
           message_type: payload.referenceType || 'system',
           reference_id: payload.referenceId,
           reference_type: payload.referenceType,
+          business_id: payload.businessId,
+          contact_id: payload.contactId,
           scheduled_for: payload.scheduledFor || new Date().toISOString(),
           status: 'pending'
         });
@@ -65,7 +71,22 @@ export const smsService = {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error("Failed to queue message:", error);
+      console.error("Failed to queue message:", error, payload);
+      throw error;
+    }
+  },
+  /**
+   * Triggers the background processing of the message queue.
+   */
+  processQueue: async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-processor', {
+        body: {} // No direct: true, triggers queue processing
+      });
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("Failed to process message queue:", error);
       throw error;
     }
   }

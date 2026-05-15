@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { analyticsService } from "../../services/analyticsService";
 import { Card, SectionHeader, ActionBtn, KPICard, Badge } from "../common/UI";
 import { useAuth } from "../../hooks/useAuth";
@@ -12,9 +12,10 @@ import {
   BarChart3, BrainCircuit, Activity, RefreshCw,
   ArrowUpRight, Info, Sparkles
 } from "lucide-react";
-import { toast } from "sonner";
+import { useToast } from "../common/Toast";
 
 export default function PredictionHub() {
+  const { toast } = useToast();
   const { profile } = useAuth();
   const businessId = profile?.business_id || "";
 
@@ -168,7 +169,7 @@ export default function PredictionHub() {
             </div>
 
             <ActionBtn 
-              onClick={() => toast.success("Analyzing bundle halo effect...")}
+              onClick={() => toast("Analyzing bundle halo effect...", "success")}
               className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200"
             >
               SIMULATE_HALO_EFFECT

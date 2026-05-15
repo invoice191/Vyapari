@@ -5,7 +5,7 @@ import { useToast } from "../../components/common/Toast";
 import { vaniService } from "../../services/vaniService";
 import { vaniExecutor } from "../../services/vaniExecutor";
 import { useVANIWakeWord } from "../../hooks/useVANIWakeWord";
-import { Mic, RefreshCw, AlertTriangle, Play, CheckCircle, XCircle } from "lucide-react";
+import { Mic, RefreshCw, AlertTriangle, Play, CheckCircle, XCircle, Brain, Activity, Sparkles } from "lucide-react";
 
 interface VANIProps {
   activeModule: string;
@@ -63,6 +63,16 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
 
   const processText = async (text: string) => {
     setState('thinking');
+    
+    // Immediate visual feedback that we're processing the speech
+    window.dispatchEvent(new CustomEvent('app:toast', {
+      detail: {
+        title: "VANI: Processing",
+        message: `Analyzing command: "${text.length > 30 ? text.slice(0, 30) + '...' : text}"`,
+        type: 'smart'
+      }
+    }));
+
     try {
       const response = await vaniService.processCommand(text, { activeModule, profile });
       setLastResponse(response);
@@ -204,7 +214,7 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
     if (state === 'idle') {
       activate();
     }
-  });
+  }, sttLang);
 
   useEffect(() => {
     if (state === 'idle') {
@@ -241,193 +251,199 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
 
   return (
     <div className="fixed bottom-10 right-10 z-[500] flex flex-col items-end gap-6">
-      {/* Summary Card / Status Dashboard */}
+      {/* VANI JARVIS CONSOLE */}
       <AnimatePresence>
-        {(state !== 'idle' || permError || (lastResponse?.summary_card && state === 'idle')) && (
+        {(state !== 'idle' || lastResponse?.summary_card || permError) && (
           <motion.div 
-            initial={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(10px)' }}
+            initial={{ opacity: 0, y: 20, scale: 0.9, filter: 'blur(10px)' }}
             animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(10px)' }}
-            className="glass-card !p-0 w-[320px] overflow-hidden border-white/20 shadow-2xl bg-white/90 backdrop-blur-2xl"
+            exit={{ opacity: 0, y: 20, scale: 0.9, filter: 'blur(10px)' }}
+            className="glass-dark w-[400px] rounded-[2.5rem] overflow-hidden border-white/10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] p-8"
           >
-            {/* Status Header */}
-            <div className={`px-4 py-2 flex items-center justify-between ${state !== 'idle' ? orbColors[state] : 'bg-slate-100'}`}>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full bg-white ${state === 'listening' ? 'animate-ping' : ''}`} />
-                <span className="text-[10px] font-bold uppercase tracking-widest">
-                  {permError ? 'Microphone Blocked' : state !== 'idle' ? orbLabels[state] : 'Execution Summary'}
-                </span>
-              </div>
-              <button onClick={() => { setLastResponse(null); setPermError(false); }} className="opacity-50 hover:opacity-100 text-slate-500">
-                <XCircle size={14} />
-              </button>
+            {/* Holographic Orb Container */}
+            <div className="relative h-64 flex items-center justify-center">
+              {/* Outer Neural Rings */}
+              <div className={`absolute inset-0 rounded-full border border-rose-500/10 animate-spin-slow ${state === 'thinking' ? 'opacity-100' : 'opacity-20'}`} />
+              <div className={`absolute w-[90%] h-[90%] rounded-full border border-blue-500/10 animate-reverse-spin-slow ${state === 'thinking' ? 'opacity-100' : 'opacity-20'}`} />
+              
+              {/* Central Neural Core */}
+              <motion.div 
+                onClick={handleOrbClick}
+                className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all duration-500 cursor-pointer overflow-hidden
+                  ${state === 'listening' ? 'scale-125 bg-rose-500/20 shadow-[0_0_50px_rgba(244,63,94,0.4)]' : 
+                    state === 'thinking' ? 'bg-blue-500/20 shadow-[0_0_50px_rgba(59,130,246,0.4)]' : 
+                    state === 'speaking' ? 'bg-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.4)]' :
+                    'bg-slate-800/50'}`}
+              >
+                {/* JARVIS Energy Waves */}
+                {state !== 'idle' && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-full h-full animate-ping-slow bg-current opacity-20 rounded-full" />
+                    <div className="absolute w-full h-1 bg-current opacity-10 animate-neural-scan" />
+                  </div>
+                )}
+                
+                <AnimatePresence mode="wait">
+                  {state === 'listening' ? (
+                    <motion.div key="list" className="flex space-x-1 items-end h-8">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <motion.div
+                          key={i}
+                          animate={{ height: [8, 24, 8] }}
+                          transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.1 }}
+                          className="w-1.5 bg-rose-500 rounded-full"
+                        />
+                      ))}
+                    </motion.div>
+                  ) : state === 'thinking' ? (
+                    <motion.div key="think" initial={{ scale: 0.5 }} animate={{ scale: 1 }}>
+                      <Brain className="w-12 h-12 text-blue-400 animate-pulse" />
+                    </motion.div>
+                  ) : state === 'speaking' ? (
+                    <motion.div key="speak" animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity }}>
+                      <Activity className="w-12 h-12 text-emerald-400" />
+                    </motion.div>
+                  ) : (
+                    <motion.div key="idle">
+                      <Mic className="w-12 h-12 text-slate-400" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             </div>
 
-            <div className="p-5">
-              {/* Premium Language Picker */}
-              <div className="flex gap-1.5 mb-4 p-1 bg-slate-100/80 rounded-xl border border-slate-200/55">
-                {[
-                  { code: 'hi-IN', label: 'Hindi' },
-                  { code: 'en-IN', label: 'English' },
-                  { code: 'mr-IN', label: 'Marathi' }
-                ].map((lang) => (
-                  <button
-                    key={lang.code}
-                    onClick={() => setSttLang(lang.code)}
-                    className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all duration-300 ${
-                      sttLang === lang.code
-                        ? 'bg-slate-900 text-white shadow-md'
-                        : 'text-slate-500 hover:text-slate-900 hover:bg-white/50'
-                    }`}
+            {/* Transcript & Command Status */}
+            <div className="mt-4 space-y-4 text-center">
+              <AnimatePresence mode="wait">
+                {transcript && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="text-lg font-medium text-slate-200 line-clamp-2 italic"
                   >
-                    {lang.label}
-                  </button>
-                ))}
+                    "{transcript}"
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="flex items-center justify-center space-x-2">
+                <div className={`w-2 h-2 rounded-full animate-pulse ${
+                  state === 'listening' ? 'bg-rose-500 shadow-[0_0_10px_#f43f5e]' : 
+                  state === 'thinking' ? 'bg-blue-500 shadow-[0_0_10px_#3b82f6]' : 
+                  state === 'speaking' ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' :
+                  'bg-slate-600'
+                }`} />
+                <span className="text-[10px] font-black tracking-[0.2em] uppercase text-slate-500">
+                  {state === 'listening' ? 'VANI Protocol Active' : 
+                   state === 'thinking' ? 'Neural Processing...' : 
+                   state === 'speaking' ? 'Synthesizing Response' : 'Standby Mode'}
+                </span>
               </div>
+            </div>
 
-              {/* Hardware / Permission Guidance */}
-              {permError && (
-                <div className="p-4 bg-red-50 rounded-2xl border border-red-100 text-red-800 space-y-3 mb-4">
-                  <div className="flex items-center gap-2 font-black text-[10px] uppercase tracking-wider">
-                    <AlertTriangle size={14} /> Mic Permission Required
-                  </div>
-                  <p className="text-[10px] font-bold uppercase tracking-wide leading-relaxed text-red-600/90">
-                    Vyapari cannot access your audio inputs. Click the camera or microphone icon in your browser address bar to grant permission, then retry.
-                  </p>
-                </div>
-              )}
-
-              {/* Transcript */}
-              {transcript && (
-                <div className="mb-4 text-sm font-medium text-slate-600 italic leading-snug">
-                  "{transcript}"
-                </div>
-              )}
-
-              {/* Wave Visualizer */}
-              {(state === 'listening' || state === 'speaking') && (
-                <div className="flex items-center gap-1 h-6 mb-4">
-                  {[...Array(15)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      animate={{ 
-                        height: state === 'listening' ? [4, 16, 4] : [2, 10, 2],
-                        opacity: [0.4, 1, 0.4]
-                      }}
-                      transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.05 }}
-                      className="w-1 bg-indigo-500 rounded-full"
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* Summary Card Content */}
-              {lastResponse?.summary_card && state === 'idle' && (
-                <motion.div 
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="space-y-4"
-                >
+            {/* Strategic Summary Card (The Jarvis Briefing) */}
+            {lastResponse?.summary_card && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="mt-8 p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-3xl"
+              >
+                <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-black text-slate-900 leading-tight">
+                    <h3 className="text-xl font-bold text-white tracking-tight">
                       {lastResponse.summary_card.title}
                     </h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">
+                    <p className="text-slate-400 text-xs italic">
                       {lastResponse.summary_card.subtitle}
                     </p>
                   </div>
-
-                  <div className="space-y-2">
-                    {lastResponse.summary_card.items.map((item: any, idx: number) => (
-                      <div key={idx} className="flex justify-between items-center bg-slate-50 p-2 rounded-lg border border-slate-100">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase">{item.label}</span>
-                        <span className="text-xs font-black text-slate-900">{item.value}</span>
-                      </div>
-                    ))}
+                  <div className={`p-2 rounded-lg ${
+                    lastResponse.summary_card.status === 'success' ? 'bg-emerald-500/10 text-emerald-400' :
+                    lastResponse.summary_card.status === 'warning' ? 'bg-amber-500/10 text-amber-400' :
+                    'bg-rose-500/10 text-rose-400'
+                  }`}>
+                    <Activity className="w-5 h-5" />
                   </div>
-
-                  {lastResponse.spoken_response && (
-                    <div className="text-[11px] font-medium text-indigo-600 bg-indigo-50 p-3 rounded-xl border border-indigo-100 leading-tight">
-                      {lastResponse.spoken_response}
-                    </div>
-                  )}
-                </motion.div>
-              )}
-              
-              {/* Spoken Response while speaking */}
-              {lastResponse?.spoken_response && state === 'speaking' && (
-                <div className="text-xs font-bold text-slate-800 leading-tight">
-                  {lastResponse.spoken_response}
                 </div>
-              )}
-            </div>
 
-            <div className="px-4 py-2 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
-              <span className="text-[8px] font-black text-slate-400 tracking-[0.2em]">VOICE_ASSISTANT_v4</span>
-              <div className="flex gap-1">
-                <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                <div className="w-1 h-1 rounded-full bg-emerald-500" />
-              </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {lastResponse.summary_card.items.map((item: any, i: number) => (
+                    <div key={i} className="p-3 rounded-2xl bg-white/5 border border-white/5">
+                      <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">
+                        {item.label}
+                      </div>
+                      <div className="text-sm font-mono text-slate-200">
+                        {item.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {lastResponse.proactive_note && (
+                  <div className="mt-4 pt-4 border-t border-white/5 flex items-start space-x-3">
+                    <Sparkles className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-blue-300/80 italic leading-relaxed">
+                      "Sir, {lastResponse.proactive_note}"
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* Language Controls */}
+            <div className="mt-6 flex justify-center gap-4">
+              {['hi-IN', 'en-IN', 'mr-IN'].map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => setSttLang(lang)}
+                  className={`text-[9px] font-black tracking-widest uppercase transition-all ${
+                    sttLang === lang ? 'text-blue-400' : 'text-slate-600 hover:text-slate-400'
+                  }`}
+                >
+                  {lang.split('-')[0]}
+                </button>
+              ))}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* The VANI Orb (Trigger) */}
-      <motion.button
-        layoutId="vani-orb"
-        onClick={handleOrbClick}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        className={`w-20 h-20 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 relative overflow-hidden ${orbColors[state]}`}
-      >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={state}
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.5 }}
-          >
-            {state === 'idle' && <Mic size={32} />}
-            {state === 'listening' && <div className="w-8 h-8 bg-white/30 rounded-full animate-ping" />}
-            {state === 'thinking' && <RefreshCw size={32} className="animate-spin" />}
-            {state === 'speaking' && <Play size={32} className="animate-pulse" />}
-            {state === 'confirming' && <AlertTriangle size={32} />}
-          </motion.div>
-        </AnimatePresence>
-        
-        {/* Decorative Ring */}
-        <div className="absolute inset-0 border-4 border-white/20 rounded-full pointer-events-none" />
-      </motion.button>
+      {/* Mini Orb for Trigger (Hidden when console is open) */}
+      {state === 'idle' && !lastResponse?.summary_card && (
+        <motion.button
+          onClick={activate}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          className="w-16 h-16 rounded-full bg-slate-900 border border-white/10 flex items-center justify-center shadow-2xl relative group overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-rose-600/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <Mic className="w-6 h-6 text-slate-400 group-hover:text-white transition-colors" />
+        </motion.button>
+      )}
 
-      {/* Confirmation Modal */}
+      {/* Confirmation Barrier */}
       <AnimatePresence>
         {state === 'confirming' && pendingAction && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-start justify-center z-[2000] p-6 overflow-y-auto">
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[2000] p-6">
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="bg-white p-8 rounded-[2rem] max-w-md w-full shadow-2xl border border-slate-200 my-auto"
+              className="glass-dark p-10 rounded-[3rem] max-w-md w-full border border-white/10 text-center"
             >
-              <div className="flex items-center gap-3 text-orange-500 mb-6 font-black uppercase text-xl">
-                <AlertTriangle size={28} /> Confirm Action
+              <div className="w-20 h-20 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-6 text-amber-500">
+                <AlertTriangle size={40} />
               </div>
-              <p className="text-slate-600 font-medium mb-8 leading-relaxed">
-                {pendingAction.confirmation_message || "Are you sure you want to proceed with this operation?"}
+              <h3 className="text-2xl font-bold text-white mb-2">Protocol Authorization</h3>
+              <p className="text-slate-400 italic mb-8 leading-relaxed">
+                "{pendingAction.confirmation_message || "Sir, this action requires your explicit authorization. Shall we proceed?"}"
               </p>
               <div className="flex gap-4">
-                <button 
-                  onClick={confirmAction}
-                  className="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-700 transition-colors"
-                >
-                  Execute
+                <button onClick={confirmAction} className="flex-1 bg-white text-slate-950 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-400 transition-all">
+                  Proceed
                 </button>
-                <button 
-                  onClick={cancelAction}
-                  className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-colors"
-                >
-                  Cancel
+                <button onClick={cancelAction} className="flex-1 bg-white/5 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-white/10 transition-all">
+                  Abort
                 </button>
               </div>
             </motion.div>

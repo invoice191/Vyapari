@@ -1,6 +1,7 @@
-﻿import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
+import { smsService } from '../services/smsService';
 
 interface DataContextType {
   products: any[];
@@ -178,14 +179,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 .from('invoices')
                 .select('*, contacts(name, phone)')
                 .eq('id', payload.new.id)
-                .single();
-              
-              if (data) {
-                setInvoices(prev => [data, ...prev]);
-              } else {
-                // Fallback to payload if fetch fails
-                setInvoices(prev => [payload.new, ...prev]);
-              }
+                .single()
+                .then(({ data }) => {
+                  if (data) {
+                    setInvoices(prev => [data, ...prev]);
+                  } else {
+                    setInvoices(prev => [payload.new, ...prev]);
+                  }
+                })
+                .catch(err => {
+                  console.error("[Realtime] Error fetching invoice detail:", err);
+                  setInvoices(prev => [payload.new, ...prev]);
+                });
             } else if (payload.eventType === 'UPDATE') {
               // Try to preserve existing contact data if payload.new doesn't have it
               setInvoices(prev => prev.map(i => {
@@ -286,6 +291,28 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsDeferredLoading(false);
     }
   }, [profile?.business_id]);
+
+  // Background Queue Processor (Poor man's cron)
+  useEffect(() => {
+    if (!profile?.business_id) return;
+    
+    const processQueue = async () => {
+      try {
+        console.log("[QueueProcessor] Triggering background queue process...");
+        await smsService.processQueue();
+      } catch (err) {
+        console.error("[QueueProcessor] Background process failed:", err);
+      }
+    };
+
+    // Trigger once on load
+    processQueue();
+
+    // Then every 60 seconds
+    const interval = setInterval(processQueue, 60000);
+    return () => clearInterval(interval);
+  }, [profile?.business_id]);
+
 
   return (
     <DataContext.Provider value={{ 

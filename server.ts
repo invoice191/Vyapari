@@ -3,6 +3,7 @@ import express from "express";
 import { createClient } from "@supabase/supabase-js";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+import nodemailer from "nodemailer";
 import {
   buildSimulationResult,
   validateOCRRequest,
@@ -25,6 +26,7 @@ interface ReminderRow {
   reminder_count: number | null;
   last_reminder_sent_at: string | null;
   next_reminder_at: string | null;
+  business_id: string;
 }
 
 interface InvoiceRow {
@@ -98,6 +100,7 @@ async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT || 3000);
   const apiAuthToken = process.env.API_AUTH_TOKEN || "VYAPARI_FALLBACK_TOKEN_REPLACE_ME";
+  console.log(`[Server] API Auth Token configured: ${apiAuthToken.substring(0, 4)}***`);
   const isDemoMode = process.env.VYAPARI_ENABLE_LIVE_APIS !== "true";
   const supabase = getSupabaseServerClient();
   const reminderIntervalHours = Number(process.env.REMINDER_INTERVAL_HOURS || 24);
@@ -105,7 +108,7 @@ async function startServer() {
   const autoRunMinutes = Number(process.env.REMINDER_AUTO_RUN_MINUTES || 60);
   let reminderJobRunning = false;
 
-  app.use(express.json({ limit: "5mb" }));
+  app.use(express.json({ limit: "50mb" }));
 
   const runReminderCycle = async (options?: { dryRun?: boolean }) => {
     if (!supabase) {
@@ -130,7 +133,7 @@ async function startServer() {
     try {
       const { data: reminderRows, error: reminderError } = await supabase
         .from("invoice_reminders")
-        .select("invoice_id, contact_id, due_date, reminder_enabled, reminder_count, last_reminder_sent_at, next_reminder_at")
+        .select("invoice_id, contact_id, due_date, reminder_enabled, reminder_count, last_reminder_sent_at, next_reminder_at, business_id")
         .eq("reminder_enabled", true)
         .lte("due_date", now.toISOString().slice(0, 10));
 
@@ -233,8 +236,8 @@ async function startServer() {
 
       let sent = 0;
       for (const dispatch of dispatches) {
-        // --- Task 1: Auto-Pilot Dunning Enhancements ---
-        const score = await getPaymentScore(supabase, dispatch.contactId!, dispatch.amount, reminders[0].business_id!);
+        const reminderRecord = reminders.find(r => r.invoice_id === dispatch.invoiceId);
+        const score = await getPaymentScore(supabase, dispatch.contactId!, dispatch.amount, reminderRecord!.business_id!);
         
         let channel = "whatsapp";
         let message = dispatch.message;
@@ -242,7 +245,6 @@ async function startServer() {
 
         if (score) {
           riskFlag = score.risk_level === "high" || score.escalation_required;
-          // Update invoice with score
           await supabase
             .from("invoices")
             .update({ ai_risk_score: score.probability / 100, risk_flag: riskFlag })
@@ -254,11 +256,10 @@ async function startServer() {
           channel = "whatsapp";
         } else if (dispatch.reminderCount === 1) {
           message = `[FORMAL NOTICE] ${dispatch.message}\nPlease find the formal notice attached.`;
-          channel = "email_pdf"; // In a real system, this would trigger a PDF generation and email/WhatsApp
+          channel = "email_pdf";
         } else if (dispatch.reminderCount >= 2 && riskFlag) {
-          // Escalation to Owner via Neural Event Bus (Anomaly Log)
           await supabase.from("anomaly_log").insert({
-            business_id: reminders[0].business_id,
+            business_id: reminderRecord!.business_id,
             title: "Dunning Escalation Required",
             message: `Invoice ${dispatch.invoiceId} for ${dispatch.customerName} (₹${dispatch.amount}) requires a personal call. Multiple reminders failed and risk is HIGH.`,
             severity: "Critical",
@@ -267,16 +268,14 @@ async function startServer() {
             metadata: { invoice_id: dispatch.invoiceId, contact_id: dispatch.contactId, score }
           });
           console.log(`[Neural Event Bus] Escalated invoice ${dispatch.invoiceId} to owner.`);
-          continue; // Don't send another automated message if escalated to owner
+          continue;
         }
 
-        // --- Task 5: Sentiment-Aware Collections ---
-        // Mocking an incoming customer response check
         const { data: recentMessages } = await supabase
           .from("notification_logs")
           .select("message")
           .eq("contact_id", dispatch.contactId)
-          .eq("channel", "whatsapp_incoming") // Assume we store incoming replies here
+          .eq("channel", "whatsapp_incoming")
           .order("sent_at", { ascending: false })
           .limit(1);
 
@@ -288,7 +287,6 @@ async function startServer() {
               console.log(`[Sentiment Agent] Detected ${sentiment.sentiment}. Switching to Payment Plan offer for ${dispatch.customerName}.`);
             } else if (sentiment.suggested_action === "OWNER_INTERVENTION") {
               console.log(`[Sentiment Agent] Detected high temperature (${sentiment.temperature}). Escalating to owner.`);
-              // Similar escalation logic as before
               continue;
             }
           }
@@ -375,21 +373,94 @@ async function startServer() {
   };
 
   app.use("/api", (req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+    console.log(`[API Debug] ${req.method} ${req.path}`);
+
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+      return;
+    }
+
     const authHeader = req.headers.authorization;
     if (authHeader === `Bearer ${apiAuthToken}`) {
       next();
       return;
     }
 
+    console.warn(`[API Debug] Unauthorized: ${req.method} ${req.path}`);
     res.status(401).json({
       success: false,
       error: "Unauthorized API request.",
     });
   });
 
-  // --- API Routes ---
+  const sendOnboardingEmail = async (email: string, fullName: string, password: string) => {
+    console.log(`[Email Service] Preparing onboarding mail for ${email}...`);
+    
+    const hasSmtp = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS;
+    
+    if (!hasSmtp) {
+      console.warn(`[Email Service] SMTP not configured in .env. Falling back to secure console handshake.`);
+      console.log(`
+        --------------------------------------------------
+        SECURE ONBOARDING LOG (SIMULATED EMAIL)
+        TO: ${fullName} <${email}>
+        SUBJECT: Welcome to the Team - Your Vyapari Identity
+        BODY:
+        Hello ${fullName},
+        Your professional account has been provisioned.
+        Username: ${email}
+        Temporary Password: ${password}
+        
+        Login at: http://localhost:3000/signin
+        (You will be asked to set a private password upon first login)
+        --------------------------------------------------
+      `);
+      return { success: true, simulated: true };
+    }
 
-  // Health check
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT) || 587,
+        secure: false,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+
+      await transporter.sendMail({
+        from: `"Vyapari Enterprise" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: "Welcome to the Team - Your Vyapari Identity",
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #0f172a; text-transform: uppercase; letter-spacing: 1px;">Welcome to the Team</h2>
+            <p>Hello <strong>${fullName}</strong>,</p>
+            <p>Your professional identity has been provisioned on the Vyapari Enterprise platform.</p>
+            <div style="background: #f8fafc; padding: 20px; border-radius: 10px; margin: 20px 0;">
+              <p style="margin: 0; color: #64748b; font-size: 12px; text-transform: uppercase; font-weight: bold;">Login Credentials</p>
+              <p style="margin: 10px 0 5px 0;"><strong>Username:</strong> ${email}</p>
+              <p style="margin: 0;"><strong>Temporary Password:</strong> <code style="background: #fff; padding: 2px 5px; border-radius: 4px;">${password}</code></p>
+            </div>
+            <p style="font-size: 14px; color: #64748b;"><em>Note: You will be required to set a new private password when you first sign in.</em></p>
+            <a href="http://localhost:3000/signin" style="display: inline-block; background: #0f172a; color: #fff; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 10px;">Login to Vyapari</a>
+          </div>
+        `
+      });
+
+      console.log(`[Email Service] Transactional email sent to ${email}`);
+      return { success: true };
+    } catch (err) {
+      console.error("[Email Service] Failed to send onboarding email:", err);
+      return { success: false, error: err };
+    }
+  };
+
   app.get("/api/health", (req, res) => {
     res.json({
       status: "ok",
@@ -405,7 +476,6 @@ async function startServer() {
     });
   });
 
-  // OCR Endpoint
   app.post("/api/ocr/process", (req, res) => {
     const errors = validateOCRRequest(req.body);
     if (errors.length > 0) {
@@ -434,7 +504,6 @@ async function startServer() {
     }, 1500);
   });
 
-  // Simulation Engine Endpoint
   app.post("/api/simulation/run", (req, res) => {
     const errors = validateSimulationRequest(req.body);
     if (errors.length > 0) {
@@ -468,6 +537,108 @@ async function startServer() {
       res.status(500).json({
         success: false,
         error: message,
+      });
+    }
+  });
+
+  app.post("/api/provision-staff", async (req, res) => {
+    try {
+      if (!supabase) {
+        return res.status(500).json({ success: false, error: "Supabase admin client not configured." });
+      }
+
+      const { email, role, full_name, business_id, employee_id, phone, address, emergency_contact } = req.body;
+
+      if (!email || !role || !business_id) {
+        console.error("[Provisioning] Validation failed. Missing params:", { email, role, business_id });
+        return res.status(400).json({ success: false, error: "Missing required identity parameters." });
+      }
+
+      const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+      let tempPassword = "";
+      for (let i = 0; i < 12; i++) {
+        tempPassword += charset.charAt(Math.floor(Math.random() * charset.length));
+      }
+
+      console.log(`[Provisioning] Initializing identity for: ${email} (${role})`);
+
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: { full_name, role }
+      });
+
+      if (authError) {
+        console.error("[Provisioning] Auth Error:", authError);
+        throw authError;
+      }
+
+      const userId = authData.user.id;
+
+      const { error: baseProfileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: userId,
+          full_name: full_name || '',
+          role: role,
+          business_id: business_id,
+          phone: phone || null,
+        });
+
+      if (baseProfileError) {
+        console.error("[Provisioning] Base Profile Error:", baseProfileError);
+        throw baseProfileError;
+      }
+
+      const { error: extError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: userId,
+          email: email,
+          employee_id: employee_id || null,
+          address: address || null,
+          emergency_contact: emergency_contact || null,
+          joining_date: new Date().toISOString().split('T')[0],
+          requires_password_change: true,
+        });
+
+      if (extError) {
+        if (extError.code === 'PGRST204' || String(extError.message).includes('column')) {
+          console.warn("[Provisioning] Extended profile columns missing — run migration SQL to enable full staff records. Continuing with base profile.");
+        } else {
+          console.error("[Provisioning] Extended Profile Error:", extError);
+        }
+      }
+
+      try {
+        await supabase.from('audit_logs').insert({
+          business_id,
+          action: 'STAFF_PROVISIONED',
+          module: 'UserManagement',
+          metadata: { email, role, employee_id }
+        });
+      } catch (_auditErr) {
+        console.warn("[Provisioning] Audit log skipped (table may not exist).");
+      }
+
+      console.log(`[Provisioning] SUCCESS: Identity created for ${email}`);
+
+      const emailResult = await sendOnboardingEmail(email, full_name, tempPassword);
+
+      return res.json({
+        success: true,
+        password: tempPassword,
+        user_id: userId,
+        emailSent: emailResult.success,
+        simulated: emailResult.simulated || false
+      });
+
+    } catch (error) {
+      console.error("[Provisioning Error]", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Internal provisioning failure." 
       });
     }
   });

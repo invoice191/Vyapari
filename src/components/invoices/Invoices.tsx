@@ -75,6 +75,7 @@ export default function Invoices() {
   const [showInvoiceAI, setShowInvoiceAI] = useState(false);
   const [showAutoReconcile, setShowAutoReconcile] = useState(false);
   const [hoveredInvoice, setHoveredInvoice] = useState<any>(null);
+  const [peekPos, setPeekPos] = useState({ x: 0, y: 0 });
   const handleExportPDF = () => {
     reportExporter.downloadPDF({
       type: 'sales',
@@ -904,10 +905,22 @@ export default function Invoices() {
               <div className="grid grid-cols-2 gap-4">
                 <button
                   onClick={async () => {
-                    const phone = remindInvoice.contacts?.phone || "";
-                    await dunningService.sendReminder(remindInvoice.id, phone, editableMsg, 'sms');
-                    toast("SMS reminder sent successfully.", "success");
-                    setRemindInvoice(null);
+                    try {
+                      const phone = remindInvoice.contacts?.phone || "";
+                      await dunningService.sendReminder(
+                        remindInvoice.id, 
+                        phone, 
+                        editableMsg, 
+                        'sms',
+                        businessId,
+                        remindInvoice.contact_id
+                      );
+                      toast("SMS reminder sent successfully.", "success");
+                      setRemindInvoice(null);
+                    } catch (err: any) {
+                      console.error("SMS Reminder failed:", err);
+                      toast(err.message || "Failed to send SMS reminder", "error");
+                    }
                   }}
                   className="py-3.5 rounded-2xl border-2 border-slate-200 hover:border-slate-300 font-black text-[10px] uppercase tracking-widest text-slate-700 hover:text-slate-900 transition-all text-center"
                 >
@@ -915,13 +928,25 @@ export default function Invoices() {
                 </button>
                 <button
                   onClick={async () => {
-                    const phone = remindInvoice.contacts?.phone || "";
-                    const cleanPhone = phone.replace(/\s+/g, '').replace(/[^0-9]/g, '');
-                    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(editableMsg)}`;
-                    window.open(waUrl, '_blank');
-                    
-                    await dunningService.sendReminder(remindInvoice.id, phone, editableMsg, 'whatsapp');
-                    setRemindInvoice(null);
+                    try {
+                      const phone = remindInvoice.contacts?.phone || "";
+                      const cleanPhone = phone.replace(/\s+/g, '').replace(/[^0-9]/g, '');
+                      const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(editableMsg)}`;
+                      window.open(waUrl, '_blank');
+                      
+                      await dunningService.sendReminder(
+                        remindInvoice.id, 
+                        phone, 
+                        editableMsg, 
+                        'whatsapp',
+                        businessId,
+                        remindInvoice.contact_id
+                      );
+                      setRemindInvoice(null);
+                    } catch (err: any) {
+                      console.error("WhatsApp Reminder failed:", err);
+                      toast(err.message || "Failed to log WhatsApp reminder", "error");
+                    }
                   }}
                   className="py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-600/20 transition-all text-center"
                 >

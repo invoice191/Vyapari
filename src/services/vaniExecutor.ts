@@ -39,8 +39,27 @@ export const vaniExecutor = {
       switch (intent) {
         // ... (existing cases: NAVIGATE, CREATE_INVOICE, CHECK_STOCK, RUN_REPORT, SEND_REMINDER, GET_BRIEFING, CREATE_PURCHASE_ORDER, WHATSAPP_SEND) ...
         case 'NAVIGATE': {
-          const targetModule = params?.target || params?.module;
-          if (targetModule) setActiveModule(targetModule.toLowerCase());
+          const targetModule = (params?.target || params?.module || '').toLowerCase().trim();
+          if (targetModule) {
+            console.log(`[VANI_EXEC] Navigating to: ${targetModule}`);
+            
+            // Map common aliases if the brain missed them
+            const mappedTarget = targetModule === 'bill' || targetModule === 'billing' ? 'invoices' :
+                               targetModule === 'stock' ? 'inventory' :
+                               targetModule === 'khata' ? 'ledger' :
+                               targetModule === 'tips' || targetModule === 'dss' ? 'dss' :
+                               targetModule === 'simulation' || targetModule === 'prediction' ? 'prediction' :
+                               targetModule;
+
+            setActiveModule(mappedTarget);
+            
+            // For complex modules, trigger additional UI setup via events
+            if (mappedTarget === 'pos') {
+              window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'pos' } }));
+            } else if (mappedTarget === 'autopilot') {
+              window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'autopilot' } }));
+            }
+          }
           break;
         }
 
@@ -54,10 +73,30 @@ export const vaniExecutor = {
 
           const resolvedItems = await Promise.all((params?.items || []).map(async (item: any) => {
             const { data: prod } = await supabase.from('products').select('id, name, selling_price').eq('business_id', businessId).ilike('name', `%${item.name}%`).limit(1).maybeSingle();
-            return { product_id: prod?.id || null, product_name: prod?.name || item.name, quantity: item.qty || 1, unit_price: item.price || prod?.selling_price || 0, unit: 'pcs' };
+            return { 
+              product_id: prod?.id || null, 
+              product_name: prod?.name || item.name, 
+              quantity: item.qty || 1, 
+              unit_price: item.price || prod?.selling_price || 0, 
+              unit: 'pcs' 
+            };
           }));
 
-          window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'invoices', props: { mode: 'create', prefill: { contact_id: contactId, contact_name: params.contact_name, items: resolvedItems, total: params.total || 0 }}}}));
+          console.log(`[VANI_EXEC] Prefilling invoice for: ${params.contact_name}`);
+          window.dispatchEvent(new CustomEvent('app:navigate', { 
+            detail: { 
+              module: 'invoices', 
+              props: { 
+                mode: 'create', 
+                prefill: { 
+                  contact_id: contactId, 
+                  contact_name: params.contact_name, 
+                  items: resolvedItems, 
+                  total: params.total || 0 
+                }
+              }
+            }
+          }));
           setActiveModule('invoices');
           break;
         }
@@ -66,9 +105,12 @@ export const vaniExecutor = {
           const { data: products } = await supabase.from('products').select('*').eq('business_id', businessId).ilike('name', `%${params?.product_name || ''}%`);
           if (products && products.length > 0) {
             setActiveModule('inventory');
-            window.dispatchEvent(new CustomEvent('app:inventory-search', { detail: { query: params.product_name } }));
+            // Allow time for component mount if needed
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('app:inventory-search', { detail: { query: params.product_name } }));
+            }, 100);
           } else {
-            vaniService.speak("Stock not found.");
+            vaniService.speak(`I couldn't find ${params?.product_name || 'the item'} in your stock.`);
           }
           break;
         }
@@ -78,15 +120,15 @@ export const vaniExecutor = {
           window.dispatchEvent(new CustomEvent('app:toast', {
             detail: {
               title: "Strategic Advisor Active",
-              message: `Analyzing roadmap for: ${params.goal}. Checking historical trends and competitor indexing...`,
+              message: `Analyzing roadmap for: ${params.goal || 'Growth'}. Checking historical trends...`,
               type: 'smart'
             }
           }));
-          // Trigger the simulation lab or DSS
+          
           setTimeout(() => {
-            setActiveModule('reports');
-            window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'reports', props: { mode: 'strategic', goal: params.goal }}}));
-          }, 2000);
+            setActiveModule('prediction'); // Changed from 'reports' to 'prediction' for what-if lab
+            window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'prediction', props: { mode: 'strategic', goal: params.goal }}}));
+          }, 1500);
           break;
         }
 
@@ -154,7 +196,21 @@ export const vaniExecutor = {
             return { product_id: prod?.id || null, product_name: prod?.name || item.name, quantity: item.qty || 1, unit_cost: item.unit_cost || prod?.cost_price || 0 };
           }));
 
-          window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'purchases', props: { mode: 'create', prefill: { supplier_id: contactId, supplier_name: params.supplier_name, items: resolvedItems, total: params.total || 0 }}}}));
+          console.log(`[VANI_EXEC] Prefilling purchase order for: ${params.supplier_name}`);
+          window.dispatchEvent(new CustomEvent('app:navigate', { 
+            detail: { 
+              module: 'purchases', 
+              props: { 
+                mode: 'create', 
+                prefill: { 
+                  supplier_id: contactId, 
+                  supplier_name: params.supplier_name, 
+                  items: resolvedItems, 
+                  total: params.total || 0 
+                }
+              }
+            }
+          }));
           setActiveModule('purchases');
           break;
         }
@@ -194,13 +250,22 @@ export const vaniExecutor = {
         }
 
         // ... (default cases) ...
-        case 'error':
-        case 'UNKNOWN':
-          vaniService.speak("I'm not sure how to execute that command.");
-          break;
-
         default:
           console.warn(`[VANI_EXEC] Action route not defined for intent: ${intent}`);
+      }
+
+      // EXTREME LEVEL: Chained Action Processing
+      if (response.actions && Array.isArray(response.actions) && response.actions.length > 0) {
+        console.log(`[VANI_EXEC] Executing ${response.actions.length} secondary actions...`);
+        for (const action of response.actions) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          await this.execute(
+            { intent: action.type, params: action.params }, 
+            businessId, 
+            setActiveModule, 
+            onSuccess
+          );
+        }
       }
 
       // Log execution
@@ -211,6 +276,19 @@ export const vaniExecutor = {
         confidence: response.confidence || 0.9,
         was_executed: true
       });
+
+      // PROACTIVE STRATEGIC INSIGHT (JARVIS PROTOCOL)
+      if (response.proactive_note) {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('app:toast', {
+            detail: {
+              title: "Strategic Insight",
+              message: response.proactive_note,
+              type: 'smart'
+            }
+          }));
+        }, 2000);
+      }
 
       if (onSuccess) onSuccess();
     } catch (err) {

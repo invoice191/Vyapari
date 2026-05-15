@@ -1,4 +1,4 @@
-import { toast } from "sonner";
+// Removed sonner import as we use the custom Toast system via window events or hooks.
 
 export const pushNotificationService = {
   /**
@@ -13,7 +13,9 @@ export const pushNotificationService = {
     try {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
-        toast.success("Vyapari Alert Engine Connected.");
+        window.dispatchEvent(new CustomEvent('app:toast', { 
+          detail: { message: "Vyapari Alert Engine Connected.", type: "success" } 
+        }));
         
         // Optional: Fire a confirmation visual ping
         new Notification("Vyapari Signal Locked", {
@@ -22,7 +24,9 @@ export const pushNotificationService = {
         });
         return true;
       } else {
-        toast.warning("Live Alert streaming suppressed by OS.");
+        window.dispatchEvent(new CustomEvent('app:toast', { 
+          detail: { message: "Live Alert streaming suppressed by OS.", type: "warning" } 
+        }));
         return false;
       }
     } catch (error) {
@@ -106,12 +110,9 @@ export const pushNotificationService = {
         }, 1000 * 60 * 60); // 1 hour simulation
       }
     } else {
-       // Fallback to in-app toast
-       if (priority === 'critical') {
-         toast.error(title, { description: body });
-       } else {
-         toast.info(title, { description: body });
-       }
+       window.dispatchEvent(new CustomEvent('app:toast', { 
+         detail: { title: title, message: body, type: priority === 'critical' ? 'error' : 'info' } 
+       }));
     }
   }
 };
