@@ -6,7 +6,7 @@ const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "eyJhb
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-async function sendMessage(chatId: string, text: string) {
+async function sendMessage(chatId: string, text: string, replyMarkup?: any) {
   console.log(`Sending message to ${chatId}...`);
   const res = await fetch(
     `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
@@ -17,6 +17,7 @@ async function sendMessage(chatId: string, text: string) {
         chat_id: chatId,
         text,
         parse_mode: "HTML",
+        reply_markup: replyMarkup,
       }),
     }
   );
@@ -26,10 +27,50 @@ async function sendMessage(chatId: string, text: string) {
   }
 }
 
+async function handleVani(chatId: string, businessId: string, text: string) {
+  const { data: business } = await supabase.from('businesses').select('name').eq('id', businessId).single();
+  const { data: recent } = await supabase.from('invoices').select('total_amount, status').eq('business_id', businessId).limit(3);
+  
+  const contextData = {
+    business_name: business?.name,
+    recent_activity: recent
+  };
+
+  try {
+    const { data: aiResponse, error } = await supabase.functions.invoke('vani-brain', {
+      body: { 
+        transcript: text, 
+        businessId: businessId,
+        contextData: contextData
+      }
+    });
+
+    if (error || !aiResponse) throw new Error("VANI disrupted");
+
+    let responseText = `🤖 <b>VANI Intelligence</b>\n─────────────────────\n${aiResponse.spoken_response}`;
+    
+    if (aiResponse.summary_card) {
+      responseText += `\n\n📊 <b>${aiResponse.summary_card.title}</b>\n`;
+      aiResponse.summary_card.items.forEach((it: any) => {
+        responseText += ` • ${it.label}: ${it.value}\n`;
+      });
+    }
+
+    await sendMessage(chatId, responseText, {
+      inline_keyboard: [
+        [{ text: "📊 Get Summary", callback_data: "/summary" }, { text: "📦 Stock Audit", callback_data: "/stock" }],
+        [{ text: "❓ Help", callback_data: "/help" }]
+      ]
+    });
+  } catch (err) {
+    await sendMessage(chatId, "⚠️ <i>My neural link is currently unstable. Please try a direct command like /summary.</i>");
+  }
+}
+
 async function handleConnect(chatId: string, code: string) {
   console.log(`Connection request: Chat ${chatId}, Code ${code}`);
   if (!code) {
-    await sendMessage(chatId, "❌ Please provide a code. Example: /connect VYP-1234");
+    await sendMessage(chatId, "❌ <b>Missing Code</b>\nPlease provide your link code from Settings.\nExample: <code>/connect VYP-XXXX</code>");
     return;
   }
 
@@ -42,111 +83,88 @@ async function handleConnect(chatId: string, code: string) {
     .single();
 
   if (error || !connectCode) {
-    console.log(`Invalid code: ${code}`);
-    await sendMessage(chatId, "❌ Invalid or expired code. Please get a new code from Vyapari Settings.");
+    await sendMessage(chatId, "❌ <b>Invalid Code</b>\nCode is either expired or incorrect. Please generate a new one in Vyapari Settings.");
     return;
   }
 
   const businessId = connectCode.business_id;
-  console.log(`Linking business ${businessId} to chat ${chatId}`);
 
-  // 1. Clear any other business using this chatId
-  await supabase
-    .from('businesses')
-    .update({ telegram_chat_id: null })
-    .eq('telegram_chat_id', chatId);
+  await supabase.from('businesses').update({ telegram_chat_id: null }).eq('telegram_chat_id', chatId);
+  await supabase.from('businesses').update({ telegram_chat_id: null }).eq('id', businessId);
 
-  // 2. Clear this business's old chat ID if it had one
-  await supabase
-    .from('businesses')
-    .update({ telegram_chat_id: null })
-    .eq('id', businessId);
-
-  // 3. Link the business (guaranteed unique now)
   const { error: linkError } = await supabase
     .from('businesses')
-    .update({
-      telegram_chat_id: chatId,
-      telegram_notifications_enabled: true
-    })
+    .update({ telegram_chat_id: chatId, telegram_notifications_enabled: true })
     .eq('id', businessId);
 
   if (linkError) {
-    console.error("Linking error:", linkError);
-    await sendMessage(chatId, "❌ System error during linking. Please try again.");
+    await sendMessage(chatId, "❌ <b>Link Error</b>\nSystem failure. Please try again.");
     return;
   }
 
-  // Mark code as used
-  await supabase
-    .from('telegram_connect_codes')
-    .update({ used: true })
-    .eq('code', code.toUpperCase());
+  await supabase.from('telegram_connect_codes').update({ used: true }).eq('code', code.toUpperCase());
 
   await sendMessage(
     chatId,
-    `✅ <b>Connected Successfully!</b>\n\nWelcome ${(connectCode.businesses as any)?.name}! 🎉\nYour daily business digest starts tonight at 9 PM.\nType /help for all commands.\n🤖 Vyapari`
+    `🚀 <b>System Link Established!</b>\n\nWelcome to Vyapari Elite, <b>${(connectCode.businesses as any)?.name}</b>! Your business intelligence suite is now live on Telegram.\n\nUse the buttons below to explore your data:`,
+    {
+      inline_keyboard: [
+        [{ text: "📊 Summary", callback_data: "/summary" }, { text: "📦 Stock", callback_data: "/stock" }],
+        [{ text: "📈 Weekly Report", callback_data: "/report" }, { text: "👥 VIPs", callback_data: "/customers" }],
+        [{ text: "❓ View All Commands", callback_data: "/help" }]
+      ]
+    }
   );
 }
 
 async function handleStart(chatId: string, businessId?: string) {
-  console.log(`Start command: Chat ${chatId}, BusinessID ${businessId}`);
   if (businessId) {
-    await sendMessage(chatId, "👋 Hi! One second while I link your business...");
+    await sendMessage(chatId, "⚡ <b>Initializing Neural Link...</b>");
     
-    // 1. Clear any other business using this chatId
-    await supabase
-      .from('businesses')
-      .update({ telegram_chat_id: null })
-      .eq('telegram_chat_id', chatId);
-
-    // 2. Clear this business's old chat ID
-    await supabase
-      .from('businesses')
-      .update({ telegram_chat_id: null })
-      .eq('id', businessId);
-
+    await supabase.from('businesses').update({ telegram_chat_id: null }).eq('telegram_chat_id', chatId);
     const { error: updateError } = await supabase
       .from("businesses")
-      .update({
-        telegram_chat_id: chatId,
-        telegram_notifications_enabled: true,
-      })
+      .update({ telegram_chat_id: chatId, telegram_notifications_enabled: true })
       .eq("id", businessId);
 
     if (updateError) {
-      console.error(`Link update error for ${businessId}:`, updateError);
-      await sendMessage(chatId, "❌ Link failed. Please try again from Settings.");
+      await sendMessage(chatId, "❌ <b>Link Failed</b>");
       return;
     }
 
     await sendMessage(
       chatId,
-      `✅ <b>Connected Successfully!</b>\n\nYour daily business digest will arrive every evening at 9 PM IST.\n\nType /help to see what I can do.\n🤖 Vyapari`
+      `✅ <b>Vyapari Intelligence Online</b>\n\nYour account is linked. I will now send you real-time alerts and daily digests.\n\n<b>Try asking me something like:</b>\n<i>"How much did I sell today?"</i>`,
+      {
+        inline_keyboard: [
+          [{ text: "📊 Get Daily Summary", callback_data: "/summary" }],
+          [{ text: "🔍 Command Menu", callback_data: "/help" }]
+        ]
+      }
     );
   } else {
-    // Resume notifications
     const { data: business } = await supabase
       .from("businesses")
-      .select("id")
+      .select("id, name")
       .eq("telegram_chat_id", chatId)
-      .limit(1)
       .maybeSingle();
 
     if (business) {
-      await supabase
-        .from("businesses")
-        .update({ telegram_notifications_enabled: true })
-        .eq("id", business.id);
-
       await sendMessage(
         chatId,
-        `🔔 Notifications re-enabled!\nDaily digest resumes at 9 PM IST.\nType /help to see all commands.\n🤖 Vyapari`
+        `👋 Welcome back, <b>${business.name}</b>!\nYour intelligence engine is ready. How can I assist you today?`,
+        {
+          inline_keyboard: [
+            [{ text: "📊 Summary", callback_data: "/summary" }, { text: "📦 Stock", callback_data: "/stock" }],
+            [{ text: "💰 Revenue", callback_data: "/revenue" }, { text: "⚠️ Alerts", callback_data: "/alerts" }],
+            [{ text: "🤖 Talk to VANI AI", callback_data: "vani_mode" }]
+          ]
+        }
       );
     } else {
       await sendMessage(
         chatId,
-        `❓ Account not connected.\nPlease connect from Vyapari Settings first.\n🤖 Vyapari`
+        `❓ <b>Unlinked Device</b>\n\nPlease connect your Telegram account from <b>Vyapari Web Dashboard > Settings > Integrations</b>.\n\nVyapari Bot v2.0 (Elite Edition) 🤖`
       );
     }
   }
@@ -161,35 +179,20 @@ async function handleSummary(chatId: string, businessId: string) {
     .gte("created_at", today);
 
   const totalSales = invoices?.reduce((s, i) => s + (Number(i.total_amount) || 0), 0) ?? 0;
-  const totalGst = invoices?.reduce((s, i) => s + (Number(i.gst_amt) || 0), 0) ?? 0;
   
-  const invoiceIds = invoices?.map(inv => inv.id) || [];
-  let itemsSold = 0;
-  let estProfit = 0;
-
-  if (invoiceIds.length > 0) {
-    const { data: items } = await supabase
-      .from("invoice_items")
-      .select("quantity, line_profit")
-      .in("invoice_id", invoiceIds);
-    itemsSold = items?.reduce((s, i) => s + (Number(i.quantity) || 0), 0) ?? 0;
-    estProfit = items?.reduce((s, i) => s + (Number(i.line_profit) || 0), 0) ?? 0;
-  }
-
-  const { data: lowStock } = await supabase
-    .from("products")
-    .select("name, quantity")
-    .eq("business_id", businessId)
-    .lt("quantity", 10)
-    .limit(3);
-
-  const lowStockText = lowStock?.length
-    ? lowStock.map(p => `  ⚠️ ${p.name} → ${p.quantity} left`).join("\n")
-    : "  ✅ All stocks healthy";
+  const { data: items } = await supabase
+    .from("invoice_items")
+    .select("quantity, line_profit")
+    .in("invoice_id", invoices?.map(inv => inv.id) || []);
+    
+  const estProfit = items?.reduce((s, i) => s + (Number(i.line_profit) || 0), 0) ?? 0;
 
   await sendMessage(
     chatId,
-    `📊 <b>Daily Intelligence Summary</b>\n📅 ${new Date().toDateString()}\n─────────────────────\n💰 <b>Gross Revenue:</b> ₹${totalSales.toLocaleString("en-IN")}\n💎 <b>Est. Profit:</b> ₹${estProfit.toLocaleString("en-IN")}\n🧾 <b>Total Invoices:</b> ${invoices?.length ?? 0}\n📦 <b>Items Sold:</b> ${itemsSold}\n📈 <b>GST Collected:</b> ₹${totalGst.toLocaleString("en-IN")}\n─────────────────────\n📦 <b>Stock Warning:</b>\n${lowStockText}\n─────────────────────\n🤖 Vyapari AI`
+    `📊 <b>Daily Intel [${new Date().toLocaleDateString()}]</b>\n─────────────────────\n💰 <b>Sales:</b> ₹${totalSales.toLocaleString("en-IN")}\n💎 <b>Profit:</b> ₹${estProfit.toLocaleString("en-IN")}\n🧾 <b>Invoices:</b> ${invoices?.length ?? 0}\n─────────────────────\n🤖 Vyapari Elite`,
+    {
+      inline_keyboard: [[{ text: "📦 Check Stock", callback_data: "/stock" }, { text: "📈 Week Report", callback_data: "/report" }]]
+    }
   );
 }
 

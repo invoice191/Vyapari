@@ -1,4 +1,4 @@
-﻿import { supabase } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 import { auditService } from "./auditService";
 
 export const invoiceService = {
@@ -121,32 +121,36 @@ export const invoiceService = {
         }
       }
 
-      // b. Check for Large Orders (threshold >= 5000)
-      const LARGE_ORDER_THRESHOLD = 5000;
-      if (Number(invoice.total_amount) >= LARGE_ORDER_THRESHOLD) {
-        // Fetch customer name for the alert
-        let customerName = invoice.customer_name || 'Guest';
-        if (invoice.contact_id) {
-          const { data: contact } = await supabase
-            .from('contacts')
-            .select('name')
-            .eq('id', invoice.contact_id)
-            .single();
-          if (contact) customerName = contact.name;
-        }
-
-        await supabase.functions.invoke("telegram-alert", {
-          body: {
-            business_id: businessId,
-            alert_type: "NEW_LARGE_ORDER",
-            data: {
-              customer_name: customerName,
-              invoice_amount: Number(invoice.total_amount),
-              invoice_number: inv.invoice_number
-            }
-          }
         });
       }
+
+      // c. Real-Time Transaction Stream (User Requested: "Every Entry")
+      const { data: creator } = await supabase.from('profiles').select('full_name').eq('id', userId).single();
+      const staffName = creator?.full_name || 'Staff';
+      
+      const itemsSummary = invoice.items.map((it: any) => ` • ${it.product_name} (x${it.quantity})`).join('\n');
+      const totalProfit = invoice.items.reduce((s: number, it: any) => s + ((it.unit_price - (it.cost_price || 0)) * it.quantity), 0);
+
+      let custName = invoice.customer_name || 'Guest';
+      if (invoice.contact_id) {
+        const { data: c } = await supabase.from('contacts').select('name').eq('id', invoice.contact_id).single();
+        if (c) custName = c.name;
+      }
+
+      await supabase.functions.invoke("telegram-alert", {
+        body: {
+          business_id: businessId,
+          alert_type: "NEW_SALE",
+          data: {
+            invoice_number: inv.invoice_number,
+            customer_name: custName,
+            total_amount: Number(invoice.total_amount),
+            profit: totalProfit,
+            staff_name: staffName,
+            items_summary: itemsSummary
+          }
+        }
+      });
     } catch (alertError) {
       console.error("Telegram alert trigger failed:", alertError);
       // Non-blocking error, don't throw

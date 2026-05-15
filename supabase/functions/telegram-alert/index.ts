@@ -47,6 +47,11 @@ serve(async (req) => {
         message = `🎉 <b>Large Order Received!</b>\n🧾 ${data.invoice_number}\n👤 ${data.customer_name}\n💰 ₹${data.invoice_amount.toLocaleString()}\nType /invoices for details.\n🤖 Vyapari`;
         break;
 
+      case 'NEW_SALE':
+        // Real-time stream requested by user
+        message = `💸 <b>New Sale Recorded</b>\n🧾 ${data.invoice_number}\n👤 ${data.customer_name}\n💰 <b>Total: ₹${data.total_amount.toLocaleString()}</b>\n💎 Est. Profit: ₹${data.profit.toLocaleString()}\n👷 Staff: ${data.staff_name}\n─────────────────────\n📦 <b>Items:</b>\n${data.items_summary}\n─────────────────────\n🤖 Vyapari Real-Time Analytics`;
+        break;
+
       default:
         return new Response(JSON.stringify({ ok: false, reason: 'Invalid alert type' }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
