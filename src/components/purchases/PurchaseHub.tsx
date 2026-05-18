@@ -23,6 +23,7 @@ import { useAuth } from '../../context/AuthContext';
 import { purchaseService } from '../../services/purchaseService';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
+import ProcurementAgent from './ProcurementAgent';
 
 // Placeholder child views for full implementation next
 const PurchaseOrderList = ({ orders, loading, onCreateNew, onVendorClick, onOrderClick }: any) => {
@@ -570,10 +571,13 @@ export default function PurchaseHub() {
   useEffect(() => {
     const handleGlobalNav = (e: any) => {
       if (e.detail?.module === 'purchases' && e.detail?.props) {
-        const { mode, prefill } = e.detail.props;
+        const { mode, prefill, tab } = e.detail.props;
         if (mode === 'create') {
           setPrefill(prefill);
           setIsCreating(true);
+        }
+        if (tab) {
+          setActiveTab(tab);
         }
       }
     };
@@ -601,6 +605,7 @@ export default function PurchaseHub() {
 
   const tabs = [
     { id: 'orders', label: 'Purchase Orders', icon: ShoppingBag },
+    { id: 'agent', label: 'AI Negotiator', icon: Sparkles },
     { id: 'vendors', label: 'Vendor Performance', icon: Star },
     { id: 'analytics', label: 'Price Benchmarking', icon: TrendingUp }
   ];
@@ -668,6 +673,7 @@ export default function PurchaseHub() {
               onOrderClick={(order: any) => setSelectedOrder(order)}
             />
           )}
+          {activeTab === 'agent' && <ProcurementAgent />}
           {activeTab === 'vendors' && (
             <div className="bg-white/80 backdrop-blur-xl border border-white/50 rounded-3xl shadow-lg p-8">
               {selectedVendorId ? (

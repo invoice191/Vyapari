@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   Bot, Clock, MessageSquare, Zap, Activity, Mail, 
@@ -9,6 +9,8 @@ import { Card, SectionHeader, ActionBtn as Button, Badge } from '../common/UI';
 import { useToast } from '../common/Toast';
 import { useAuth } from '../../context/AuthContext';
 import { automationService } from '../../services/automationService';
+import SmartDunning from './SmartDunning';
+import ProcurementAgent from '../purchases/ProcurementAgent';
 
 export default function AutoPilot() {
   const { toast } = useToast();
@@ -30,6 +32,18 @@ export default function AutoPilot() {
     dailyBriefing: true,
     briefingTime: '08:00'
   });
+
+  const [activeSubView, setActiveSubView] = useState<'main' | 'dunning' | 'procurement'>('main');
+
+  useEffect(() => {
+    const handleNav = (e: any) => {
+      if (e.detail?.module === 'autopilot' && e.detail?.props?.subview) {
+        setActiveSubView(e.detail.props.subview);
+      }
+    };
+    window.addEventListener('app:navigate', handleNav);
+    return () => window.removeEventListener('app:navigate', handleNav);
+  }, []);
 
   const toggle = (key: keyof typeof config) => {
     setConfig(prev => ({ ...prev, [key]: !prev[key] as any }));
@@ -58,6 +72,24 @@ export default function AutoPilot() {
   };
 
   const logs = liveLogs;
+
+  if (activeSubView === 'dunning') {
+    return (
+      <div className="space-y-6">
+        <button onClick={() => setActiveSubView('main')} className="px-6 py-2 bg-slate-100 text-slate-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all">← Back to Overview</button>
+        <SmartDunning />
+      </div>
+    );
+  }
+
+  if (activeSubView === 'procurement') {
+    return (
+      <div className="space-y-6">
+        <button onClick={() => setActiveSubView('main')} className="px-6 py-2 bg-slate-100 text-slate-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all">← Back to Overview</button>
+        <ProcurementAgent />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-10 pb-20">
@@ -147,6 +179,28 @@ export default function AutoPilot() {
             active={config.autoRestock}
             onToggle={() => toggle('autoRestock')}
           />
+
+          {/* Rule 4: Sentiment Dunning Launch */}
+          <div className="bg-indigo-600 rounded-[2.5rem] p-10 text-white relative overflow-hidden group">
+             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl rounded-full -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-1000" />
+             <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-4">
+                   <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center">
+                      <MessageSquare size={24} className="text-white" />
+                   </div>
+                   <h3 className="text-2xl font-black uppercase tracking-tight">Sentiment Dunning Console</h3>
+                </div>
+                <p className="text-white/70 font-medium mb-8 max-w-md">
+                   Go beyond basic automation. Use the Neural Sentiment Engine to analyze customer relationships and craft perfect recovery messages.
+                </p>
+                <button 
+                  onClick={() => setActiveSubView('dunning')}
+                  className="px-8 py-4 bg-neon text-ink rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl"
+                >
+                   Launch Intelligence Console
+                </button>
+             </div>
+          </div>
         </div>
 
         {/* Sidebar: Activity Log */}

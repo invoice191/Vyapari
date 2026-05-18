@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { C } from "../../lib/constants";
 import { useBreakpoint, rv } from "../../hooks/useBreakpoint";
 import { Card, SectionHeader, Badge, ActionBtn, KPICard } from "../common/UI";
@@ -9,7 +9,7 @@ import { Building2, Bell, Shield, Share2, Palette, CreditCard,
   Settings2, Save, RotateCcw, CheckCircle2, AlertTriangle, 
   Mail, MessageSquare, BellRing, Smartphone, TrendingDown, 
   Lock, Key, Globe, Eye, Zap, Layers, FileText, Download,
-  CloudLightning, ExternalLink, Cpu, MapPin
+  CloudLightning, ExternalLink, Cpu, MapPin, Landmark, Plus, Trash2, Check
 } from "lucide-react";
 import { PinModal } from "../common/PinModal";
 import { auditService } from "../../services/auditService";
@@ -93,6 +93,39 @@ export default function Settings() {
     upiId: ""
   });
 
+  // Banking State
+  const [bankAccounts, setBankAccounts] = useState<any[]>([
+    {
+      id: "acc_1",
+      bankName: "HDFC Bank",
+      accountHolder: "Vyapari Enterprise Pvt Ltd",
+      accountNumber: "•••• •••• 5678",
+      ifscCode: "HDFC0000123",
+      upiId: "vyapari@okhdfcbank",
+      isPrimary: true,
+      accountType: "Current Account"
+    },
+    {
+      id: "acc_2",
+      bankName: "ICICI Bank",
+      accountHolder: "Vyapari Enterprise Pvt Ltd",
+      accountNumber: "•••• •••• 9012",
+      ifscCode: "ICIC0000456",
+      upiId: "vyapari@okicici",
+      isPrimary: false,
+      accountType: "Savings Account"
+    }
+  ]);
+
+  const [newBank, setNewBank] = useState({
+    bankName: "",
+    accountHolder: "",
+    accountNumber: "",
+    ifscCode: "",
+    upiId: "",
+    accountType: "Current Account"
+  });
+
   // Load settings from business metadata if available
   useEffect(() => {
     if (business) {
@@ -111,6 +144,9 @@ export default function Settings() {
         razorpayKeySecret: business.settings?.razorpayKeySecret || "",
         upiId: business.settings?.upiId || ""
       });
+      if (business.settings?.bankAccounts) {
+        setBankAccounts(business.settings.bankAccounts);
+      }
       setBizInfo({
         name: business.name || FACTORY_DEFAULTS.businessName,
         gst: business.gstin || FACTORY_DEFAULTS.gstNumber,
@@ -125,6 +161,87 @@ export default function Settings() {
       });
     }
   }, [business]);
+
+  // Banking handlers
+  const handleSetPrimaryBank = (accId: string) => {
+    const updated = bankAccounts.map(acc => {
+      if (acc.id === accId) {
+        // Automatically sync the primary account's UPI VPA to the general API keys settings
+        setApiKeys((prev: any) => ({ ...prev, upiId: acc.upiId }));
+        return { ...acc, isPrimary: true };
+      }
+      return { ...acc, isPrimary: false };
+    });
+    setBankAccounts(updated);
+    toast("Primary bank account updated and synchronized.", "success");
+  };
+
+  const handleAddBank = () => {
+    if (!newBank.bankName || !newBank.accountNumber || !newBank.ifscCode) {
+      toast("Please fill in Bank Name, Account Number, and IFSC Code.", "warning");
+      return;
+    }
+    
+    // Auto obscuring account number for security representation if user didn't enter obscured text
+    const cleanNumber = newBank.accountNumber.replace(/\s+/g, '');
+    const obscured = cleanNumber.length > 4 
+      ? `•••• •••• ${cleanNumber.slice(-4)}` 
+      : cleanNumber;
+
+    const newAcc = {
+      id: `acc_${Date.now()}`,
+      bankName: newBank.bankName,
+      accountHolder: newBank.accountHolder || bizInfo.name,
+      accountNumber: obscured,
+      ifscCode: newBank.ifscCode.toUpperCase(),
+      upiId: newBank.upiId || `${newBank.bankName.toLowerCase().replace(/\s+/g, '')}@upi`,
+      isPrimary: bankAccounts.length === 0, // Make primary if first account
+      accountType: newBank.accountType
+    };
+
+    const updated = [...bankAccounts, newAcc];
+    setBankAccounts(updated);
+    
+    // If it was the first, automatically sync its UPI VPA to keys
+    if (newAcc.isPrimary) {
+      setApiKeys((prev: any) => ({ ...prev, upiId: newAcc.upiId }));
+    }
+
+    // Reset form
+    setNewBank({
+      bankName: "",
+      accountHolder: "",
+      accountNumber: "",
+      ifscCode: "",
+      upiId: "",
+      accountType: "Current Account"
+    });
+
+    toast("Bank account successfully linked to Vyapari.", "success");
+  };
+
+  const handleRemoveBank = (accId: string) => {
+    const accToRemove = bankAccounts.find(acc => acc.id === accId);
+    if (!accToRemove) return;
+
+    if (accToRemove.isPrimary && bankAccounts.length > 1) {
+      toast("Please set another account as primary before deleting this one.", "warning");
+      return;
+    }
+
+    const updated = bankAccounts.filter(acc => acc.id !== accId);
+    setBankAccounts(updated);
+
+    // If we deleted the primary account and there is another account left, make the first one primary
+    if (accToRemove.isPrimary && updated.length > 0) {
+      updated[0].isPrimary = true;
+      setApiKeys((prev: any) => ({ ...prev, upiId: updated[0].upiId }));
+    } else if (updated.length === 0) {
+      setApiKeys((prev: any) => ({ ...prev, upiId: "" }));
+    }
+
+    toast("Bank account removed.", "info");
+  };
 
   const validateGST = (gst: string) => {
     const regex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
@@ -150,7 +267,7 @@ export default function Settings() {
       city: bizInfo.city,
       state: bizInfo.state,
       pincode: bizInfo.pincode,
-      settings: { ...business.settings, ...toggles, ...apiKeys }
+      settings: { ...business.settings, ...toggles, ...apiKeys, bankAccounts }
     };
 
     setPendingSaveData(dataToSave);
@@ -274,6 +391,7 @@ export default function Settings() {
     { key: "General", label: "Core Profile", icon: <Building2 size={18}/> },
     { key: "Notifications", label: "Signal Matrix", icon: <Bell size={18}/> },
     { key: "Security", label: "Vault Security", icon: <Shield size={18}/> },
+    { key: "Banking", label: "Banking & Settlement", icon: <Landmark size={18}/> },
     { key: "Integrations", label: "Neural Links", icon: <Share2 size={18}/> },
     { key: "Appearance", label: "Visual Engine", icon: <Palette size={18}/> },
     { key: "Billing", label: "Ledger Plan", icon: <CreditCard size={18}/> },
@@ -609,6 +727,151 @@ export default function Settings() {
                   </div>
                 </div>
               )}
+
+
+              {settingsTab === "Banking" && (
+                <div className="space-y-12">
+                  <div className="glass-card !p-12">
+                    <SectionHeader 
+                      title="Settlement Accounts & Banking Hub" 
+                      subtitle="Manage your connected commercial bank accounts, toggle settlement routing, and synchronize virtual payment IDs." 
+                    />
+                    
+                    {/* Bank Cards Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
+                      {bankAccounts.map((acc: any) => (
+                        <motion.div
+                          key={acc.id}
+                          className={`relative rounded-[2.5rem] p-8 overflow-hidden shadow-2xl flex flex-col justify-between min-h-[220px] transition-all border ${
+                            acc.isPrimary 
+                              ? 'bg-gradient-to-br from-emerald-600/95 via-teal-800/95 to-slate-900/95 border-emerald-500/30 shadow-emerald-950/20 text-white' 
+                              : 'bg-gradient-to-br from-slate-800/95 to-slate-950/95 border-white/10 text-slate-100'
+                          }`}
+                        >
+                          {/* Bank Icon & Label */}
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="flex items-center gap-3">
+                                <Landmark className={acc.isPrimary ? 'text-neon' : 'text-slate-400'} size={24} />
+                                <span className="font-black text-lg uppercase tracking-tight text-white">{acc.bankName}</span>
+                              </div>
+                              <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest block mt-1">{acc.accountType}</span>
+                            </div>
+                            {acc.isPrimary && (
+                              <span className="px-4 py-1.5 rounded-full bg-neon/20 border border-neon/30 text-neon font-black text-[9px] uppercase tracking-[0.2em] shadow-lg shadow-neon/10">
+                                ACTIVE ROUTING
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Account Details */}
+                          <div className="my-6 space-y-1.5">
+                            <div className="text-xl font-bold tracking-[0.2em] text-white/95 font-mono">
+                              {acc.accountNumber}
+                            </div>
+                            <div className="flex flex-wrap gap-x-6 gap-y-1 text-[10px] font-bold uppercase tracking-widest text-white/60">
+                              <div>IFSC: <span className="text-white">{acc.ifscCode}</span></div>
+                              <div>UPI: <span className="text-white">{acc.upiId}</span></div>
+                            </div>
+                          </div>
+
+                          {/* Card Holder & Actions */}
+                          <div className="flex justify-between items-center pt-4 border-t border-white/5">
+                            <div>
+                              <div className="text-[8px] font-bold text-white/40 uppercase tracking-[0.2em]">Account Holder</div>
+                              <div className="text-[11px] font-black text-white uppercase tracking-wider">{acc.accountHolder}</div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {!acc.isPrimary && (
+                                <button
+                                  onClick={() => handleSetPrimaryBank(acc.id)}
+                                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-neon hover:text-slate-950 font-black text-[9px] uppercase tracking-wider text-white transition-all flex items-center gap-1.5"
+                                >
+                                  <Check size={12} /> Set Active
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleRemoveBank(acc.id)}
+                                className="p-2.5 rounded-xl bg-red-600/10 text-red-400 hover:bg-red-600 hover:text-white transition-all"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Add New Bank Account Form */}
+                  <div className="glass-card !p-12">
+                    <SectionHeader 
+                      title="Link Commercial Account" 
+                      subtitle="Add a new business settlement account to route domestic checkout streams" 
+                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mt-12">
+                      <InputField 
+                        label="Bank / Institution Name" 
+                        value={newBank.bankName} 
+                        onChange={(e: any) => setNewBank({ ...newBank, bankName: e.target.value })} 
+                        placeholder="e.g. HDFC Bank" 
+                        icon={Building2} 
+                      />
+                      <InputField 
+                        label="Account Holder Legal Name" 
+                        value={newBank.accountHolder} 
+                        onChange={(e: any) => setNewBank({ ...newBank, accountHolder: e.target.value })} 
+                        placeholder="e.g. Vyapari Enterprise" 
+                        icon={Building2} 
+                      />
+                      <InputField 
+                        label="Account Number" 
+                        value={newBank.accountNumber} 
+                        onChange={(e: any) => setNewBank({ ...newBank, accountNumber: e.target.value })} 
+                        placeholder="12 to 16 digit number" 
+                        icon={CreditCard} 
+                      />
+                      <InputField 
+                        label="IFSC Code" 
+                        value={newBank.ifscCode} 
+                        onChange={(e: any) => setNewBank({ ...newBank, ifscCode: e.target.value })} 
+                        placeholder="e.g. HDFC0000123" 
+                        icon={Shield} 
+                      />
+                      <InputField 
+                        label="Instant UPI VPA Target" 
+                        value={newBank.upiId} 
+                        onChange={(e: any) => setNewBank({ ...newBank, upiId: e.target.value })} 
+                        placeholder="merchant@upi" 
+                        icon={Globe} 
+                      />
+                      
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 pl-1 block">Account Classification</label>
+                        <select 
+                          value={newBank.accountType}
+                          onChange={e => setNewBank({ ...newBank, accountType: e.target.value })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 font-bold text-sm outline-none focus:border-neon focus:ring-4 focus:ring-neon/10 transition-all appearance-none"
+                        >
+                          <option value="Current Account">CURRENT ACCOUNT (COMMERCIAL)</option>
+                          <option value="Savings Account">SAVINGS ACCOUNT (RETAIL)</option>
+                          <option value="Overdraft Account">OVERDRAFT ACCOUNT (OD)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="pt-10 mt-10 border-t border-slate-100 flex justify-end">
+                      <button
+                        onClick={handleAddBank}
+                        className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-neon hover:text-slate-950 transition-all flex items-center gap-2"
+                      >
+                        <Plus size={14} /> Link Account
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
 
               {settingsTab === "Integrations" && (
                 <div className="glass-card !p-12">

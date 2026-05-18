@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "../lib/supabase";
-import { lovable } from "../integrations/lovable";
 import { useToast } from "../components/common/Toast";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -60,14 +59,17 @@ const SignUp = () => {
 
   const onGoogle = async () => {
     setOauthLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (result.error) {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
+    
+    if (error) {
       setOauthLoading(false);
-      toast("Google sign-up failed", "error");
-      return;
+      toast(error.message, "error");
     }
-    if (result.redirected) return;
-    navigate("/");
   };
 
   return (

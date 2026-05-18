@@ -1,4 +1,4 @@
-﻿import { supabase } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 
 export interface SystemAlert {
   id: string;
@@ -23,6 +23,17 @@ export const systemAlertService = {
 
     if (error) throw error;
     return data as SystemAlert[];
+  },
+
+  createAlert: async (alert: Omit<SystemAlert, 'id' | 'created_at' | 'status'>) => {
+    const { data, error } = await supabase
+      .from('system_alerts')
+      .insert([alert])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as SystemAlert;
   },
 
   resolveAlert: async (alertId: string) => {

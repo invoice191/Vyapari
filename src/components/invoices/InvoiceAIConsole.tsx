@@ -22,6 +22,7 @@ interface Message {
   content?: string;
   widgetType?: string;
   widgetData?: any;
+  buttons?: { label: string; action: string }[];
   timestamp: Date;
 }
 
@@ -594,6 +595,362 @@ export default function InvoiceAIConsole(props: InvoiceAIConsoleProps) {
     setLoading(false);
   };
 
+  const getChatbotResponseV2 = (question: string, history: Message[]): { content: string; buttons?: { label: string; action: string }[] } => {
+    const queryLower = question.toLowerCase();
+    
+    // 1. GREETINGS & FRIENDLY CHAT
+    if (/^(hi|hello|hey|yo|g'day|good\s+morning|good\s+afternoon|good\s+evening|what's\s+up|sup)\b/i.test(queryLower)) {
+      return {
+        content: `👋 **Hello there! Welcome!**
+
+I am your friendly business assistant. How is your day going?
+
+I can make your daily business work much easier. Here is what I can do for you:
+
+* **📝 Easy Billing:** Say *"Draft a new bill"* or *"Match my payments"*.
+
+* **🛡️ Smart Safety:** Ask *"Is my money safe?"* or *"Explain fingerprint locks"*.
+
+* **🌐 Auto Syncing:** Ask *"How to send bills directly to other stores?"*.
+
+* **📊 Cash Forecasts:** Ask *"Show me cash flow plans"* or *"Predict late payers"*.
+
+What shall we look at first? Let me know in simple words!`,
+        buttons: [
+          { label: "📈 Cash Forecast", action: "Forecast cash flow" },
+          { label: "🛡️ Safety Lock", action: "Is my money safe" },
+          { label: "📝 Draft New Bill", action: "Draft a new bill" }
+        ]
+      };
+    }
+
+    // 2. GRATITUDE & POLITE REMARKS
+    if (/\b(thanks|thank you|awesome|perfect|great|cool|nice|wonderful|excellent|superb)\b/i.test(queryLower)) {
+      return {
+        content: `😊 **You are very welcome!**
+
+I am always happy to help you run a smooth, safe, and easy business.
+
+Would you like to try something else right now? I can:
+
+1. **Check for fake bills:** We can run a safety check on any bill.
+
+2. **Split big bills:** We can break a large bill into easy weekly or monthly parts.
+
+3. **Find tax savings:** We can check how much tax money we can save for you.
+
+Just type what you need!`,
+        buttons: [
+          { label: "🛡️ Run Fraud Audit", action: "Verify transaction safety" },
+          { label: "⚡ Split Large Bill", action: "Split large bills" },
+          { label: "🧮 GST Tax Savings", action: "Optimize GST" }
+        ]
+      };
+    }
+
+    // 3. IDENTITY & CAPABILITIES
+    if (/\b(who are you|what is your name|your purpose|what do you do|how do you work|tell me about yourself)\b/i.test(queryLower)) {
+      return {
+        content: `🤖 **Meet Vyapari — Your Smart Business Copilot!**
+
+I am built directly into your dashboard to handle the boring and hard parts of your business:
+
+* **Direct Syncing (The Mesh):** I send bills directly from your screen to your buyer's screen. No more manual typing.
+
+* **Quick Cash (Liquid Invoices):** I create small discount offers to make buyers pay you much faster.
+
+* **Payer Warning:** I check your buyer's past habits to tell you if they might pay you late.
+
+* **Face & Fingerprint Locks:** I keep your money completely safe. I ask for physical touch approval for large cash releases.
+
+Feel free to ask me anything about your bills, taxes, or safety!`,
+        buttons: [
+          { label: "🌐 Open Mesh Inbox", action: "Mesh Sync" },
+          { label: "⚡ Early Discounts", action: "Early settlement deals" },
+          { label: "🛡️ Biometric Locks", action: "Explain WebAuthn" }
+        ]
+      };
+    }
+
+    // 4. CONVERSATIONAL CONTINUITY LOOKBACK (Follow-ups like "tell me more" or "explain further")
+    if (/\b(tell me more|explain more|elaborate|how to use|how do i|more details|explain further)\b/i.test(queryLower)) {
+      const lastAIMsg = [...history].reverse().find(m => m.role === 'ai' && m.type === 'text');
+      
+      if (lastAIMsg && lastAIMsg.content) {
+        const lastContent = lastAIMsg.content.toLowerCase();
+        
+        if (lastContent.includes('mesh') || lastContent.includes('sync')) {
+          return {
+            content: `🌐 **How to send bills directly to other stores:**
+
+It is very easy to use! Just follow these three simple steps:
+
+1. **Add your partner:** Connect with other business owners using their store ID.
+
+2. **Send in one click:** When making a bill, select "Send via Mesh". It flies straight to their screen instantly.
+
+3. **Easy approval:** The other store opens their "Mesh Inbox", reviews the details, and clicks "Accept". No typing needed!`,
+            buttons: [
+              { label: "🌐 Visit Mesh Inbox", action: "Mesh Inbox" },
+              { label: "🧮 Hold Tax Escrow", action: "Hold Tax Escrow" }
+            ]
+          };
+        }
+        if (lastContent.includes('webauthn') || lastContent.includes('security') || lastContent.includes('safe') || lastContent.includes('lock')) {
+          return {
+            content: `🛡️ **How to lock your account with Face or Fingerprint:**
+
+You can lock big actions with your physical face or fingerprint:
+
+1. Go to your **Profile and Security settings** in the sidebar.
+
+2. Click **"Register Security Key"** or **"Setup Face/Fingerprint Lock"**.
+
+3. Turn on the lock rule. Now, the system will ask for your touch before releasing any payments over Rs. 50,000.`,
+            buttons: [
+              { label: "🛡️ Fraud Guard Check", action: "Fraud Guard" },
+              { label: "🔑 Account Security", action: "Security Sentry" }
+            ]
+          };
+        }
+        if (lastContent.includes('discount') || lastContent.includes('liquid') || lastContent.includes('installment')) {
+          return {
+            content: `⚡ **How to get paid faster:**
+
+You can use two great ways to make sure you never run out of money:
+
+* **Early Payment Discounts:** Give your clients a small discount (like 1.5% to 3% off) if they pay you within a week.
+
+* **Easy Monthly Splitting:** If a customer does not have full cash, split their bill into 4 weekly payments. We will remind them on WhatsApp automatically!`,
+            buttons: [
+              { label: "⚡ Early Offer", action: "Early payment offer" },
+              { label: "⚡ Instalments", action: "Installment options" }
+            ]
+          };
+        }
+        if (lastContent.includes('tax') || lastContent.includes('gst') || lastContent.includes('compliance')) {
+          return {
+            content: `🧮 **How Tax Escrow works in simple terms:**
+
+This feature makes sure you never lose tax credit:
+
+* When a partner sends you a bill, click **"Hold Tax Escrow"** when you accept it.
+
+* You pay them the base money, but you hold back the tax part (like 18%) safely in your ledger.
+
+* When they pay their government tax, our system sees it and releases the held tax money to their bank account automatically!`,
+            buttons: [
+              { label: "🧮 Tax Savvy Audit", action: "Tax Savvy GST" },
+              { label: "🌐 Mesh Sync Details", action: "Mesh sync protocol" }
+            ]
+          };
+        }
+      }
+      
+      return {
+        content: `💡 **Quick guide to chatting with me:**
+
+You can ask me to run tools or just ask simple business questions:
+
+1. **To run a tool:** Select an invoice on the left, then say *"Show forecast"* or *"Predict late payers"*.
+
+2. **To learn concepts:** Ask *"How do I split a bill?"* or *"What is a tax escrow?"*.
+
+3. **To take action:** Say *"Write a reminder"* or *"Draft an invoice"*!`,
+        buttons: [
+          { label: "📈 Cash Forecast", action: "Forecast cash flow" },
+          { label: "📝 Draft Invoice", action: "Draft cement bill" }
+        ]
+      };
+    }
+
+    // 5. TOPIC SEARCH AND INTENT CATEGORIES
+
+    // Security / Fraud / Sentry
+    if (/\b(security|safe|fraud|scam|hack|webauthn|biometric|fingerprint|faceid|sentry|protect|encrypt)\b/i.test(queryLower)) {
+      return {
+        content: `🛡️ **Vyapari Safety & Fraud Shield**
+
+We keep your business completely safe. Here are the three ways we guard your money:
+
+1. **Face & Fingerprint Locks:**
+   Whenever you transfer money or accept big deals, you must touch your screen or show your face. Password theft cannot hurt you.
+
+2. **Automatic Scam Detection:**
+   We check incoming bills instantly. We warn you if someone is billing you twice or changed their bank details.
+
+3. **Safe Invoices:**
+   Every single invoice is locked with a unique digital stamp so no one can fake it.
+
+💡 *Tip: Run a 'Fraud Guard' check to analyze if a new bill is 100% safe!*`,
+        buttons: [
+          { label: "🛡️ Run Fraud Guard", action: "Fraud Guard" },
+          { label: "🛡️ Biometric WebAuthn", action: "Explain fingerprint lock" }
+        ]
+      };
+    }
+
+    // Mesh Sync Protocol
+    if (/\b(mesh|sync|peer|zero entry|zero-entry|inbox|incoming|transfer|network|channel)\b/i.test(queryLower)) {
+      return {
+        content: `🌐 **The Mesh: Direct Store-to-Store Sync**
+
+This is our direct connection system. It links your shop's ledger with your suppliers and buyers:
+
+* **Instant Delivery:** The moment a supplier makes a bill, it lands directly in your **Mesh Inbox** as a draft.
+
+* **No Typing:** You do not need to scan papers or type the bill. Just review the screen and click "Accept".
+
+* **Smart Options:** If some goods are broken, you can accept just a part of the bill and let the supplier know in one click.
+
+💡 *Tip: Open your Mesh Inbox from the menu to see incoming bills from verified partners!*`,
+        buttons: [
+          { label: "🌐 Open Mesh Inbox", action: "Mesh Inbox" },
+          { label: "🧮 Hold Tax Escrow", action: "Tax Escrow" }
+        ]
+      };
+    }
+
+    // Liquid Invoice / Early Settlement
+    if (/\b(liquid|early|settle|discount|receivable|factor|installment|part pay|installments|split|offer)\b/i.test(queryLower)) {
+      return {
+        content: `⚡ **Liquid Invoice: Get Paid Faster**
+
+Never run out of cash. Use these three easy methods to keep money flowing in:
+
+1. **Early Pay Discounts:**
+   Offer a small reward (like 1.5% to 3% off) to buyers if they clear their outstanding bills within 7 days.
+
+2. **Easy Splits:**
+   Break a big, heavy bill into easy weekly or monthly payment plans so your buyers can pay comfortably.
+
+3. **WhatsApp Reminders:**
+   Let our assistant send polite automated WhatsApp messages to nudge late payers.
+
+💡 *Tip: Select any invoice and click 'Early Offer' or 'Instalments' to create quick payment plans!*`,
+        buttons: [
+          { label: "⚡ Early Offer", action: "Early Offer" },
+          { label: "⚡ Instalments", action: "Instalments" }
+        ]
+      };
+    }
+
+    // GST & Taxes
+    if (/\b(tax|gst|compliance|itc|input tax|savings|optimize)\b/i.test(queryLower)) {
+      return {
+        content: `🧮 **Tax Savvy: Simple Tax Savings**
+
+We make saving tax money and filing GST simple and stress-free:
+
+* **Tax Credit Guard:**
+  We check if your suppliers are filing their taxes on time. If they are late, we warn you so you do not lose your tax credit.
+
+* **Safe Tax Holding:**
+  You can hold back the tax amount (like 18%) safely in escrow. It will be sent to the supplier only after they file their government taxes.
+
+* **Filings Tips:**
+  We look at your past bills to show you simple tax-saving tricks.
+
+💡 *Tip: Click 'Tax Savvy' in your AI Library on the right to run an automated tax audit!*`,
+        buttons: [
+          { label: "🧮 Optimize Taxes", action: "Tax Savvy" },
+          { label: "🌐 Mesh Sync Details", action: "Mesh peer sync" }
+        ]
+      };
+    }
+
+    // VANI voice assistant
+    if (/\b(vani|voice|speech|assistant|jarvis|dictate|command|nlp|executor|ai helper)\b/i.test(queryLower)) {
+      return {
+        content: `🎙️ **VANI: Talk to Your Dashboard**
+
+VANI is your voice assistant. You can speak simple commands to run your business hands-free:
+
+* **Create Bills by Voice:**
+  Just say: *"VANI, make an invoice for Rajesh for 10 cement bags."*
+
+* **Smart Chain Commands:**
+  Tell it: *"Check Rajesh's bill for scams, and then send him a reminder on WhatsApp."*
+
+* **Spoken Alerts:**
+  VANI talks to you proactively if your bank cash is low or if a customer is late on their payments.`,
+        buttons: [
+          { label: "🎙️ Speak to VANI", action: "VANI assistant" }
+        ]
+      };
+    }
+
+    // Cash flow forecast / Predictive dispute / Conflict AI
+    if (/\b(forecast|future|cashflow|projection|runway|liquidity|risk|dispute|conflict|predict)\b/i.test(queryLower)) {
+      return {
+        content: `📈 **Simple Cash Forecasting & Safety Warnings**
+
+Our assistant acts early to keep your money healthy and safe:
+
+* **30-Day Cash Plan:**
+  We show you how much money will come into your business and go out over the next month.
+
+* **Late Payer Alert:**
+  We study past payment dates to tell you which customer has a high chance of paying you late.
+
+* **Conflict Guard:**
+  We warn you about possible pricing disputes before you send out bills.
+
+💡 *Tip: Select an active invoice and click 'Forecast' to see your future cash timeline!*`,
+        buttons: [
+          { label: "📈 Cash Forecast", action: "Forecast" },
+          { label: "📉 Payment Risk", action: "Payment Risk" }
+        ]
+      };
+    }
+
+    // Invoicing & Bills drafting
+    if (/\b(invoice|bill|draft|create|make|write|list|history|pdf|print|receipt)\b/i.test(queryLower)) {
+      return {
+        content: `📝 **Simple Bill & Invoice Drafting**
+
+We make managing corporate bills simple and elegant:
+
+* **AI Bill Drafts:**
+  Just type a quick rough sentence (like *"bill rajesh 10 cement bags"*). We will draft a beautiful itemized bill with automatic tax math!
+
+* **Beautiful PDF Receipts:**
+  Print premium invoice papers and receipts with your shop details and security stamps with one click.
+
+* **Mesh Delivery:**
+  Deliver invoices directly to the other store's computer ledger. No paper, no email, no shipping!
+
+💡 *Tip: Select a customer and try 'AI Draft' or print a payment receipt!*`,
+        buttons: [
+          { label: "📝 AI Invoice Draft", action: "AI Draft" },
+          { label: "🧾 Match Payment", action: "Match Payment" }
+        ]
+      };
+    }
+
+    // General fallback
+    return {
+      content: `💡 **Vyapari Conversational CFO**
+
+Hello! I am your simple business assistant. I can explain any feature in very easy words:
+
+* **Invoicing:** Ask *"How do I write bills?"* or *"How to print a receipt?"*
+
+* **Direct Sync:** Ask *"What is Mesh peer sync?"* or *"Explain Mesh Inbox"*
+
+* **Account Lock:** Ask *"How to lock with fingerprints?"* or *"Is my money safe?"*
+
+* **Cash Flows:** Ask *"How to get paid faster?"* or *"Explain split bills"*
+
+*Type your question below, or select an invoice on the left to start a visual tool!*`,
+      buttons: [
+        { label: "📈 Cash Forecast", action: "Forecast cash flow" },
+        { label: "🛡️ Safety Lock", action: "Is my money safe" },
+        { label: "📝 Draft Invoice", action: "Draft cement bill" }
+      ]
+    };
+  };
+
   const handleQuerySubmit = async (e?: React.FormEvent, overrideQuery?: string) => {
     e?.preventDefault();
     const finalQuery = overrideQuery || query;
@@ -632,13 +989,15 @@ export default function InvoiceAIConsole(props: InvoiceAIConsoleProps) {
       }
     }
 
-    if (detectedId) {
+    const isQuestion = /^(how|what|why|explain|is|can|will|should|tell|who|thanks|thank|hello|hi|hey|yo)\b/i.test(q) || selectedTargets.length === 0;
+
+    if (detectedId && !isQuestion) {
       runCapability(detectedId, userQ);
     } else {
-      // Default to general chat if no intent detected
       setLoading(true);
       await new Promise(r => setTimeout(r, 800));
-      addMessage({ role: 'ai', type: 'text', content: "I'm not quite sure what you need. Should I check 'payment risks', help with 'GST tips', or 'send a reminder' to someone? Tell me in simple words!" });
+      const chatbotResult = getChatbotResponseV2(userQ, messages);
+      addMessage({ role: 'ai', type: 'text', content: chatbotResult.content, buttons: chatbotResult.buttons });
       setLoading(false);
     }
   };
@@ -659,7 +1018,7 @@ export default function InvoiceAIConsole(props: InvoiceAIConsoleProps) {
   ];
 
   return (
-    <div className="flex flex-col lg:flex-row h-[800px] bg-slate-50 rounded-[3rem] shadow-2xl border border-slate-200 overflow-hidden font-sans relative">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-140px)] min-h-[600px] bg-slate-50 rounded-[3rem] shadow-2xl border border-slate-200 overflow-hidden font-sans relative">
       
       {/* 1. LEFT PANEL: INSIGHT RADAR */}
       <div className="lg:w-[320px] bg-white border-r border-slate-200 flex flex-col z-10">
@@ -781,6 +1140,7 @@ export default function InvoiceAIConsole(props: InvoiceAIConsoleProps) {
                     </div>
 
                     {msg.type === 'text' ? (
+                       <>
                        <div className={`p-5 rounded-3xl text-sm leading-relaxed shadow-sm border ${
                           msg.role === 'user' 
                              ? 'bg-indigo-600 text-white border-indigo-500 rounded-tr-sm' 
@@ -788,6 +1148,21 @@ export default function InvoiceAIConsole(props: InvoiceAIConsoleProps) {
                        }`}>
                           {msg.content}
                        </div>
+                       {msg.buttons && msg.buttons.length > 0 && (
+                          <div className="flex flex-wrap gap-2.5 mt-3 px-1">
+                             {msg.buttons.map((btn, bidx) => (
+                                <button
+                                   key={bidx}
+                                   onClick={() => handleQuerySubmit(undefined, btn.action)}
+                                   className="px-4 py-2 bg-white hover:bg-indigo-600 border border-slate-200 hover:border-indigo-600 text-slate-700 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 shadow-sm active:scale-95 flex items-center gap-1.5"
+                                >
+                                   <Sparkles size={11} className="text-indigo-500 hover:text-white animate-pulse" />
+                                   {btn.label}
+                                </button>
+                             ))}
+                          </div>
+                       )}
+                    </>
                     ) : (
                        <div className="mt-2 scale-95 origin-top-left">
                           <WidgetRenderer type={msg.widgetType!} data={msg.widgetData} onAction={handleAction} />

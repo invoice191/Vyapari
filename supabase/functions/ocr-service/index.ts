@@ -20,8 +20,10 @@ serve(async (req) => {
     const { image, imageBase64, mimeType, businessId } = body;
     const imageData = image || imageBase64;
 
-    if (!GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY is not configured in Supabase Secrets.");
+    // Multi-tier Credential Fallback (Project Secret -> Client Injection -> VITE_ Fallback)
+    const apiKey = Deno.env.get("GEMINI_API_KEY") || body.apiKey || Deno.env.get("VITE_GEMINI_API_KEY");
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not configured in Supabase Secrets and no client key was provided.");
     }
 
     if (!imageData) {
@@ -40,9 +42,10 @@ serve(async (req) => {
       4. TAXATION: Identify GST breakdown (CGST, SGST, IGST) per line item or total.
       5. VALIDATION: Ensure individual item totals match (Qty * Price).
       6. CONFIDENCE: Provide a per-field confidence score (0.0 to 1.0).
+      Return JSON only matching the requested schema.
     `;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     
     let result;
     let attempts = 0;
@@ -234,13 +237,15 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (error) {
-    console.error("[OCR-Service Error]:", error);
-    const isQuota = error.message?.includes("429") || error.message?.includes("Quota");
-    return new Response(JSON.stringify({ error: error.message, isQuota }), {
+  } catch (error: any) {
+    console.error("[OCR] Critical Error:", error);
+    return new Response(JSON.stringify({ 
+      error: error.message, 
+      type: error.name,
+      hint: "Check GEMINI_API_KEY in Supabase Project Secrets" 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: isQuota ? 429 : 400,
+      status: 400,
     });
   }
 });
-

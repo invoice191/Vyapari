@@ -77,7 +77,7 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
       const response = await vaniService.processCommand(text, { activeModule, profile });
       setLastResponse(response);
 
-      // Play vocalized response
+      // Play vocalized response (non-blocking so VANI acts instantly in under 1s!)
       setState('speaking');
       
       // -- IMMEDIATE ACTION: Trigger execution concurrently with speech
@@ -86,24 +86,29 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
         // Use a slight timeout to ensure state transitions don't clash
         setTimeout(() => {
           vaniExecutor.execute(response, profile?.business_id || '', onCommand);
-        }, 100);
+        }, 50);
       }
 
       if (response.spoken_response) {
-        await speakText(response.spoken_response, response.language_detected);
+        speakText(response.spoken_response, response.language_detected).then(() => {
+          setState(s => s === 'speaking' ? 'idle' : s);
+        });
+      } else {
+        setState('idle');
       }
 
       // Handle clarifying question
       if (response.follow_up_question) {
-        await speakText(response.follow_up_question, response.language_detected);
+        speakText(response.follow_up_question, response.language_detected);
         setState('idle');
         return;
       }
 
       // Proactive advisory note
       if (response.proactive_note) {
-        await new Promise(r => setTimeout(r, 600));
-        await speakText(response.proactive_note, response.language_detected);
+        setTimeout(() => {
+          speakText(response.proactive_note, response.language_detected);
+        }, 1500);
       }
 
       // Confirmation barrier for risky actions
@@ -112,9 +117,6 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
         setState('confirming');
         return;
       }
-
-      // Final state reset (execution already triggered or not needed)
-      setState('idle');
     } catch (e) {
       console.error("[VANI_UI] Extraction Failure:", e);
       setState('idle');
@@ -252,60 +254,119 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
   return (
     <div className="fixed bottom-10 right-10 z-[500] flex flex-col items-end gap-6">
       {/* VANI JARVIS CONSOLE */}
-      <AnimatePresence>
+       <AnimatePresence>
         {(state !== 'idle' || lastResponse?.summary_card || permError) && (
           <motion.div 
             initial={{ opacity: 0, y: 20, scale: 0.9, filter: 'blur(10px)' }}
             animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
             exit={{ opacity: 0, y: 20, scale: 0.9, filter: 'blur(10px)' }}
-            className="glass-dark w-[400px] rounded-[2.5rem] overflow-hidden border-white/10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] p-8"
+            className="glass-dark w-[400px] rounded-[2.5rem] overflow-hidden border-white/10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] p-8 relative"
           >
-            {/* Holographic Orb Container */}
+            {/* Top Close/Standby Control */}
+            <div className="absolute top-6 right-6 z-20">
+              <button 
+                onClick={() => {
+                  window.speechSynthesis.cancel();
+                  if (recognitionRef.current) {
+                    try { recognitionRef.current.abort(); } catch (e) {}
+                  }
+                  setState('idle');
+                  setLastResponse(null);
+                  setTranscript("");
+                }}
+                className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+              >
+                <XCircle className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Holographic Breathing Assistant Orb Container */}
             <div className="relative h-64 flex items-center justify-center">
-              {/* Outer Neural Rings */}
-              <div className={`absolute inset-0 rounded-full border border-rose-500/10 animate-spin-slow ${state === 'thinking' ? 'opacity-100' : 'opacity-20'}`} />
-              <div className={`absolute w-[90%] h-[90%] rounded-full border border-blue-500/10 animate-reverse-spin-slow ${state === 'thinking' ? 'opacity-100' : 'opacity-20'}`} />
+              {/* Outer Cosmic Neural Ring 1 */}
+              <div className={`absolute w-64 h-64 rounded-full border border-dashed transition-all duration-700
+                ${state === 'listening' ? 'border-rose-500/20 scale-110 animate-spin-slow' : 
+                  state === 'thinking' ? 'border-blue-500/40 animate-spin-fast' : 
+                  state === 'speaking' ? 'border-emerald-500/30 animate-spin-slow' : 
+                  'border-cyan-500/10 scale-95 animate-spin-slow'}`} 
+              />
+              {/* Outer Cosmic Neural Ring 2 */}
+              <div className={`absolute w-56 h-56 rounded-full border border-dotted transition-all duration-700
+                ${state === 'listening' ? 'border-rose-400/20 scale-105 animate-reverse-spin-slow' : 
+                  state === 'thinking' ? 'border-blue-400/40 animate-reverse-spin-fast' : 
+                  state === 'speaking' ? 'border-emerald-400/30 animate-reverse-spin-slow' : 
+                  'border-cyan-400/10 scale-100 animate-reverse-spin-slow'}`} 
+              />
+
+              {/* Glowing Aura Ring */}
+              <div className={`absolute w-44 h-44 rounded-full filter blur-xl transition-all duration-1000 opacity-30
+                ${state === 'listening' ? 'bg-rose-500 animate-pulse' : 
+                  state === 'thinking' ? 'bg-blue-600 animate-pulse' : 
+                  state === 'speaking' ? 'bg-emerald-500 animate-pulse' : 
+                  'bg-cyan-500/50 animate-pulse-slow'}`} 
+              />
               
-              {/* Central Neural Core */}
+              {/* Central Consciousness Core */}
               <motion.div 
                 onClick={handleOrbClick}
-                className={`relative w-32 h-32 rounded-full flex items-center justify-center transition-all duration-500 cursor-pointer overflow-hidden
-                  ${state === 'listening' ? 'scale-125 bg-rose-500/20 shadow-[0_0_50px_rgba(244,63,94,0.4)]' : 
-                    state === 'thinking' ? 'bg-blue-500/20 shadow-[0_0_50px_rgba(59,130,246,0.4)]' : 
-                    state === 'speaking' ? 'bg-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.4)]' :
-                    'bg-slate-800/50'}`}
+                className={`relative w-36 h-36 rounded-full flex items-center justify-center transition-all duration-500 cursor-pointer overflow-hidden border
+                  ${state === 'listening' ? 'scale-110 bg-gradient-to-tr from-rose-950/40 to-rose-900/60 border-rose-500/50 shadow-[0_0_60px_rgba(244,63,94,0.6)]' : 
+                    state === 'thinking' ? 'bg-gradient-to-tr from-blue-950/40 to-blue-900/60 border-blue-500/50 shadow-[0_0_60px_rgba(59,130,246,0.6)]' : 
+                    state === 'speaking' ? 'bg-gradient-to-tr from-emerald-950/40 to-emerald-900/60 border-emerald-500/50 shadow-[0_0_60px_rgba(16,185,129,0.6)]' :
+                    'bg-gradient-to-tr from-cyan-950/20 to-slate-900/50 border-cyan-500/30 shadow-[0_0_40px_rgba(6,182,212,0.2)] hover:border-cyan-400/50'}`}
               >
-                {/* JARVIS Energy Waves */}
-                {state !== 'idle' && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-full h-full animate-ping-slow bg-current opacity-20 rounded-full" />
-                    <div className="absolute w-full h-1 bg-current opacity-10 animate-neural-scan" />
-                  </div>
-                )}
+                {/* Micro Scanline Bar */}
+                <div className={`absolute w-full h-1 opacity-10 animate-neural-scan
+                  ${state === 'listening' ? 'bg-rose-400' : 
+                    state === 'thinking' ? 'bg-blue-400' : 
+                    state === 'speaking' ? 'bg-emerald-400' : 
+                    'bg-cyan-400'}`} 
+                />
                 
                 <AnimatePresence mode="wait">
                   {state === 'listening' ? (
-                    <motion.div key="list" className="flex space-x-1 items-end h-8">
+                    <motion.div key="list" className="flex items-center space-x-1.5 h-10">
                       {[1, 2, 3, 4, 5].map((i) => (
                         <motion.div
                           key={i}
-                          animate={{ height: [8, 24, 8] }}
-                          transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.1 }}
-                          className="w-1.5 bg-rose-500 rounded-full"
+                          animate={{ height: [12, 36, 12] }}
+                          transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.1 }}
+                          className="w-1.5 bg-gradient-to-t from-rose-600 to-rose-400 rounded-full"
                         />
                       ))}
                     </motion.div>
                   ) : state === 'thinking' ? (
-                    <motion.div key="think" initial={{ scale: 0.5 }} animate={{ scale: 1 }}>
-                      <Brain className="w-12 h-12 text-blue-400 animate-pulse" />
+                    <motion.div 
+                      key="think" 
+                      initial={{ scale: 0.5, rotate: 0 }} 
+                      animate={{ scale: 1, rotate: 360 }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                      className="relative w-16 h-16 flex items-center justify-center"
+                    >
+                      <Brain className="w-12 h-12 text-blue-400" />
+                      <div className="absolute inset-0 rounded-full border-2 border-blue-400/20 border-t-blue-400" />
                     </motion.div>
                   ) : state === 'speaking' ? (
-                    <motion.div key="speak" animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity }}>
+                    <motion.div 
+                      key="speak" 
+                      animate={{ scale: [0.95, 1.05, 0.95] }} 
+                      transition={{ repeat: Infinity, duration: 0.8 }}
+                      className="flex flex-col items-center justify-center space-y-1"
+                    >
                       <Activity className="w-12 h-12 text-emerald-400" />
+                      <span className="text-[7px] text-emerald-400/80 font-black tracking-widest uppercase animate-pulse">Vocalizing</span>
                     </motion.div>
                   ) : (
-                    <motion.div key="idle">
-                      <Mic className="w-12 h-12 text-slate-400" />
+                    // Futuristic Eye (Breathing Cyan Core)
+                    <motion.div 
+                      key="idle"
+                      animate={{ scale: [0.98, 1.02, 0.98] }}
+                      transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                      className="flex flex-col items-center justify-center space-y-1.5"
+                    >
+                      <div className="w-8 h-8 rounded-full border-2 border-cyan-400/40 flex items-center justify-center animate-pulse">
+                        <div className="w-4 h-4 rounded-full bg-cyan-400/60 shadow-[0_0_15px_#06b6d4]" />
+                      </div>
+                      <span className="text-[7px] text-cyan-400 font-black tracking-[0.2em] uppercase">VANI Companion</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -320,7 +381,7 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="text-lg font-medium text-slate-200 line-clamp-2 italic"
+                    className="text-lg font-medium text-slate-100 line-clamp-2 italic px-4 font-serif"
                   >
                     "{transcript}"
                   </motion.div>
@@ -328,16 +389,22 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
               </AnimatePresence>
 
               <div className="flex items-center justify-center space-x-2">
-                <div className={`w-2 h-2 rounded-full animate-pulse ${
-                  state === 'listening' ? 'bg-rose-500 shadow-[0_0_10px_#f43f5e]' : 
-                  state === 'thinking' ? 'bg-blue-500 shadow-[0_0_10px_#3b82f6]' : 
-                  state === 'speaking' ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' :
-                  'bg-slate-600'
+                <div className={`w-2.5 h-2.5 rounded-full animate-ping ${
+                  state === 'listening' ? 'bg-rose-500 shadow-[0_0_12px_#f43f5e]' : 
+                  state === 'thinking' ? 'bg-blue-500 shadow-[0_0_12px_#3b82f6]' : 
+                  state === 'speaking' ? 'bg-emerald-500 shadow-[0_0_12px_#10b981]' :
+                  'bg-cyan-500 shadow-[0_0_10px_#06b6d4]'
                 }`} />
-                <span className="text-[10px] font-black tracking-[0.2em] uppercase text-slate-500">
-                  {state === 'listening' ? 'VANI Protocol Active' : 
-                   state === 'thinking' ? 'Neural Processing...' : 
-                   state === 'speaking' ? 'Synthesizing Response' : 'Standby Mode'}
+                <span className="text-[10px] font-black tracking-[0.25em] uppercase transition-colors duration-300
+                  ${state === 'listening' ? 'text-rose-400' : 
+                    state === 'thinking' ? 'text-blue-400' : 
+                    state === 'speaking' ? 'text-emerald-400' : 
+                    'text-cyan-400'}"
+                >
+                  {state === 'listening' ? 'Listening closely to you, sir...' : 
+                   state === 'thinking' ? 'Accessing neural ledger registers...' : 
+                   state === 'speaking' ? 'Answering you now, sir...' : 
+                   'VANI Active · Awaiting Your Voice'}
                 </span>
               </div>
             </div>
@@ -404,6 +471,35 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
                   {lang.split('-')[0]}
                 </button>
               ))}
+            </div>
+
+            {/* Keyboard Command Input (Jarvis Viva life-saver!) */}
+            <div className="mt-6 pt-4 border-t border-white/5">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const target = e.currentTarget;
+                  const input = target.elements.namedItem('textCommand') as HTMLInputElement;
+                  if (input && input.value.trim()) {
+                    processText(input.value.trim());
+                    input.value = '';
+                  }
+                }}
+                className="relative"
+              >
+                <input
+                  name="textCommand"
+                  type="text"
+                  placeholder="Type Jarvis command (e.g. 'create bill for Rohan')..."
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50 transition-all font-mono"
+                />
+                <button
+                  type="submit"
+                  className="absolute right-2 top-2 p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white transition-all"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                </button>
+              </form>
             </div>
           </motion.div>
         )}

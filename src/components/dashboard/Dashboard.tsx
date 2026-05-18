@@ -20,6 +20,7 @@ import { useCLV } from "../../hooks/useCLV";
 import { useCashflowForecast } from "../../hooks/useCashflowForecast";
 import { AlertTriangle, TrendingUp, Sparkles, Send, Bell, RefreshCw, X, Filter, Globe, Zap, ArrowUpRight, Target } from "lucide-react";
 import { FESTIVAL_CALENDAR, CATEGORY_STRATEGY_MAP } from "../../lib/constants";
+import { toast } from "../common/Toast";
 
 function LiveClock() {
   const [time, setTime] = useState(new Date());
@@ -78,6 +79,93 @@ export default function Dashboard() {
   const [isFiltering, setIsFiltering] = useState(false);
   const [showPulseAudit, setShowPulseAudit] = useState(false);
   const [selectedAuditProduct, setSelectedAuditProduct] = useState<any>(null);
+  const [pulseRefreshing, setPulseRefreshing] = useState(false);
+
+  const handleRefreshPulse = async () => {
+    setPulseRefreshing(true);
+    toast.info("Re-evaluating supply chain anomalies and weather-risk offsets...", "Pulse Engine");
+    try {
+      await Promise.all([
+        fetchTier1(),
+        fetchTier2()
+      ]);
+      if (inventory.length > 0 && sales.length > 0) {
+        await fetchTier3(inventory, sales, true);
+      }
+      toast.success("Monsoon Arrival strategy command matrices refreshed.", "Sync Successful");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to sync monsoon strategy telemetry.", "Sync Failure");
+    } finally {
+      setPulseRefreshing(false);
+    }
+  };
+
+  const chartData = useMemo(() => {
+    const isFiltered = selectedProducts.length > 0 || dateRange.start || dateRange.end;
+    
+    if (isFiltered) {
+      const trendMap: Record<string, number> = {};
+      (filteredSalesTrend || []).forEach(d => {
+        if (!d.date) return;
+        trendMap[d.date] = (trendMap[d.date] || 0) + Number(d.revenue || 0);
+      });
+
+      return Object.entries(trendMap)
+        .map(([date, revenue]) => ({
+          date,
+          revenue,
+          prev: revenue * 0.9,
+          target: revenue * 1.1
+        }))
+        .sort((a, b) => {
+          const parseDate = (dStr: string) => {
+            if (dStr === 'Unknown') return 0;
+            const parts = dStr.split('/');
+            if (parts.length === 3) {
+              const day = parseInt(parts[0]);
+              const month = parseInt(parts[1]) - 1;
+              const year = parseInt(parts[2]);
+              const testD = new Date(year, month, day);
+              if (!isNaN(testD.getTime())) return testD.getTime();
+            }
+            const d = new Date(dStr);
+            return isNaN(d.getTime()) ? 0 : d.getTime();
+          };
+          return parseDate(a.date) - parseDate(b.date);
+        });
+    } else {
+      const grouped: Record<string, number> = {};
+      (sales || []).forEach(s => {
+        const dateStr = s.created_at ? new Date(s.created_at).toLocaleDateString() : 'Unknown';
+        grouped[dateStr] = (grouped[dateStr] || 0) + Number(s.total_amount || s.amount || 0);
+      });
+      
+      return Object.entries(grouped)
+        .map(([date, revenue]) => ({
+          date,
+          revenue,
+          prev: revenue * 0.9,
+          target: revenue * 1.1
+        }))
+        .sort((a, b) => {
+          const parseDate = (dStr: string) => {
+            if (dStr === 'Unknown') return 0;
+            const parts = dStr.split('/');
+            if (parts.length === 3) {
+              const day = parseInt(parts[0]);
+              const month = parseInt(parts[1]) - 1;
+              const year = parseInt(parts[2]);
+              const testD = new Date(year, month, day);
+              if (!isNaN(testD.getTime())) return testD.getTime();
+            }
+            const d = new Date(dStr);
+            return isNaN(d.getTime()) ? 0 : d.getTime();
+          };
+          return parseDate(a.date) - parseDate(b.date);
+        });
+    }
+  }, [selectedProducts, dateRange, filteredSalesTrend, sales]);
 
   // Real-time Money In/Out calculations from ledger
   const moneyIn = (ledger || []).filter(e => e?.type === 'credit').reduce((a, b) => a + (Number(b?.amount) || 0), 0);
@@ -139,9 +227,9 @@ export default function Dashboard() {
     }
   };
 
-  const fetchTier3 = async (invData: any[], salesData: any[]) => {
-    if (!profile?.business_id || fetchLock.current) return;
-    fetchLock.current = true;
+  const fetchTier3 = async (invData: any[], salesData: any[], force = false) => {
+    if (!profile?.business_id || (fetchLock.current && !force)) return;
+    if (!force) fetchLock.current = true;
     setTier3Loading(true);
     setTier3Error(false);
     try {
@@ -166,12 +254,18 @@ export default function Dashboard() {
       fetchLock.current = false;
       
       // Fetch pending reconciliations
-      supabase.from('reconciliation_attempts')
-        .select('*, ledger_entries(description, amount), invoices(invoice_number)')
-        .eq('business_id', profile.business_id)
-        .eq('status', 'pending')
-        .then(({ data }) => setPendingReconciliations(data || []))
-        .catch(err => console.error("Error fetching reconciliation attempts:", err));
+      const fetchReconciliations = async () => {
+        try {
+          const { data } = await supabase.from('reconciliation_attempts')
+            .select('*, ledger_entries(description, amount), invoices(invoice_number)')
+            .eq('business_id', profile.business_id)
+            .eq('status', 'pending');
+          setPendingReconciliations(data || []);
+        } catch (err) {
+          console.error("Error fetching reconciliation attempts:", err);
+        }
+      };
+      fetchReconciliations();
     }
   }, [profile?.business_id, invoices, products, dbCategories, contacts, ledger]);
 
@@ -394,7 +488,7 @@ export default function Dashboard() {
               <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Business Hub</div>
             </div>
             
-            <h1 className="text-4xl lg:text-5xl font-black tracking-tighter text-white mb-4 leading-none">
+            <h1 className="text-4xl lg:text-5xl font-black tracking-tighter text-white mb-4 leading-tight">
               Welcome back,<br/>
               <span className="text-indigo-400">Owner</span>
             </h1>
@@ -485,7 +579,7 @@ export default function Dashboard() {
                onClick={() => setShowPulseAudit(true)}
                className="!px-6 !py-3 !text-[9px] bg-slate-900 text-white"
              >
-               CHECK_FESTIVAL_STOCK
+               Check Festival Stock
              </ActionBtn>
              <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors">
                 <ArrowUpRight size={20} />
@@ -794,52 +888,42 @@ export default function Dashboard() {
               </div>
             ) : null}
             <div className="min-w-[600px] h-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart 
-                  data={(selectedProducts.length > 0 || dateRange.start || dateRange.end)
-                    ? (filteredSalesTrend || []).map(d => ({
-                        ...d,
-                        prev: (Number(d.revenue) || 0) * 0.9,
-                        target: (Number(d.revenue) || 0) * 1.1
-                      }))
-                    : (sales || []).map(s => ({ 
-                        date: s.created_at ? new Date(s.created_at).toLocaleDateString() : 'Unknown',
-                        revenue: Number(s.total_amount || s.amount || 0),
-                        prev: Number(s.total_amount || s.amount || 0) * 0.9,
-                        target: Number(s.total_amount || s.amount || 0) * 1.1
-                      })).reverse()
-                  }
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 10, fontWeight: 700, fill: '#475569' }} 
-                    axisLine={{ stroke: '#E2E8F0', strokeWidth: 1 }} 
-                    tickLine={{ stroke: '#E2E8F0' }} 
-                    interval={0}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 10, fontWeight: 700, fill: '#475569' }} 
-                    axisLine={{ stroke: '#E2E8F0', strokeWidth: 1 }} 
-                    tickLine={{ stroke: '#E2E8F0' }} 
-                    tickFormatter={v => `Rs.${v / 1000}K`} 
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend 
-                    verticalAlign="top" 
-                    height={36} 
-                    iconType="circle" 
-                    wrapperStyle={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5, color: '#475569', marginBottom: '20px' }} 
-                  />
-                  <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#6366F1" fill="url(#colorRev)" strokeWidth={4} />
-                  <defs>
-                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366F1" stopOpacity={0.15}/>
-                      <stop offset="95%" stopColor="#6366F1" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                </ComposedChart>
-              </ResponsiveContainer>
+              {!tier2Loading && !isFiltering && sales.length > 0 && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart 
+                    data={chartData}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 10, fontWeight: 700, fill: '#475569' }} 
+                      axisLine={{ stroke: '#E2E8F0', strokeWidth: 1 }} 
+                      tickLine={{ stroke: '#E2E8F0' }} 
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 10, fontWeight: 700, fill: '#475569' }} 
+                      axisLine={{ stroke: '#E2E8F0', strokeWidth: 1 }} 
+                      tickLine={{ stroke: '#E2E8F0' }} 
+                      tickFormatter={v => `Rs.${v / 1000}K`} 
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend 
+                      verticalAlign="top" 
+                      height={36} 
+                      iconType="circle" 
+                      wrapperStyle={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.5, color: '#475569', marginBottom: '20px' }} 
+                    />
+                    <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#6366F1" fill="url(#colorRev)" strokeWidth={4} />
+                    <defs>
+                      <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366F1" stopOpacity={0.15}/>
+                        <stop offset="95%" stopColor="#6366F1" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                  </ComposedChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         </div>
@@ -1091,7 +1175,11 @@ export default function Dashboard() {
 
       {/* AI Intelligence Briefing - Repositioned to bottom for Executive Summary flow */}
       {(tier3Loading || (aiInsights && aiInsights.length > 0)) && (
-        <DailyBriefing insights={aiInsights} loading={tier3Loading} />
+        <DailyBriefing 
+          insights={aiInsights} 
+          loading={tier3Loading} 
+          onRefresh={() => fetchTier3(inventory, sales, true)}
+        />
       )}
 
       {/* Strategic Pulse Audit Modal */}
@@ -1115,9 +1203,19 @@ export default function Dashboard() {
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Autonomous Business Intelligence Unit</p>
                   </div>
                 </div>
-                <button onClick={() => setShowPulseAudit(false)} className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all bg-white">
-                  <X size={24} />
-                </button>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={handleRefreshPulse}
+                    disabled={pulseRefreshing}
+                    className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center text-indigo-600 hover:text-indigo-700 hover:border-indigo-300 transition-all bg-white disabled:opacity-50"
+                    title="Refresh Strategy Data"
+                  >
+                    <RefreshCw size={20} className={pulseRefreshing ? "animate-spin" : ""} />
+                  </button>
+                  <button onClick={() => setShowPulseAudit(false)} className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all bg-white">
+                    <X size={24} />
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 divide-x divide-slate-100 h-[650px]">

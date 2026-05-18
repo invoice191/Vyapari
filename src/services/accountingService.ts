@@ -124,5 +124,36 @@ export const accountingService = {
       },
       equity: netEquity
     };
+  },
+
+  /**
+   * Generates a Trial Balance for the business, showing closing balances of all ledger categories.
+   */
+  getTrialBalance: async (businessId: string) => {
+    const { data: entries, error } = await supabase
+      .from('ledger_entries')
+      .select('amount, type, category')
+      .eq('business_id', businessId);
+    
+    if (error) throw error;
+
+    const balances: Record<string, { debit: number, credit: number }> = {};
+    
+    entries?.forEach(entry => {
+      const cat = entry.category || 'General';
+      if (!balances[cat]) balances[cat] = { debit: 0, credit: 0 };
+      
+      if (entry.type === 'debit') balances[cat].debit += Number(entry.amount || 0);
+      else balances[cat].credit += Number(entry.amount || 0);
+    });
+
+    const trialBalance = Object.entries(balances).map(([category, vals]) => ({
+      category,
+      debit: vals.debit,
+      credit: vals.credit,
+      net: vals.debit - vals.credit
+    }));
+
+    return trialBalance;
   }
 };

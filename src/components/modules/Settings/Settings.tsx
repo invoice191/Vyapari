@@ -1,9 +1,9 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Building2, CreditCard, Bell, Palette, Mic, Database, 
   Shield, Key, AlertTriangle, Save, RotateCcw, 
-  CheckCircle2, Wifi, WifiOff, Layout, Smartphone, Search
+  CheckCircle2, Wifi, WifiOff, Layout, Smartphone, Search, Landmark
 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { useDataRefresh } from '../../../context/DataProvider';
@@ -11,6 +11,7 @@ import { useToast } from '../../common/Toast';
 
 // Panel Imports
 import { ProfileSettings } from './panels/ProfileSettings';
+import { BankingSettings } from './panels/BankingSettings';
 import { BillingSettings } from './panels/BillingSettings';
 import { NotificationSettings } from './panels/NotificationSettings';
 import { AppearanceSettings } from './panels/AppearanceSettings';
@@ -20,7 +21,7 @@ import { SecuritySettings } from './panels/SecuritySettings';
 import { APISettings } from './panels/APISettings';
 import { DangerZone } from './panels/DangerZone';
 
-type PanelID = 'Profile' | 'Billing' | 'Notifications' | 'Appearance' | 'VANI' | 'DataSync' | 'Security' | 'API' | 'Danger';
+type PanelID = 'Profile' | 'Billing' | 'Notifications' | 'Appearance' | 'VANI' | 'DataSync' | 'Security' | 'API' | 'Danger' | 'Banking';
 
 interface NavGroup {
   label: string;
@@ -32,6 +33,7 @@ const navGroups: NavGroup[] = [
     label: 'Account',
     items: [
       { id: 'Profile', label: 'Business Profile', icon: Building2 },
+      { id: 'Banking', label: 'Banking & Settlement', icon: Landmark },
       { id: 'Billing', label: 'Billing & Plan', icon: CreditCard },
       { id: 'Notifications', label: 'Notifications', icon: Bell },
     ]
@@ -239,6 +241,7 @@ export default function Settings() {
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
               {activePanel === 'Profile' && <ProfileSettings data={localBusiness} onChange={handleUpdateLocal} />}
+              {activePanel === 'Banking' && <BankingSettings data={localBusiness} onChange={handleUpdateLocal} />}
               {activePanel === 'Billing' && <BillingSettings plan={localBusiness.plan || 'Free'} />}
               {activePanel === 'Notifications' && <NotificationSettings data={localBusiness} onChange={handleUpdateLocal} />}
               {activePanel === 'Appearance' && <AppearanceSettings data={localBusiness} onChange={handleUpdateLocal} />}

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   DollarSign, Users, Tag, BarChart3, Landmark, TrendingUp, 
   Package, TrendingDown, FileText, Gift, Microscope, RefreshCw, AlertTriangle, Brain, ChevronRight, LayoutDashboard, Settings, Radar
@@ -39,6 +39,17 @@ const ENGINES = [
 export const DSSLayout: React.FC = () => {
   const [activeEngine, setActiveEngine] = useState('strategy');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    const handleGlobalNav = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.module === 'dss' && customEvent.detail?.engine) {
+        setActiveEngine(customEvent.detail.engine);
+      }
+    };
+    window.addEventListener('app:navigate', handleGlobalNav);
+    return () => window.removeEventListener('app:navigate', handleGlobalNav);
+  }, []);
 
   const renderEngineContent = () => {
     switch (activeEngine) {

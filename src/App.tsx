@@ -183,7 +183,7 @@ function App() {
 
 
   return (
-    <div className="min-h-screen flex flex-col selection:bg-neon selection:text-ink relative">
+    <div className="h-screen flex flex-col selection:bg-neon selection:text-ink relative overflow-hidden">
       {/* 3D Visual Experience */}
       <Background3D />
       
@@ -204,12 +204,12 @@ function App() {
         setActive={setActive}
       />
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         {!isMobile && (
           <motion.aside 
             animate={{ width: sidebarOpen ? 280 : 80 }}
             transition={{ type: "spring", stiffness: 280, damping: 32, mass: 1 }}
-            className="sticky top-16 h-[calc(100vh-64px)] flex-shrink-0 z-[100] will-change-[width]"
+            className="h-full flex-shrink-0 z-[100] will-change-[width]"
           >
             <Sidebar 
               active={active}
@@ -255,7 +255,7 @@ function App() {
           )}
         </AnimatePresence>
 
-        <main className="flex-1 p-4 sm:p-10 min-w-0 relative">
+        <main className="flex-1 p-4 sm:p-10 min-w-0 relative overflow-y-auto h-full custom-scrollbar">
           <div className="max-w-[1600px] mx-auto">
             <AnimatePresence mode="wait">
               <motion.div

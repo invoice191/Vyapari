@@ -1,11 +1,12 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import Replenishment from "./Replenishment";
 import MasterInventoryControl from "./MasterInventoryControl";
+import VisualVerification from "./VisualVerification";
 import { supabase } from "../../lib/supabase";
 
 export default function Inventory() {
-  const [activeTab, setActiveTab] = useState<"list" | "replenish">("list");
+  const [activeTab, setActiveTab] = useState<"list" | "replenish" | "verify">("list");
 
   useEffect(() => {
     const handleDeepLink = (e: any) => {
@@ -23,13 +24,13 @@ export default function Inventory() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
       <div className="flex gap-4 bg-slate-100/50 p-2 rounded-3xl border border-slate-200/40 backdrop-blur-md w-fit">
-        {["list", "replenish"].map((t) => (
+        {["list", "replenish", "verify"].map((t) => (
           <button 
             key={t}
             onClick={() => setActiveTab(t as any)}
             className={`px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all ${activeTab === t ? "bg-white text-neon shadow-xl shadow-indigo-500/10 border border-indigo-100" : "text-slate-400 hover:text-slate-600"}`}
           >
-            {t === "list" ? "Your Stock" : "Order Advice"}
+            {t === "list" ? "Your Stock" : t === "replenish" ? "Order Advice" : "vPOD Intelligence"}
           </button>
         ))}
       </div>
@@ -44,8 +45,10 @@ export default function Inventory() {
         >
           {activeTab === "list" ? (
             <MasterInventoryControl />
-          ) : (
+          ) : activeTab === "replenish" ? (
             <Replenishment />
+          ) : (
+            <VisualVerification />
           )}
         </motion.div>
       </AnimatePresence>

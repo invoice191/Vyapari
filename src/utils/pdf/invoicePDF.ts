@@ -269,18 +269,19 @@ export const generateInvoicePDF = (
   const totalsHeight = 60; // Approximate height of totals box + padding
   const pageHeight = doc.internal.pageSize.height;
   
+  let ty = 0;
   if (finalY + totalsHeight > pageHeight - 20) {
     doc.addPage();
     // Reset Y for the new page
     doc.setFillColor(248, 250, 252);
     doc.rect(totalsX - 4, 14, 68, 52, "F");
-    var ty = 20;
+    ty = 20;
   } else {
     // Totals box
     doc.setFillColor(248, 250, 252);
     doc.rect(totalsX - 4, finalY - 4, 
              68, 52, "F");
-    var ty = finalY + 2;
+    ty = finalY + 2;
   }
 
   doc.setFontSize(9);

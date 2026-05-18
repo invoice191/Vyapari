@@ -59,6 +59,9 @@ export function runSimulation(
       }, 0) / validProducts.length)
     : 0.25; // Fallback to 25% if no data
 
+  // Baseline snapshot from last 30 days
+  const currentTotalRevenue = input.invoices.reduce((s, i) => s + (Number(i.total_amount) || 0), 0);
+
   // Calculate Real Overhead from Ledger (Average Monthly Expense)
   const debits = input.ledgerEntries.filter(e => e.type === 'debit');
   const totalExpense = debits.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
@@ -66,9 +69,6 @@ export function runSimulation(
   const monthlyOverhead = input.ledgerEntries.length > 0 
     ? (totalExpense / Math.max(1, input.invoices.length / 30)) // Rough monthly
     : (currentTotalRevenue * avgMargin * 0.4);
-
-  // Baseline snapshot from last 30 days
-  const currentTotalRevenue = input.invoices.reduce((s, i) => s + (Number(i.total_amount) || 0), 0);
   const baseline: SimulationSnapshot = {
     revenue: currentTotalRevenue,
     grossProfit: currentTotalRevenue * avgMargin,
