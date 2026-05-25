@@ -123,7 +123,7 @@ export const BundleEngine: React.FC = () => {
     generateDynamicBundles();
     setIsGenerating(false);
     
-    toast.success('Market basket analysis complete. 3 optimized product bundles created!', 'DSS Engine');
+    toast.success('Market basket analysis complete. 3 optimized product bundles created!', 'Business Advisor');
   };
 
   const handleAddToCatalog = async (bundle: any) => {

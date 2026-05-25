@@ -19,7 +19,7 @@ interface InvoiceDetailModalProps {
   onVoid: () => void;
 }
 
-type TabType = "OVERVIEW" | "ITEMS + GST" | "PAYMENTS" | "AI INTEL" | "DELIVERY" | "FORENSICS";
+type TabType = "OVERVIEW" | "ITEMS + GST" | "PAYMENTS" | "Smart Insights" | "DELIVERY" | "FORENSICS";
 
 export default function InvoiceDetailModal({
   isOpen,
@@ -51,7 +51,7 @@ export default function InvoiceDetailModal({
   const [payRef, setPayRef] = useState("");
   const [payLoading, setPayLoading] = useState(false);
   
-  // AI advice states
+  // Smart Advice states
   const [aiAdvice, setAiAdvice] = useState<string | null>(null);
   const [loadingAdvice, setLoadingAdvice] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
@@ -269,7 +269,7 @@ export default function InvoiceDetailModal({
 
         {/* Tab Controls */}
         <div className="flex border-b border-[#222222] bg-[#141414] overflow-x-auto scrollbar-hide">
-          {(["OVERVIEW", "ITEMS + GST", "PAYMENTS", "DELIVERY", "AI INTEL", "FORENSICS"] as TabType[]).map((tab) => (
+          {(["OVERVIEW", "ITEMS + GST", "PAYMENTS", "DELIVERY", "Smart Insights", "FORENSICS"] as TabType[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -726,7 +726,7 @@ export default function InvoiceDetailModal({
             </div>
           )}
 
-          {activeTab === "AI INTEL" && (
+          {activeTab === "Smart Insights" && (
             <div className="space-y-6">
               {!invoice.contact_id ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
@@ -807,9 +807,9 @@ export default function InvoiceDetailModal({
                     )}
                   </div>
 
-                  {/* Full AI invoice analysis */}
+                  {/* Full full invoice review */}
                   <div className="space-y-3 pt-2">
-                    <div className="text-[10px] font-bold text-[#FF5500] tracking-widest uppercase">FULL AI INVOICE ANALYSIS</div>
+                    <div className="text-[10px] font-bold text-[#FF5500] tracking-widest uppercase">FULL full invoice review</div>
                     <button
                       onClick={getAIAnalysis}
                       disabled={loadingAnalysis}
@@ -821,7 +821,7 @@ export default function InvoiceDetailModal({
                         </>
                       ) : (
                         <>
-                          <Sparkles size={14} /> RUN AI INVOICE ANALYSIS
+                          <Sparkles size={14} /> REVIEW THIS INVOICE
                         </>
                       )}
                     </button>
@@ -877,7 +877,7 @@ export default function InvoiceDetailModal({
                        <span className="text-[9px] font-bold text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded border border-indigo-400/20 uppercase">Optimization Opportunity</span>
                     </div>
                     <p className="text-xs font-bold text-white leading-relaxed">
-                       "Current margin: <span className="text-emerald-400">12%</span>. AI suggests <span className="text-indigo-400">14.5%</span> for next order. This customer has extremely low price sensitivity on high-velocity items."
+                       "Current margin: <span className="text-emerald-400">12%</span>. Suggested <span className="text-indigo-400">14.5%</span> for next order. This customer has extremely low price sensitivity on high-velocity items."
                     </p>
                   </div>
                 </div>

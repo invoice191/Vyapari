@@ -61,7 +61,7 @@ export default function LedgerEntryModal({ isOpen, onClose, onCreated, businessI
     const entityName = contact ? contact.name : customEntityName.trim();
 
     if (!entityName) {
-      setError('Please select a Customer/Supplier, or type a custom Neural Entity Name.');
+      setError('Please select a Customer/Supplier, or type a custom Smart Entity Name.');
       return;
     }
 
@@ -141,11 +141,11 @@ export default function LedgerEntryModal({ isOpen, onClose, onCreated, businessI
               </div>
             )}
 
-            {/* Neural Entity Picker */}
+            {/* Smart Entity Picker */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                  Neural Entity <span className="text-[#FF5500]">*</span>
+                  Smart Entity <span className="text-[#FF5500]">*</span>
                 </label>
                 <span className="text-[9px] font-bold text-slate-500 uppercase">
                   Used for credit dunning & CLV mapping

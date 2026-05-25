@@ -103,7 +103,7 @@ export const REPORT_CONFIG: ReportDefinition[] = [
     title: 'Promo Effectiveness',
     description: 'Incremental sales, redemption rate and ROI for each active promotion to evaluate campaign performance.',
     icon: BadgePercent,
-    category: '-- Sales Reports',
+    category: 'Sales Records',
     type: 'table',
     columns: ['Promo', 'Redemptions', 'Discount Given', 'Incremental Sales', 'ROI']
   },

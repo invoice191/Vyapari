@@ -52,7 +52,7 @@ export default function CommandCenter() {
     };
 
     runTacticalAnalysis();
-    // Neural Heartbeat: Refresh every 10 seconds for "real-time" feel
+    // Smart Heartbeat: Refresh every 10 seconds for "real-time" feel
     const interval = setInterval(() => {
       runTacticalAnalysis();
       setRefreshKey(prev => prev + 1);
@@ -179,7 +179,7 @@ export default function CommandCenter() {
         color: "text-indigo-400" 
       },
       { 
-        label: "Neural Anomalies", 
+        label: "Smart Anomalies", 
         value: tacticalAlerts.length, 
         trend: "Active Intelligence", 
         icon: Brain, 
@@ -227,7 +227,7 @@ export default function CommandCenter() {
           <div className="flex gap-2 items-center bg-white/5 px-4 py-2 rounded-xl border border-white/10">
             <div className={`w-2 h-2 rounded-full ${isSubscribed ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              {isSubscribed ? 'Neural_Link_Active' : 'Neural_Link_Offline'}
+              {isSubscribed ? 'Smart_Link_Active' : 'Smart_Link_Offline'}
             </span>
           </div>
           <div className="flex gap-3 bg-white/5 p-1 rounded-2xl border border-white/10">
@@ -326,7 +326,7 @@ export default function CommandCenter() {
                 </div>
                 <div>
                   <h3 className="font-black tracking-tight text-xl text-slate-900 uppercase italic">Intelligence</h3>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Strategic Neural Alerts</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Strategic Smart Alerts</p>
                 </div>
               </div>
             </div>
@@ -415,7 +415,7 @@ export default function CommandCenter() {
                 )}
               </AnimatePresence>
               
-              {loading && <div className="text-[10px] font-black text-slate-200 animate-pulse text-center py-10 italic uppercase tracking-[0.5em]">Syncing_Neural_Feed...</div>}
+              {loading && <div className="text-[10px] font-black text-slate-200 animate-pulse text-center py-10 italic uppercase tracking-[0.5em]">Syncing_Smart_Feed...</div>}
             </div>
 
             <div className="mt-8 pt-8 border-t border-slate-100">

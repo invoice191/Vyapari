@@ -1064,7 +1064,7 @@ export default function Settings() {
               )}
               {settingsTab === "Automation" && (
                 <div className="glass-card !p-12">
-                  <SectionHeader title="Robotic Process Automation" subtitle="Configure triggers, conditions, AI decisions, and WhatsApp pipelines" />
+                  <SectionHeader title="Robotic Process Automation" subtitle="Configure triggers, conditions, Smart Decisions, and WhatsApp pipelines" />
                   <AutomationRules />
                 </div>
               )}

@@ -53,7 +53,7 @@ export default function ExportModal({
       label: 'PDF Documents',
       icon: FileText,
       formats: [
-        { id: 'pdf_executive' as const, title: 'Executive Summary', desc: 'High-level view with AI insights & charts.' },
+        { id: 'pdf_executive' as const, title: 'Executive Summary', desc: 'High-level view with Business Insights & charts.' },
         { id: 'pdf_detailed' as const, title: 'Detailed Report', desc: 'Full multi-page audit with all logs.' },
         { id: 'pdf_simple' as const, title: 'Simple Summary', desc: 'Plain language explanation of data.' },
       ]

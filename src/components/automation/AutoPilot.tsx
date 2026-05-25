@@ -191,7 +191,7 @@ export default function AutoPilot() {
                    <h3 className="text-2xl font-black uppercase tracking-tight">Sentiment Dunning Console</h3>
                 </div>
                 <p className="text-white/70 font-medium mb-8 max-w-md">
-                   Go beyond basic automation. Use the Neural Sentiment Engine to analyze customer relationships and craft perfect recovery messages.
+                   Go beyond basic automation. Use the Smart Sentiment Engine to analyze customer relationships and craft perfect recovery messages.
                 </p>
                 <button 
                   onClick={() => setActiveSubView('dunning')}

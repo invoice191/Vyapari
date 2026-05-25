@@ -11,12 +11,14 @@ import {
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import LedgerEntryModal from "./LedgerEntryModal";
+import { useToast } from "../common/Toast";
 
 import { useGlobalData } from "../../context/DataContext";
 import { reportExporter } from "../../services/reportExporter";
 
 export default function Ledger() {
   const { profile } = useAuth();
+  const { toast } = useToast();
   const { ledger: entries, loading, refresh } = useGlobalData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -29,8 +31,9 @@ export default function Ledger() {
 
   useEffect(() => {
     if (profile?.business_id) {
-      rfmService.getRFMSegments(profile.business_id)
-        .then(data => {
+      const loadRFM = async () => {
+        try {
+          const data = await rfmService.getRFMSegments(profile.business_id);
           const mapping: Record<string, string> = {};
           Object.entries(data).forEach(([label, rows]: [string, any[]]) => {
             rows.forEach(r => {
@@ -38,8 +41,11 @@ export default function Ledger() {
             });
           });
           setRfmLabels(mapping);
-        })
-        .catch(err => console.error("RFM loading failed:", err));
+        } catch (err) {
+          console.error("RFM loading failed:", err);
+        }
+      };
+      loadRFM();
     }
   }, [profile?.business_id]);
 
@@ -47,12 +53,19 @@ export default function Ledger() {
     // Check if we should open in reconcile mode via URL or state
     // For demo, we'll just check if there are attempts
     if (profile?.business_id) {
-      supabase.from('reconciliation_attempts')
-        .select('*, ledger_entries(*), invoices(*)')
-        .eq('business_id', profile.business_id)
-        .eq('status', 'pending')
-        .then(({ data }) => setReconciliationAttempts(data || []))
-        .catch(err => console.error("Error fetching reconciliation attempts in Ledger:", err));
+      const fetchAttempts = async () => {
+        try {
+          const { data, error } = await supabase.from('reconciliation_attempts')
+            .select('*, ledger_entries(*), invoices(*)')
+            .eq('business_id', profile.business_id)
+            .eq('status', 'pending');
+          if (error) throw error;
+          setReconciliationAttempts(data || []);
+        } catch (err) {
+          console.error("Error fetching reconciliation attempts in Ledger:", err);
+        }
+      };
+      fetchAttempts();
     }
   }, [profile?.business_id, entries]);
 
@@ -148,9 +161,10 @@ export default function Ledger() {
 
   const handleExportPDF = () => {
     reportExporter.downloadPDF({
-      type: 'finance',
+      type: 'ledger',
       title: 'Business Ledger Audit',
       businessName: profile?.business_name || 'Vyapari Retail',
+      gstin: profile?.gstin || "",
       dateRange: { from: new Date().toISOString(), to: new Date().toISOString() },
       rows: filtered.map((e, i) => ({
         ...e,
@@ -176,9 +190,10 @@ export default function Ledger() {
 
   const handleExportCSV = () => {
     reportExporter.downloadCSV({
-      type: 'finance',
+      type: 'ledger',
       title: 'Business Ledger Export',
       businessName: profile?.business_name || 'Vyapari Retail',
+      gstin: profile?.gstin || "",
       dateRange: { from: new Date().toISOString(), to: new Date().toISOString() },
       rows: filtered.map(e => ({
         ...e,
@@ -216,7 +231,7 @@ export default function Ledger() {
                 <CheckCircle size={32} />
               </div>
               <div className="text-sm font-black uppercase text-slate-900">All Done!</div>
-              <p className="text-xs font-bold text-slate-400 uppercase">AI has matched all recent bank deposits.</p>
+              <p className="text-xs font-bold text-slate-400 uppercase">All recent bank deposits have been matched.</p>
             </div>
           ) : (
             reconciliationAttempts.map(attempt => (
@@ -288,7 +303,7 @@ export default function Ledger() {
                className="px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center gap-2 text-indigo-600 hover:bg-indigo-100 transition-all"
              >
                <Zap size={14} className="animate-pulse" />
-               <span className="text-[9px] font-black uppercase tracking-wider">{reconciliationAttempts.length} AI Matches Pending</span>
+               <span className="text-[9px] font-black uppercase tracking-wider">{reconciliationAttempts.length} Payment Matches Pending</span>
              </button>
            )}
         </div>

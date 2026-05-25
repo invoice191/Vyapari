@@ -19,7 +19,8 @@ import {
   Calculator,
   ShieldCheck,
   Lock,
-  Bot
+  Bot,
+  Sparkles,
 } from "lucide-react";
 import { useRBAC } from "../../hooks/useRBAC";
 
@@ -55,7 +56,7 @@ const MODULE_GROUPS = [
     title: "Money",
     items: [
       { key: "invoices", label: "Bills & Orders", icon: Receipt },
-      { key: "invoice_ai", label: "Invoice AI", icon: Bot },
+      { key: "invoice_ai", label: "Smart Billing Assistant", icon: Sparkles },
       { key: "ledger", label: "Money History", icon: BookOpen },
       { key: "ocr", label: "Snap a Photo", icon: FileSearch },
     ]

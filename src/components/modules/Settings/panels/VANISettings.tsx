@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Mic, Zap, Cpu, Search, Activity, Volume2 } from 'lucide-react';
 import { ToggleRow, SelectRow, SliderRow, BadgeRow } from '../SettingRows';
 
@@ -11,7 +11,7 @@ export const VANISettings = ({ data, onChange }: { data: any; onChange: (key: st
         </div>
         <div>
           <h3 className="text-lg font-black uppercase tracking-tight text-white font-display">VANI / Voice Engine</h3>
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Configure neural speech synthesis and AI execution thresholds</p>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Configure voice commands and automation settings</p>
         </div>
       </div>
 
@@ -61,7 +61,7 @@ export const VANISettings = ({ data, onChange }: { data: any; onChange: (key: st
       </div>
 
       <div className="glass-card !bg-white/[0.02] !border-white/[0.05] !p-8 mt-8">
-        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-6">AI Execution Core</h4>
+        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-6">Vani Voice Controls</h4>
         <SelectRow 
           label="Gemini Model Engine" 
           description="Large Language Model for command interpretation" 

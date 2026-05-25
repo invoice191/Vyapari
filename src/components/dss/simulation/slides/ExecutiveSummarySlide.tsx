@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion } from 'motion/react';
 import { Brain, CheckCircle2, AlertTriangle, Sparkles, ShieldAlert } from 'lucide-react';
 import { Theme } from '../PresentationMode';
@@ -66,7 +66,7 @@ export default function ExecutiveSummarySlide({ data, theme }: SlideProps) {
               <Sparkles size={28} />
             </div>
             <div>
-               <h3 className={`text-[10px] font-black uppercase tracking-[0.3em] ${textColor} opacity-50`}>NEURAL CORE INSIGHT</h3>
+               <h3 className={`text-[10px] font-black uppercase tracking-[0.3em] ${textColor} opacity-50`}>Smart CORE INSIGHT</h3>
                <div className="text-sm font-black text-indigo-500 uppercase">Strategic Directive</div>
             </div>
           </div>

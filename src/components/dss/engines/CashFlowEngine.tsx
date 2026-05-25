@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { IndianRupee, Zap, TrendingUp, ArrowDownRight, ArrowUpRight, HelpCircle, Info, Lightbulb, Wallet, Calculator, Loader2, Calendar, Target, Activity } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '../../../lib/supabase';
@@ -73,7 +73,7 @@ export const CashFlowEngine: React.FC = () => {
         ))}
       </div>
 
-      {/* AI Strategy Panel */}
+      {/* Smart Strategy Panel */}
       <div className="bg-indigo-600/5 border border-indigo-500/20 p-8 rounded-3xl relative overflow-hidden group">
         <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform">
           <Zap className="w-24 h-24 text-indigo-500" />

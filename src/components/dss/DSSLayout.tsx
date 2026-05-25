@@ -20,7 +20,7 @@ import { WarRoomEngine } from './engines/WarRoomEngine';
 import { SimulationEngine } from './simulation/SimulationEngine';
 
 const ENGINES = [
-  { id: 'strategy', label: 'Neural Brief', icon: Brain, category: 'Intelligence' },
+  { id: 'strategy', label: 'Smart Brief', icon: Brain, category: 'Intelligence' },
   { id: 'warroom', label: 'War Room', icon: Radar, category: 'Intelligence' },
   { id: 'pricing', label: 'Set Prices', icon: DollarSign, category: 'Financial' },
   { id: 'rfm', label: 'Best Customers', icon: Users, category: 'Customers' },

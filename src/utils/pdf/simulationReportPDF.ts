@@ -1,4 +1,4 @@
-﻿import jsPDF from "jspdf";
+import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { 
   downloadPDF,
@@ -164,7 +164,7 @@ export const generateSimulationPDF = (
   doc.setFont("helvetica", "normal");
   const summaryLines = doc.splitTextToSize(
     data.aiSummary || 
-    "AI analysis of your simulation scenario.",
+    "Analysis of your simulation scenario.",
     180
   );
   doc.text(summaryLines, 14, y + 5);
@@ -248,7 +248,7 @@ export const generateSimulationPDF = (
     doc.addPage();
     y = addVyapariHeader(
       doc,
-      "AI Recommendations",
+      "Smart Recommendations",
       businessName
     );
 

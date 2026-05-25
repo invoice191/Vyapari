@@ -144,7 +144,7 @@ export default function MasterInventoryControl() {
     doc.rect(margin, nextY, 1.5, recHeight, 'F');
     
     doc.setFontSize(8); doc.setTextColor(...NAVY); doc.setFont('helvetica', 'bold');
-    doc.text('SMART AI ADVICE', margin + 5, nextY + 6);
+    doc.text('SMART ADVICE', margin + 5, nextY + 6);
     
     doc.setFontSize(9); doc.setTextColor(55, 65, 81); doc.setFont('helvetica', 'normal');
     doc.text(recLines, margin + 5, nextY + 13);
@@ -173,6 +173,7 @@ export default function MasterInventoryControl() {
       type: 'inventory',
       title: 'Master Inventory Audit',
       businessName: business?.name || 'Vyapari Retail',
+      gstin: business?.gstin || "",
       dateRange: { from: new Date().toISOString(), to: new Date().toISOString() },
       rows: filteredProducts.map((p, i) => ({
         ...p,

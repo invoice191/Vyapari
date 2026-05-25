@@ -7,3 +7,22 @@ coverage/
 .env*
 !.env.example
 .vercel
+
+# Temporary and Scratch Files
+scratch/
+set_secrets.ts
+test_*
+test-*
+debug_*
+*.txt
+*.png
+*.docx
+*.py
+*.js
+*.html
+apply-migration.ps1
+vyapari-gateway-main/
+BE_Project_Report_*.md
+Vyapari_Final_BE_Project_Report.md
+vyapari_comprehensive_architecture_report.md
+

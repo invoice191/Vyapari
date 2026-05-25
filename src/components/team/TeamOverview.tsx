@@ -586,7 +586,7 @@ const TeamOverview: React.FC = () => {
                   </button>
                   <button 
                     onClick={() => {
-                      toast.success("Recalculated workspace performance coefficients!", "AI Target Lab");
+                      toast.success("Recalculated workspace performance coefficients!", "Performance Targets");
                     }}
                     className="flex-1 border border-slate-200 hover:border-slate-300 text-slate-700 font-black text-xs uppercase tracking-widest py-4 rounded-2xl flex items-center justify-center gap-2 transition-all hover:bg-slate-50 active:scale-95"
                   >

@@ -6,6 +6,7 @@ import { vaniService } from "../../services/vaniService";
 import { vaniExecutor } from "../../services/vaniExecutor";
 import { useVANIWakeWord } from "../../hooks/useVANIWakeWord";
 import { Mic, RefreshCw, AlertTriangle, Play, CheckCircle, XCircle, Brain, Activity, Sparkles } from "lucide-react";
+import VaniMascot from "./VaniMascot";
 
 interface VANIProps {
   activeModule: string;
@@ -104,8 +105,8 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
         return;
       }
 
-      // Proactive advisory note
-      if (response.proactive_note) {
+      // Proactive advisory note - restricted to greetings or briefings to prevent repetitive vocal interruptions on direct user commands
+      if (response.proactive_note && (response.intent === 'GET_BRIEFING' || text.toLowerCase().includes('hi') || text.toLowerCase().includes('hello') || text.toLowerCase().includes('morning') || text.toLowerCase().includes('briefing') || text.toLowerCase().includes('system check'))) {
         setTimeout(() => {
           speakText(response.proactive_note, response.language_detected);
         }, 1500);
@@ -123,61 +124,67 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
     }
   };
 
+  const stopWakeWordRef = useRef<(() => void) | null>(null);
+
   const activate = useCallback(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      speakText("Speech commands are not supported in this browser.");
-      return;
+    // 1. Force-stop any active wake word detection microphone stream synchronously
+    if (stopWakeWordRef.current) {
+      try {
+        stopWakeWordRef.current();
+      } catch (e) {
+        console.warn("Error stopping wake word detection synchronously:", e);
+      }
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.lang = sttLang;
-    recognitionRef.current = recognition;
-
-    setState('listening');
-    setTranscript("");
-    setPermError(false);
-
-    const finalTranscriptRef = { current: "" };
-    recognition.onresult = (event: any) => {
-      const current = Array.from(event.results)
-        .map((r: any) => r[0].transcript)
-        .join('');
-      setTranscript(current);
-      finalTranscriptRef.current = current;
-    };
-
-    recognition.onend = async () => {
-      if (!finalTranscriptRef.current) {
-        setState('idle');
+    // 2. Cooldown delay to let the browser cleanly release the mic stream before starting the new session
+    setTimeout(() => {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        speakText("Speech commands are not supported in this browser.");
         return;
       }
-      await processText(finalTranscriptRef.current);
-    };
 
-    recognition.onerror = (event: any) => {
-      console.warn("STT Error detected:", event.error);
-      if (event.error === 'not-allowed') {
-        setPermError(true);
-      }
-      setState('idle');
-    };
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = sttLang;
+      recognitionRef.current = recognition;
 
-    try {
-      // Ensure any previous recognition is settled before starting new one
-      // This prevents 'aborted' errors from conflicting mic streams
-      setTimeout(() => {
-        try {
-          recognition.start();
-        } catch (e) {
-          console.warn("Recognition delayed start failed:", e);
+      setState('listening');
+      setTranscript("");
+      setPermError(false);
+
+      const finalTranscriptRef = { current: "" };
+      recognition.onresult = (event: any) => {
+        const current = Array.from(event.results)
+          .map((r: any) => r[0].transcript)
+          .join('');
+        setTranscript(current);
+        finalTranscriptRef.current = current;
+      };
+
+      recognition.onend = async () => {
+        if (!finalTranscriptRef.current) {
+          setState('idle');
+          return;
         }
-      }, 150);
-    } catch (e) {
-      console.warn("Recognition already active:", e);
-    }
+        await processText(finalTranscriptRef.current);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn("STT Error detected:", event.error);
+        if (event.error === 'not-allowed') {
+          setPermError(true);
+        }
+        setState('idle');
+      };
+
+      try {
+        recognition.start();
+      } catch (e) {
+        console.warn("Recognition start failed:", e);
+      }
+    }, 300);
   }, [activeModule, profile, onCommand, sttLang]);
 
   const handleOrbClick = () => {
@@ -218,6 +225,8 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
     }
   }, sttLang);
 
+  stopWakeWordRef.current = stopWakeWordDetection;
+
   useEffect(() => {
     if (state === 'idle') {
       startWakeWordDetection();
@@ -252,18 +261,19 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
   };
 
   return (
-    <div className="fixed bottom-10 right-10 z-[500] flex flex-col items-end gap-6">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[500] flex flex-col items-end gap-4 w-[calc(100vw-2rem)] sm:w-[380px] max-w-full pointer-events-none">
       {/* VANI JARVIS CONSOLE */}
        <AnimatePresence>
         {(state !== 'idle' || lastResponse?.summary_card || permError) && (
           <motion.div 
-            initial={{ opacity: 0, y: 20, scale: 0.9, filter: 'blur(10px)' }}
+            initial={{ opacity: 0, y: 30, scale: 0.95, filter: 'blur(10px)' }}
             animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, y: 20, scale: 0.9, filter: 'blur(10px)' }}
-            className="glass-dark w-[400px] rounded-[2.5rem] overflow-hidden border-white/10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] p-8 relative"
+            exit={{ opacity: 0, y: 30, scale: 0.95, filter: 'blur(10px)' }}
+            transition={{ type: "spring", stiffness: 200, damping: 25 }}
+            className="bg-slate-950/95 backdrop-blur-3xl w-full rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.7),0_0_80px_rgba(99,102,241,0.1)] flex flex-col max-h-[70vh] sm:max-h-[80vh] pointer-events-auto relative transition-all"
           >
             {/* Top Close/Standby Control */}
-            <div className="absolute top-6 right-6 z-20">
+            <div className="absolute top-5 right-5 z-20">
               <button 
                 onClick={() => {
                   window.speechSynthesis.cancel();
@@ -274,207 +284,152 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
                   setLastResponse(null);
                   setTranscript("");
                 }}
-                className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+                className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/15 hover:scale-105 active:scale-95 transition-all shadow-sm cursor-pointer"
               >
                 <XCircle className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Holographic Breathing Assistant Orb Container */}
-            <div className="relative h-64 flex items-center justify-center">
-              {/* Outer Cosmic Neural Ring 1 */}
-              <div className={`absolute w-64 h-64 rounded-full border border-dashed transition-all duration-700
-                ${state === 'listening' ? 'border-rose-500/20 scale-110 animate-spin-slow' : 
-                  state === 'thinking' ? 'border-blue-500/40 animate-spin-fast' : 
-                  state === 'speaking' ? 'border-emerald-500/30 animate-spin-slow' : 
-                  'border-cyan-500/10 scale-95 animate-spin-slow'}`} 
-              />
-              {/* Outer Cosmic Neural Ring 2 */}
-              <div className={`absolute w-56 h-56 rounded-full border border-dotted transition-all duration-700
-                ${state === 'listening' ? 'border-rose-400/20 scale-105 animate-reverse-spin-slow' : 
-                  state === 'thinking' ? 'border-blue-400/40 animate-reverse-spin-fast' : 
-                  state === 'speaking' ? 'border-emerald-400/30 animate-reverse-spin-slow' : 
-                  'border-cyan-400/10 scale-100 animate-reverse-spin-slow'}`} 
-              />
+            {/* Scrollable Core Workspace Panel */}
+            <div className="flex-1 overflow-y-auto p-6 pr-5 space-y-5 custom-scrollbar">
+              {/* Holographic Breathing Assistant Orb Container - Dynamically scaled to prevent overflow */}
+              <div className={`relative flex items-center justify-center transition-all duration-500 ${lastResponse?.summary_card ? 'h-36 mt-4' : 'h-48 mt-6'}`}>
+                {/* Gyroscopic Counter-Rotating Hologram Rings */}
+                <div className={`absolute rounded-full border border-dashed transition-all duration-700
+                  ${lastResponse?.summary_card ? 'w-36 h-36' : 'w-48 h-48'}
+                  ${state === 'listening' ? 'border-rose-500/30 scale-105 animate-spin-slow' : 
+                    state === 'thinking' ? 'border-blue-500/50 scale-110 animate-spin-slow' : 
+                    state === 'speaking' ? 'border-emerald-500/40 scale-105 animate-spin-slow' : 
+                    'border-cyan-500/20 scale-95 animate-spin-slow'}`} 
+                />
+                <div className={`absolute rounded-full border border-dotted transition-all duration-700
+                  ${lastResponse?.summary_card ? 'w-32 h-32' : 'w-40 h-40'}
+                  ${state === 'listening' ? 'border-rose-400/20 scale-100 animate-[spin_10s_linear_infinite_reverse]' : 
+                    state === 'thinking' ? 'border-blue-400/40 scale-105 animate-[spin_6s_linear_infinite_reverse]' : 
+                    state === 'speaking' ? 'border-emerald-400/30 scale-100 animate-[spin_12s_linear_infinite_reverse]' : 
+                    'border-cyan-400/10 scale-95 animate-[spin_15s_linear_infinite_reverse]'}`} 
+                />
 
-              {/* Glowing Aura Ring */}
-              <div className={`absolute w-44 h-44 rounded-full filter blur-xl transition-all duration-1000 opacity-30
-                ${state === 'listening' ? 'bg-rose-500 animate-pulse' : 
-                  state === 'thinking' ? 'bg-blue-600 animate-pulse' : 
-                  state === 'speaking' ? 'bg-emerald-500 animate-pulse' : 
-                  'bg-cyan-500/50 animate-pulse-slow'}`} 
-              />
-              
-              {/* Central Consciousness Core */}
-              <motion.div 
-                onClick={handleOrbClick}
-                className={`relative w-36 h-36 rounded-full flex items-center justify-center transition-all duration-500 cursor-pointer overflow-hidden border
-                  ${state === 'listening' ? 'scale-110 bg-gradient-to-tr from-rose-950/40 to-rose-900/60 border-rose-500/50 shadow-[0_0_60px_rgba(244,63,94,0.6)]' : 
-                    state === 'thinking' ? 'bg-gradient-to-tr from-blue-950/40 to-blue-900/60 border-blue-500/50 shadow-[0_0_60px_rgba(59,130,246,0.6)]' : 
-                    state === 'speaking' ? 'bg-gradient-to-tr from-emerald-950/40 to-emerald-900/60 border-emerald-500/50 shadow-[0_0_60px_rgba(16,185,129,0.6)]' :
-                    'bg-gradient-to-tr from-cyan-950/20 to-slate-900/50 border-cyan-500/30 shadow-[0_0_40px_rgba(6,182,212,0.2)] hover:border-cyan-400/50'}`}
-              >
-                {/* Micro Scanline Bar */}
-                <div className={`absolute w-full h-1 opacity-10 animate-neural-scan
-                  ${state === 'listening' ? 'bg-rose-400' : 
-                    state === 'thinking' ? 'bg-blue-400' : 
-                    state === 'speaking' ? 'bg-emerald-400' : 
-                    'bg-cyan-400'}`} 
+                {/* Glowing Aura Ring */}
+                <div className={`absolute rounded-full filter blur-xl transition-all duration-1000 opacity-20
+                  ${lastResponse?.summary_card ? 'w-24 h-24' : 'w-32 h-32'}
+                  ${state === 'listening' ? 'bg-rose-500 animate-pulse' : 
+                    state === 'thinking' ? 'bg-blue-600 animate-pulse' : 
+                    state === 'speaking' ? 'bg-emerald-500 animate-pulse' : 
+                    'bg-cyan-500/50 animate-pulse-slow'}`} 
                 />
                 
+                {/* Reactive Cute Chibi Assistant Mascot */}
+                <div onClick={handleOrbClick} className="w-full h-full flex items-center justify-center cursor-pointer">
+                  <VaniMascot state={state} transcript={transcript} responseBrief={lastResponse?.spoken_response} />
+                </div>
+              </div>
+
+              {/* Transcript & Command Status */}
+              <div className="space-y-3 text-center px-2">
                 <AnimatePresence mode="wait">
-                  {state === 'listening' ? (
-                    <motion.div key="list" className="flex items-center space-x-1.5 h-10">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <motion.div
-                          key={i}
-                          animate={{ height: [12, 36, 12] }}
-                          transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.1 }}
-                          className="w-1.5 bg-gradient-to-t from-rose-600 to-rose-400 rounded-full"
-                        />
-                      ))}
-                    </motion.div>
-                  ) : state === 'thinking' ? (
-                    <motion.div 
-                      key="think" 
-                      initial={{ scale: 0.5, rotate: 0 }} 
-                      animate={{ scale: 1, rotate: 360 }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                      className="relative w-16 h-16 flex items-center justify-center"
+                  {transcript && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="text-sm font-medium text-slate-100 line-clamp-3 italic px-4 py-2 bg-white/5 border border-white/5 rounded-2xl font-sans relative overflow-hidden"
                     >
-                      <Brain className="w-12 h-12 text-blue-400" />
-                      <div className="absolute inset-0 rounded-full border-2 border-blue-400/20 border-t-blue-400" />
-                    </motion.div>
-                  ) : state === 'speaking' ? (
-                    <motion.div 
-                      key="speak" 
-                      animate={{ scale: [0.95, 1.05, 0.95] }} 
-                      transition={{ repeat: Infinity, duration: 0.8 }}
-                      className="flex flex-col items-center justify-center space-y-1"
-                    >
-                      <Activity className="w-12 h-12 text-emerald-400" />
-                      <span className="text-[7px] text-emerald-400/80 font-black tracking-widest uppercase animate-pulse">Vocalizing</span>
-                    </motion.div>
-                  ) : (
-                    // Futuristic Eye (Breathing Cyan Core)
-                    <motion.div 
-                      key="idle"
-                      animate={{ scale: [0.98, 1.02, 0.98] }}
-                      transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                      className="flex flex-col items-center justify-center space-y-1.5"
-                    >
-                      <div className="w-8 h-8 rounded-full border-2 border-cyan-400/40 flex items-center justify-center animate-pulse">
-                        <div className="w-4 h-4 rounded-full bg-cyan-400/60 shadow-[0_0_15px_#06b6d4]" />
-                      </div>
-                      <span className="text-[7px] text-cyan-400 font-black tracking-[0.2em] uppercase">VANI Companion</span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-cyan-500/5 to-transparent animate-pulse" />
+                      <span className="relative z-10 text-slate-200">"{transcript}"</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </motion.div>
-            </div>
 
-            {/* Transcript & Command Status */}
-            <div className="mt-4 space-y-4 text-center">
-              <AnimatePresence mode="wait">
-                {transcript && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="text-lg font-medium text-slate-100 line-clamp-2 italic px-4 font-serif"
+                <div className="flex items-center justify-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full animate-ping ${
+                    state === 'listening' ? 'bg-rose-500 shadow-[0_0_12px_#f43f5e]' : 
+                    state === 'thinking' ? 'bg-blue-500 shadow-[0_0_12px_#3b82f6]' : 
+                    state === 'speaking' ? 'bg-emerald-500 shadow-[0_0_12px_#10b981]' :
+                    'bg-cyan-500 shadow-[0_0_10px_#06b6d4]'
+                  }`} />
+                  <span className={`text-[9px] font-black tracking-[0.2em] uppercase transition-colors duration-300
+                    ${state === 'listening' ? 'text-rose-400' : 
+                      state === 'thinking' ? 'text-blue-400' : 
+                      state === 'speaking' ? 'text-emerald-400' : 
+                      'text-cyan-400'}`}
                   >
-                    "{transcript}"
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    {state === 'listening' ? 'Listening to you, sir...' : 
+                     state === 'thinking' ? 'Accessing neural ledgers...' : 
+                     state === 'speaking' ? 'Answering you now, sir...' : 
+                     'VANI Active · Awaiting Voice'}
+                  </span>
+                </div>
+              </div>
 
-              <div className="flex items-center justify-center space-x-2">
-                <div className={`w-2.5 h-2.5 rounded-full animate-ping ${
-                  state === 'listening' ? 'bg-rose-500 shadow-[0_0_12px_#f43f5e]' : 
-                  state === 'thinking' ? 'bg-blue-500 shadow-[0_0_12px_#3b82f6]' : 
-                  state === 'speaking' ? 'bg-emerald-500 shadow-[0_0_12px_#10b981]' :
-                  'bg-cyan-500 shadow-[0_0_10px_#06b6d4]'
-                }`} />
-                <span className="text-[10px] font-black tracking-[0.25em] uppercase transition-colors duration-300
-                  ${state === 'listening' ? 'text-rose-400' : 
-                    state === 'thinking' ? 'text-blue-400' : 
-                    state === 'speaking' ? 'text-emerald-400' : 
-                    'text-cyan-400'}"
+              {/* Strategic Summary Card (The Jarvis Briefing) */}
+              {lastResponse?.summary_card && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="p-5 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-3xl relative overflow-hidden group shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
                 >
-                  {state === 'listening' ? 'Listening closely to you, sir...' : 
-                   state === 'thinking' ? 'Accessing neural ledger registers...' : 
-                   state === 'speaking' ? 'Answering you now, sir...' : 
-                   'VANI Active · Awaiting Your Voice'}
-                </span>
+                  <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/5 via-transparent to-transparent opacity-50 pointer-events-none" />
+                  <div className="flex items-center justify-between mb-3 relative z-10">
+                    <div>
+                      <h3 className="text-sm font-bold text-white tracking-tight font-display">
+                        {lastResponse.summary_card.title}
+                      </h3>
+                      <p className="text-slate-400 text-[10px] italic">
+                        {lastResponse.summary_card.subtitle}
+                      </p>
+                    </div>
+                    <div className={`p-2 rounded-xl ${
+                      lastResponse.summary_card.status === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                      lastResponse.summary_card.status === 'warning' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                      'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                    }`}>
+                      <Activity className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5 relative z-10">
+                    {lastResponse.summary_card.items.map((item: any, i: number) => (
+                      <div key={i} className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 shadow-sm">
+                        <div className="text-[8px] text-slate-500 uppercase tracking-widest mb-0.5 font-bold">
+                          {item.label}
+                        </div>
+                        <div className="text-xs font-mono text-slate-200 truncate">
+                          {item.value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {lastResponse.proactive_note && (
+                    <div className="mt-3 pt-3 border-t border-white/5 flex items-start space-x-2 relative z-10">
+                      <Sparkles className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5 animate-pulse" />
+                      <p className="text-[10px] text-blue-300/80 italic leading-relaxed font-sans">
+                        "Sir, {lastResponse.proactive_note}"
+                      </p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Language Controls */}
+              <div className="flex justify-center gap-3.5 pt-2">
+                {['hi-IN', 'en-IN', 'mr-IN'].map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => setSttLang(lang)}
+                    className={`text-[8px] font-black tracking-widest uppercase transition-all ${
+                      sttLang === lang ? 'text-blue-400' : 'text-slate-600 hover:text-slate-400'
+                    } cursor-pointer`}
+                  >
+                    {lang.split('-')[0]}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Strategic Summary Card (The Jarvis Briefing) */}
-            {lastResponse?.summary_card && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="mt-8 p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-3xl"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-white tracking-tight">
-                      {lastResponse.summary_card.title}
-                    </h3>
-                    <p className="text-slate-400 text-xs italic">
-                      {lastResponse.summary_card.subtitle}
-                    </p>
-                  </div>
-                  <div className={`p-2 rounded-lg ${
-                    lastResponse.summary_card.status === 'success' ? 'bg-emerald-500/10 text-emerald-400' :
-                    lastResponse.summary_card.status === 'warning' ? 'bg-amber-500/10 text-amber-400' :
-                    'bg-rose-500/10 text-rose-400'
-                  }`}>
-                    <Activity className="w-5 h-5" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  {lastResponse.summary_card.items.map((item: any, i: number) => (
-                    <div key={i} className="p-3 rounded-2xl bg-white/5 border border-white/5">
-                      <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">
-                        {item.label}
-                      </div>
-                      <div className="text-sm font-mono text-slate-200">
-                        {item.value}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {lastResponse.proactive_note && (
-                  <div className="mt-4 pt-4 border-t border-white/5 flex items-start space-x-3">
-                    <Sparkles className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-blue-300/80 italic leading-relaxed">
-                      "Sir, {lastResponse.proactive_note}"
-                    </p>
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            {/* Language Controls */}
-            <div className="mt-6 flex justify-center gap-4">
-              {['hi-IN', 'en-IN', 'mr-IN'].map((lang) => (
-                <button
-                  key={lang}
-                  onClick={() => setSttLang(lang)}
-                  className={`text-[9px] font-black tracking-widest uppercase transition-all ${
-                    sttLang === lang ? 'text-blue-400' : 'text-slate-600 hover:text-slate-400'
-                  }`}
-                >
-                  {lang.split('-')[0]}
-                </button>
-              ))}
-            </div>
-
-            {/* Keyboard Command Input (Jarvis Viva life-saver!) */}
-            <div className="mt-6 pt-4 border-t border-white/5">
+            {/* Fixed Bottom Keyboard Command Input Footer */}
+            <div className="p-4 border-t border-white/5 bg-slate-950/80 backdrop-blur-md">
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -490,12 +445,12 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
                 <input
                   name="textCommand"
                   type="text"
-                  placeholder="Type Jarvis command (e.g. 'create bill for Rohan')..."
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50 transition-all font-mono"
+                  placeholder="Type Jarvis command..."
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-4 pr-10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50 transition-all font-mono"
                 />
                 <button
                   type="submit"
-                  className="absolute right-2 top-2 p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white transition-all"
+                  className="absolute right-1.5 top-1.5 p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white transition-all cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                 </button>
@@ -503,18 +458,19 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
+       </AnimatePresence>
 
       {/* Mini Orb for Trigger (Hidden when console is open) */}
       {state === 'idle' && !lastResponse?.summary_card && (
         <motion.button
           onClick={activate}
           whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          className="w-16 h-16 rounded-full bg-slate-900 border border-white/10 flex items-center justify-center shadow-2xl relative group overflow-hidden"
+          whileTap={{ scale: 0.95 }}
+          className="w-16 h-16 rounded-full bg-slate-950 border border-white/10 flex items-center justify-center shadow-[0_12px_24px_-8px_rgba(0,0,0,0.5),0_0_20px_rgba(99,102,241,0.15)] relative group overflow-hidden pointer-events-auto cursor-pointer"
         >
-          <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-rose-600/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <Mic className="w-6 h-6 text-slate-400 group-hover:text-white transition-colors" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 to-rose-600/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute inset-0 bg-mesh opacity-20" />
+          <Mic className="w-6 h-6 text-slate-300 group-hover:text-white transition-colors duration-300 relative z-10 animate-[pulse_2s_infinite]" />
         </motion.button>
       )}
 

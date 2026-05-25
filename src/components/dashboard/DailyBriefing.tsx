@@ -164,7 +164,7 @@ The Vyapari Business Administration Team`
             whileTap={{ scale: 0.95 }}
             onClick={() => {
               const text = safeInsights.map(i => `-- *${i.title.toUpperCase()}*\n${i.insight}`).join('\n\n');
-              const header = `-- *VYAPARI EXECUTIVE BRIEFING*\n_Neural insights for your business growth_\n\n`;
+              const header = `-- *VYAPARI EXECUTIVE BRIEFING*\n_Smart insights for your business growth_\n\n`;
               window.open(`https://wa.me/?text=${encodeURIComponent(header + text)}`, '_blank');
             }}
             className="px-8 py-4 bg-indigo-600 text-white text-xs font-bold uppercase tracking-widest rounded-2xl flex items-center gap-3 shadow-xl shadow-indigo-600/20 hover:bg-indigo-500"

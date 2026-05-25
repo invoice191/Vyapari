@@ -49,8 +49,13 @@ export const automationService = {
               referenceType: 'invoice'
             });
 
-            await auditService.logAction(businessId, userId, userEmail, 'automated_dunning', 'AutoPilot', {
-              invoice_id: invoice.id, type: 'pre-due reminder', days_until_due: diffDays
+            await auditService.logAction({
+              business_id: businessId,
+              user_id: userId,
+              user_email: userEmail,
+              action: 'automated_dunning',
+              module: 'AutoPilot',
+              details: { invoice_id: invoice.id, type: 'pre-due reminder', days_until_due: diffDays }
             });
           }
 
@@ -89,8 +94,13 @@ export const automationService = {
               detail: `Added ${config.lateFeePercent}% (Rs. ${penalty.toFixed(0)}) to #${invoice.invoice_number}`,
               status: 'warning'
             });
-            await auditService.logAction(businessId, userId, userEmail, 'applied_late_fee', 'AutoPilot', {
-              invoice_id: invoice.id, penalty_amount: penalty
+            await auditService.logAction({
+              business_id: businessId,
+              user_id: userId,
+              user_email: userEmail,
+              action: 'applied_late_fee',
+              module: 'AutoPilot',
+              details: { invoice_id: invoice.id, penalty_amount: penalty }
             });
           }
         }
@@ -123,8 +133,13 @@ export const automationService = {
                 referenceType: 'system'
               });
             }
-            await auditService.logAction(businessId, userId, userEmail, 'automated_restock_request', 'AutoPilot', {
-              item_id: item.id, supplier_id: item.supplier_id
+            await auditService.logAction({
+              business_id: businessId,
+              user_id: userId,
+              user_email: userEmail,
+              action: 'automated_restock_request',
+              module: 'AutoPilot',
+              details: { item_id: item.id, supplier_id: item.supplier_id }
             });
           }
         }

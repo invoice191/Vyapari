@@ -232,7 +232,7 @@ export default function SmartDunning() {
               </div>
 
               <div className="p-6 bg-slate-900 text-white/40 text-[9px] font-black uppercase tracking-[0.3em] text-center">
-                 Neural Sentiment Engine v2.5 | End-to-End Encrypted
+                 Smart Sentiment Engine v2.5 | End-to-End Encrypted
               </div>
            </div>
         </div>

@@ -1,11 +1,11 @@
-﻿import React from 'react';
+import React from 'react';
 import { AlertTriangle, Trash2, RotateCcw, ShieldAlert, ZapOff, Users } from 'lucide-react';
 
 export const DangerZone = () => {
   const actions = [
     {
       title: "DSS Neural Reset",
-      desc: "Clear all strategic simulations, historical recommendations, and AI training data. This action is irreversible.",
+      desc: "Clear all strategic simulations, historical recommendations, and simulation history. This action is irreversible.",
       btn: "Wipe Strategy Engine",
       icon: <RotateCcw size={18} />
     },

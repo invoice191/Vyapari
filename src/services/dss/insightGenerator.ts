@@ -33,7 +33,7 @@ export async function generateInsights(
 
     if (error) throw error;
 
-    // Merge rule-based and AI-generated insights
+    // Merge rule-based and Auto-generated insights
     // The edge function returns an array of objects: { title, insight, impact, icon }
     // We map these to DSSInsight type
     const aiInsights: DSSInsight[] = Array.isArray(data)

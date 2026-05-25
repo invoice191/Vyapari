@@ -156,7 +156,7 @@ function App() {
       case "prediction":return <ModuleErrorBoundary moduleName="What-If Calculator"><RoleGuard module="Simulation"><Prediction /></RoleGuard></ModuleErrorBoundary>;
       case "ocr":       return <ModuleErrorBoundary moduleName="What I Bought"><OCR /></ModuleErrorBoundary>;
       case "invoices":  return <ModuleErrorBoundary moduleName="Bills & Orders"><Invoices /></ModuleErrorBoundary>;
-      case "invoice_ai": return <ModuleErrorBoundary moduleName="Invoice AI"><InvoiceAIConsole /></ModuleErrorBoundary>;
+      case "invoice_ai": return <ModuleErrorBoundary moduleName="Smart Billing Assistant"><InvoiceAIConsole /></ModuleErrorBoundary>;
       case "pos":       return <ModuleErrorBoundary moduleName="POS Counter Mode"><POSCounterMode /></ModuleErrorBoundary>;
       case "inventory": return <ModuleErrorBoundary moduleName="My Stock"><Inventory /></ModuleErrorBoundary>;
       case "purchases": return <ModuleErrorBoundary moduleName="Vendor Orders"><PurchaseHub /></ModuleErrorBoundary>;
@@ -176,7 +176,7 @@ function App() {
     dss: "Business Tips", prediction: "Business Testing",
     ocr: "Snap a Photo", invoices: "Bills & Orders",
     inventory: "My Stock", contacts: "Customers & Suppliers", ledger: "Money History", banker: "Loan Ready Check",
-    invoice_ai: "Invoice AI",
+    invoice_ai: "Smart Billing Assistant",
     settings: "Settings", users: "My Team", audit: "Activity Log",
   };
 

@@ -114,7 +114,7 @@ export const PricingEngine: React.FC = () => {
       toast("Global pricing cluster synced successfully.", "success");
     } catch (err) {
       console.error("Update failed:", err);
-      toast("Neural sync interrupted.", "error");
+      toast("Smart sync interrupted.", "error");
     } finally {
       setUpdatingId(null);
     }

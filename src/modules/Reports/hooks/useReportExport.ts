@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useToast } from '../../../components/common/Toast';
 import { generateExecutivePDF } from '../export/templates/pdf/executivePDF';
@@ -35,7 +35,7 @@ export function useReportExport() {
       localStorage.setItem(cacheKey, JSON.stringify(advisory));
       return advisory;
     } catch (err) {
-      console.error('AI Insight failed:', err);
+      console.error('SMART INSIGHT failed:', err);
       return ["Data analysis completed. Review metrics below."];
     }
   };

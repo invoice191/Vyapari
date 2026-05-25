@@ -37,6 +37,110 @@ function LiveClock() {
   );
 }
 
+function DhandaScoreWidget({ tier1Data, moneyIn, moneyOut }: { tier1Data: any; moneyIn: number; moneyOut: number }) {
+  let score = 650;
+  
+  const overdueCount = tier1Data?.overdue_count || 0;
+  score -= Math.min(overdueCount * 35, 150);
+
+  const lowStockCount = tier1Data?.low_stock_count || 0;
+  score -= Math.min(lowStockCount * 20, 100);
+
+  if (moneyIn > moneyOut && moneyOut > 0) {
+    const profitRatio = (moneyIn - moneyOut) / moneyOut;
+    score += Math.min(Math.round(profitRatio * 100), 150);
+  } else if (moneyIn > 100000) {
+    score += 80;
+  }
+
+  score = Math.max(300, Math.min(900, score));
+
+  let tierLabel = "Merchant Apprentice";
+  let tierColor = "from-amber-500 to-orange-600 text-amber-500 bg-amber-500/10 border-amber-500/20";
+  let description = "Keep working on clearing your overdue bills and stocking up items to boost your business rating!";
+
+  if (score >= 800) {
+    tierLabel = "Sovereign Vyapari";
+    tierColor = "from-emerald-400 to-teal-600 text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
+    description = "Sir, your business intelligence protocols are executing flawlessly. Your cash flow and warehouse levels are in prime health!";
+  } else if (score >= 700) {
+    tierLabel = "Profit Pioneer";
+    tierColor = "from-indigo-400 to-indigo-600 text-indigo-400 bg-indigo-500/10 border-indigo-500/20";
+    description = "Excellent progress! You have highly stable revenue. Try resolving the remaining stockouts to reach Sovereign status.";
+  }
+
+  const strokeDashoffset = 339 - (339 * (score - 300)) / 600;
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-8 rounded-[2rem] bg-slate-900 border border-white/5 flex flex-col md:flex-row items-center gap-8 shadow-2xl relative overflow-hidden mb-10 mt-6"
+    >
+      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 via-transparent to-transparent pointer-events-none" />
+      
+      {/* Glowing Circular Progress Dial */}
+      <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
+        <svg className="w-full h-full transform -rotate-90">
+          <circle cx="72" cy="72" r="54" className="stroke-slate-800" strokeWidth="8" fill="transparent" />
+          <motion.circle 
+            cx="72" 
+            cy="72" 
+            r="54" 
+            className="stroke-indigo-500" 
+            strokeWidth="10" 
+            strokeLinecap="round"
+            fill="transparent" 
+            initial={{ strokeDashoffset: 339 }}
+            animate={{ strokeDashoffset }}
+            strokeDasharray="339"
+            transition={{ duration: 1.5, ease: "easeOut" }}
+          />
+        </svg>
+        <div className="absolute flex flex-col items-center justify-center text-center">
+          <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Dhanda Score</span>
+          <span className="text-3xl font-black tracking-tighter text-white font-mono mt-0.5">{score}</span>
+        </div>
+      </div>
+
+      {/* Info Panel */}
+      <div className="flex-1 space-y-4 text-center md:text-left">
+        <div className="flex flex-col md:flex-row items-center gap-3">
+          <h3 className="text-xl font-bold text-white tracking-tight">Ecosystem Growth Diagnostics</h3>
+          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border bg-gradient-to-r ${tierColor}`}>
+            {tierLabel}
+          </span>
+        </div>
+        <p className="text-slate-400 text-sm leading-relaxed max-w-xl">
+          "{description}"
+        </p>
+
+        {/* Gamified Achievement Badges Track */}
+        <div className="flex flex-wrap items-center gap-3 justify-center md:justify-start pt-2">
+          <div className={`px-3 py-1.5 rounded-xl border flex items-center gap-2 text-[9px] font-bold uppercase transition-all ${
+            overdueCount === 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-800/40 text-slate-500 border-white/5'
+          }`}>
+            <Target size={12} className={overdueCount === 0 ? "animate-pulse" : ""} />
+            Debt Clean
+          </div>
+          <div className={`px-3 py-1.5 rounded-xl border flex items-center gap-2 text-[9px] font-bold uppercase transition-all ${
+            lowStockCount === 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-800/40 text-slate-500 border-white/5'
+          }`}>
+            <Zap size={12} className={lowStockCount === 0 ? "animate-pulse" : ""} />
+            Warehouse Full
+          </div>
+          <div className={`px-3 py-1.5 rounded-xl border flex items-center gap-2 text-[9px] font-bold uppercase transition-all ${
+            moneyIn > moneyOut ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-800/40 text-slate-500 border-white/5'
+          }`}>
+            <TrendingUp size={12} className={moneyIn > moneyOut ? "animate-pulse" : ""} />
+            Surplus Capital
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function Dashboard() {
   const { profile } = useAuth();
   const bp = useBreakpoint();
@@ -304,7 +408,7 @@ export default function Dashboard() {
       const data = await analyticsService.getItemDrilldown(profile.business_id, itemId);
       setDrilldownData(data);
       
-      // Get AI Insight for this product
+      // Get SMART INSIGHT for this product
       const insight = await dssService.generateBusinessBriefing({
         engineOutputs: [{
           engine: 'inventory',
@@ -532,7 +636,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-1">AI Helper</div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-1">Auto Payments Finder</div>
                   <div className="text-sm font-bold text-white">AI identified ₹{pendingReconciliations.reduce((a,b) => a + Number(b.ledger_entries?.amount || 0), 0).toLocaleString()} in new payments.</div>
                   <div className="text-[10px] font-medium text-indigo-300/80 uppercase tracking-wider">Ready for one-tap reconciliation.</div>
                 </div>
@@ -602,7 +706,10 @@ export default function Dashboard() {
           {renderCard("Low Stock", (tier1Data?.low_stock_count || 0).toString(), -2.1, "Stock Alerts", "--", "#f59e0b", spark(90), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'inventory' } })), 0.3)}
           {renderCard("Overdue Bills", (tier1Data?.overdue_count || 0).toString(), 5.6, "Past Due Date", "--", C.purple, spark(1800), () => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'ledger' } })), 0.35)}
         </div>
-        </div>
+      </div>
+
+      {/* Gamified Business Rating Core Indicator */}
+      <DhandaScoreWidget tier1Data={tier1Data} moneyIn={moneyIn} moneyOut={moneyOut} />
 
 
 
@@ -1041,7 +1148,7 @@ export default function Dashboard() {
                         <Sparkles size={40} className="text-white" />
                       </div>
                       <div className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-4 flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Gemini AI Insight
+                        <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Gemini SMART INSIGHT
                       </div>
                       <p className="text-slate-300 text-sm font-medium leading-relaxed italic">
                         "{aiDrilldownInsight}"
@@ -1173,7 +1280,7 @@ export default function Dashboard() {
         </motion.div>
       )}
 
-      {/* AI Intelligence Briefing - Repositioned to bottom for Executive Summary flow */}
+      {/* Smart Engine Briefing - Repositioned to bottom for Executive Summary flow */}
       {(tier3Loading || (aiInsights && aiInsights.length > 0)) && (
         <DailyBriefing 
           insights={aiInsights} 

@@ -98,7 +98,7 @@ export default function ProductInsights({
                 {product.name} - Intelligence Terminal
               </h1>
               <span className="px-2 py-0.5 bg-orange-500 text-white text-[8px] font-black rounded uppercase tracking-widest">
-                AI Powered
+                Smart Tech Powered
               </span>
             </div>
             <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
@@ -691,7 +691,7 @@ export default function ProductInsights({
         <div className="flex items-center gap-4">
           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-            AI Engine Status: Optimized - V5.2-Stable
+            System Status: Optimized - V5.2-Stable
           </span>
         </div>
         <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">

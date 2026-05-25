@@ -75,7 +75,7 @@ export const LiquidInvoiceAction: React.FC<LiquidInvoiceProps> = ({
                   disabled={loading}
                   className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold text-lg transition-all shadow-lg shadow-indigo-600/20"
                 >
-                  {loading ? 'Analyzing Risks...' : 'Calculate AI Offer'}
+                  {loading ? 'Analyzing Risks...' : 'Calculate Best Offer'}
                 </button>
               </motion.div>
             )}
@@ -90,7 +90,7 @@ export const LiquidInvoiceAction: React.FC<LiquidInvoiceProps> = ({
               >
                 <div className="flex items-center gap-3 text-emerald-400 font-bold uppercase tracking-widest text-xs">
                   <Calculator className="w-4 h-4" />
-                  AI Settlement Generated
+                  Settlement Offer Ready
                 </div>
                 
                 <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 p-6 rounded-3xl text-center relative overflow-hidden">

@@ -149,7 +149,7 @@ export default function ExportDropdown({
                   className="w-full text-left px-3 py-2.5 text-[11px] font-black uppercase tracking-wider bg-white/[0.02] hover:bg-indigo-600/20 rounded-xl hover:text-white transition-all duration-300 border border-white/5 hover:border-indigo-500/30 flex items-center justify-between group"
                 >
                   <span>-- PDF - Executive</span>
-                  <span className="text-[7px] bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded-full font-black tracking-widest group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300">AI INSIGHTS</span>
+                  <span className="text-[7px] bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded-full font-black tracking-widest group-hover:bg-indigo-500 group-hover:text-white transition-all duration-300">SMART INSIGHTS</span>
                 </button>
                 <button
                   onClick={() => onExecuteExport('pdf_detailed')}
@@ -283,7 +283,7 @@ export default function ExportDropdown({
                 <h4 className="text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
                   <Mail size={18} className="text-amber-400" /> Automate Dispatch
                 </h4>
-                <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-1">Configure automated AI intelligence deliveries</p>
+                <p className="text-[9px] text-slate-400 uppercase tracking-widest mt-1">Set up automated smart report deliveries</p>
               </div>
               <button type="button" onClick={() => setIsScheduleOpen(false)} className="text-slate-400 hover:text-white text-[10px] font-black tracking-widest uppercase bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full transition-all">CLOSE</button>
             </div>

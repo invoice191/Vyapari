@@ -175,22 +175,26 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log(`[Realtime] ${payload.table} change:`, payload.eventType);
             if (payload.eventType === 'INSERT') {
               // Fetch full joined data for the new invoice to ensure UI consistency
-              const { data } = await supabase
-                .from('invoices')
-                .select('*, contacts(name, phone)')
-                .eq('id', payload.new.id)
-                .single()
-                .then(({ data }) => {
+              const fetchDetail = async () => {
+                try {
+                  const { data, error } = await supabase
+                    .from('invoices')
+                    .select('*, contacts(name, phone)')
+                    .eq('id', payload.new.id)
+                    .single();
+                  
+                  if (error) throw error;
                   if (data) {
                     setInvoices(prev => [data, ...prev]);
                   } else {
                     setInvoices(prev => [payload.new, ...prev]);
                   }
-                })
-                .catch(err => {
+                } catch (err) {
                   console.error("[Realtime] Error fetching invoice detail:", err);
                   setInvoices(prev => [payload.new, ...prev]);
-                });
+                }
+              };
+              fetchDetail();
             } else if (payload.eventType === 'UPDATE') {
               // Try to preserve existing contact data if payload.new doesn't have it
               setInvoices(prev => prev.map(i => {

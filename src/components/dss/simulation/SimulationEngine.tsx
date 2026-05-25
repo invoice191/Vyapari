@@ -325,7 +325,7 @@ export const SimulationEngine: React.FC = () => {
             <ResultCard label="DANGER LEVEL" value={results.overallRisk === 'LOW' ? 'SAFE' : 'RISKY'} sub={`${results.confidence}% sure about this`} positive={results.overallRisk === 'LOW'} />
           </div>
 
-          {/* AI Advice */}
+          {/* Smart Advice */}
           <div className="bg-brand/20 border border-brand/30 p-10 rounded-[3rem] relative overflow-hidden group shadow-2xl">
             <Zap className="absolute -right-12 -top-12 w-48 h-48 text-brand opacity-10 group-hover:rotate-12 transition-transform duration-700" />
             <h3 className="text-brand font-black text-xl flex items-center gap-2 mb-8 uppercase tracking-tighter italic">

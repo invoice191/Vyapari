@@ -59,6 +59,14 @@ export function runForecastEngine(input: EngineInput): EngineOutput {
     const isFestival = rules.forecast.festivalMonths.includes(monthIndex);
     const seasonality = isFestival ? rules.forecast.festivalBoostFactor : 1.0;
     
+    let festivalName = "";
+    if (isFestival) {
+      if (monthIndex === 10) festivalName = "Dussehra / Durga Puja Peak";
+      else if (monthIndex === 11) festivalName = "Diwali Festival Spike";
+      else if (monthIndex === 3) festivalName = "Holi Celebration Peak";
+      else if (monthIndex === 4) festivalName = "Eid / Spring Shopping";
+    }
+    
     // Expanding Uncertainty: Future further out has wider bounds
     const uncertaintyFactor = 1 + (i * 0.1); 
     const prediction = Math.max(0, (blendedAvg + (historicTrend * i)) * seasonality);
@@ -68,6 +76,7 @@ export function runForecastEngine(input: EngineInput): EngineOutput {
       actual: Math.round(prediction), 
       isFuture: true, 
       isFestival,
+      festivalName,
       lowerBound: Math.round(prediction * (0.9 / uncertaintyFactor)),
       upperBound: Math.round(prediction * (1.1 * uncertaintyFactor))
     });
@@ -84,7 +93,8 @@ export function runForecastEngine(input: EngineInput): EngineOutput {
       lowerBound: m.lowerBound || m.actual,
       upperBound: m.upperBound || m.actual,
       seasonalityFactor: m.isFestival ? rules.forecast.festivalBoostFactor : 1.0,
-      isFestivalMonth: !!m.isFestival
+      isFestivalMonth: !!m.isFestival,
+      festivalName: (m as any).festivalName || ""
     })),
     confidence: 0.7,
     modelUsed: 'seasonal_decomposition',

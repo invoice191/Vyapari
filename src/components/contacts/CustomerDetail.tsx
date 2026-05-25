@@ -290,7 +290,7 @@ export default function CustomerDetail({ contact, onClose, onNewInvoice }: Custo
         </div>
         <div className="space-y-2">
           <h3 className="text-3xl font-black">Frequent Buyer</h3>
-          <h4 className="text-xs font-black uppercase tracking-widest opacity-60">AI Intelligence</h4>
+          <h4 className="text-xs font-black uppercase tracking-widest opacity-60">Smart Intelligence</h4>
           <p className="text-indigo-100 text-sm leading-relaxed font-medium">
             This customer makes an average of 4 purchases per month. They primarily shop in the "Groceries" category and tend to buy in bulk.
           </p>

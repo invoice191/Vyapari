@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Play, RotateCcw, Save, Download, 
   TrendingUp, TrendingDown, AlertCircle, 
-  HelpCircle, Zap, Clock, Calculator
+  HelpCircle, Zap, Clock, Calculator, Brain
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -171,7 +171,7 @@ export default function WhatIfSimulator() {
                     <h3 className="text-white font-black text-lg tracking-tight uppercase italic">Intelligence Result</h3>
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                       Neural Engine Synced: {new Date(result?.generatedAt || Date.now()).toLocaleTimeString()}
+                       Smart Engine Synced: {new Date(result?.generatedAt || Date.now()).toLocaleTimeString()}
                     </p>
                  </div>
               </div>

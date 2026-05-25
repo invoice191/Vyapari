@@ -85,7 +85,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => window.removeEventListener('notifications:count', handleCount);
   }, []);
   return (
-    <header className="h-18 bg-white/40 backdrop-blur-2xl border-b border-slate-200/40 flex items-center px-6 sm:px-10 sticky top-0 z-[200] gap-4 sm:gap-8 shadow-sm">
+    <header className="h-16 bg-white/60 backdrop-blur-3xl border-b border-slate-200/50 flex items-center px-4 sm:px-8 sticky top-0 z-[200] gap-4 sm:gap-6" style={{boxShadow:'0 1px 0 rgba(0,0,0,0.04), 0 4px 16px -8px rgba(15,23,42,0.08)'}}>
       {/* Mobile Menu Toggle / Breadcrumb */}
       <div className="flex items-center gap-4 flex-shrink-0">
         {isMobile && (
@@ -98,40 +98,42 @@ export const Navbar: React.FC<NavbarProps> = ({
           </motion.button>
         )}
         
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-0.5">
           <div className="flex items-center gap-2">
-            <Activity size={14} className="text-indigo-600 animate-pulse" />
-            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hidden sm:inline">Live System</span>
-            
-            {/* Security Indicator */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100 ml-2">
-               <Shield size={10} className="text-emerald-500" />
-               <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Secured</span>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[8px] font-bold text-emerald-600 uppercase tracking-widest hidden sm:inline">Live</span>
+            </div>
+            <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200/80">
+              <Shield size={9} className="text-slate-400" />
+              <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Secured</span>
             </div>
           </div>
-          <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight whitespace-nowrap">
+          <h1 className="text-[15px] font-bold text-slate-900 tracking-tight whitespace-nowrap leading-tight">
             {activeTitle}
           </h1>
         </div>
       </div>
 
       {/* Fully Functional Inline Search Bar */}
-      <div ref={searchRef} className="hidden lg:flex items-center flex-1 max-w-md mx-auto relative z-[500]">
-        <div className="relative w-full group">
-          <Search className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${isSearching ? 'text-indigo-600' : 'text-slate-400'}`} size={16} />
-          <input 
-            type="text" 
+      <div ref={searchRef} className="hidden lg:flex items-center flex-1 max-w-sm mx-auto relative z-[500]">
+        <div className="relative w-full">
+          <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${isSearching ? 'text-indigo-500' : 'text-slate-400'}`} size={15} />
+          <input
+            type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsSearching(true)}
-            placeholder="Search commands, products, or customers..." 
-            className={`w-full bg-slate-100/50 border border-slate-200/60 pl-12 pr-12 py-2.5 rounded-2xl text-sm font-medium text-slate-900 placeholder:text-slate-400 outline-none transition-all ${
-              isSearching ? 'bg-white border-indigo-600 ring-4 ring-indigo-600/5 shadow-lg' : 'focus:bg-white focus:border-indigo-600'
+            placeholder="Search anything..."
+            className={`w-full bg-slate-100/70 border pl-10 pr-20 py-2 rounded-xl text-sm font-medium text-slate-800 placeholder:text-slate-400 outline-none transition-all duration-200 ${
+              isSearching
+                ? 'bg-white border-indigo-400 ring-4 ring-indigo-500/8 shadow-md'
+                : 'border-slate-200/80 hover:border-slate-300 hover:bg-slate-100'
             }`}
           />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 bg-white border border-slate-200 rounded-lg shadow-sm opacity-60 pointer-events-none">
-            <Command size={10} className="text-slate-400" />
-            <span className="text-[10px] font-bold text-slate-400">K</span>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 px-1.5 py-0.5 bg-white border border-slate-200 rounded-md opacity-50 pointer-events-none">
+            <Command size={9} className="text-slate-400" />
+            <span className="text-[9px] font-bold text-slate-400">K</span>
           </div>
         </div>
 
@@ -282,53 +284,51 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Actions */}
       <div className="flex items-center gap-3 sm:gap-5 flex-shrink-0 ml-auto">
         {/* Branch Selector */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-slate-100/50 border border-slate-200/60 rounded-xl cursor-pointer hover:bg-white transition-all">
-          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Branch:</span>
-          <span className="text-[11px] font-bold text-slate-900">HQ Main</span>
-          <ChevronDown size={14} className="text-slate-400" />
+        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100/60 border border-slate-200/60 rounded-lg cursor-pointer hover:bg-white hover:border-slate-300 hover:shadow-sm transition-all">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <span className="text-[10px] font-semibold text-slate-700">HQ Main</span>
+          <ChevronDown size={11} className="text-slate-400" />
         </div>
 
-        <div className="h-6 w-[1px] bg-slate-200 hidden sm:block mx-1" />
+        <div className="h-5 w-px bg-slate-200 hidden sm:block" />
 
         {/* VANI Trigger */}
-        <motion.button 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+        <motion.button
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.94 }}
           onClick={() => window.dispatchEvent(new CustomEvent('vani:trigger'))}
-          className="w-10 h-10 flex items-center justify-center bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all relative group"
+          className="relative w-9 h-9 flex items-center justify-center rounded-xl text-white group"
+          style={{
+            background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
+            boxShadow: '0 4px 14px -4px rgba(99,102,241,0.55), 0 1px 0 rgba(255,255,255,0.15) inset'
+          }}
         >
-          <Mic size={18} />
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-400 rounded-full animate-ping opacity-75" />
-          {/* Tooltip */}
-          <div className="absolute top-full mt-3 right-0 bg-slate-900 text-white text-[10px] px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap font-bold tracking-wider z-[300]">
-            VANI VOICE ASSISTANT
+          <Mic size={15} />
+          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-indigo-300 rounded-full border-2 border-white animate-ping opacity-70" />
+          <div className="absolute top-full mt-2 right-0 bg-slate-900 text-white text-[9px] px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap font-semibold tracking-wide z-[300]">
+            Voice Assistant
           </div>
         </motion.button>
 
         {/* Notifications */}
-        <motion.button 
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+        <motion.button
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.94 }}
           onClick={() => setNotificationsOpen(true)}
-          className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-600 hover:text-indigo-600 transition-all relative shadow-sm group"
+          className="relative w-9 h-9 bg-white border border-slate-200/80 rounded-xl flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:shadow-sm transition-all group"
         >
           <motion.div
-            animate={{ 
-              rotate: [0, -10, 10, -10, 10, 0],
-            }}
-            transition={{ 
-              duration: 2, 
-              repeat: Infinity, 
-              repeatDelay: 3 
-            }}
+            animate={{ rotate: [0, -8, 8, -8, 8, 0] }}
+            transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 4 }}
           >
-          <Bell size={18} className="group-hover:fill-indigo-50" />
+            <Bell size={16} />
           </motion.div>
           {unreadCount > 0 && (
-            <motion.span 
+            <motion.span
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[9px] font-black rounded-full border-2 border-white flex items-center justify-center shadow-[0_0_8px_rgba(244,63,94,0.4)] animate-pulse"
+              className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-rose-500 text-white text-[8px] font-bold rounded-full border-2 border-white flex items-center justify-center"
+              style={{boxShadow:'0 0 8px rgba(244,63,94,0.5)'}}
             >
               {unreadCount}
             </motion.span>
@@ -341,23 +341,26 @@ export const Navbar: React.FC<NavbarProps> = ({
         />
         
         {/* Profile */}
-        <div className="flex items-center gap-3 pl-2 sm:pl-4 border-l border-slate-200 ml-1">
-          <div className="text-right hidden sm:block">
-            <div className="text-[11px] font-black text-slate-900 truncate max-w-[120px]">
+        <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200/70">
+          <div className="hidden sm:flex flex-col text-right">
+            <span className="text-[11px] font-semibold text-slate-800 truncate max-w-[110px] leading-tight">
               {user.user_metadata?.full_name || profile?.full_name || user.email.split('@')[0]}
-            </div>
-            <div className="text-[9px] text-indigo-600 font-black uppercase tracking-[0.15em] mt-0.5">
-              {profile?.role || 'Administrator'}
-            </div>
+            </span>
+            <span className="text-[9px] font-semibold text-indigo-500 uppercase tracking-[0.12em] mt-0.5">
+              {profile?.role || 'Admin'}
+            </span>
           </div>
-          <motion.div 
-            whileHover={{ scale: 1.05 }}
-            className="w-10 h-10 border-2 border-white ring-1 ring-slate-200 rounded-full overflow-hidden shadow-md flex-shrink-0 bg-slate-50 cursor-pointer"
+          <motion.div
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.96 }}
+            className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 cursor-pointer ring-2 ring-white shadow-md"
+            style={{boxShadow:'0 0 0 2px rgba(99,102,241,0.2), 0 2px 8px rgba(15,23,42,0.12)'}}
           >
             {user.user_metadata?.avatar_url ? (
               <img src={user.user_metadata.avatar_url} alt="profile" className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center font-black text-xs text-indigo-600">
+              <div className="w-full h-full flex items-center justify-center font-bold text-[11px] text-white"
+                   style={{background:'linear-gradient(135deg,#6366F1,#4F46E5)'}}>
                 {(user.user_metadata?.full_name || profile?.full_name || user.email || 'U').charAt(0).toUpperCase()}
               </div>
             )}

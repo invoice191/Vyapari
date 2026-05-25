@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Zap, Brain, Activity, ShieldCheck, TrendingUp, 
@@ -42,7 +42,7 @@ export default function DSSResultsView({ data, onReRun }: DSSResultsViewProps) {
 
   return (
     <div className="space-y-10 pb-20">
-      {/* -- NEURAL SAFETY SHIELD -- */}
+      {/* -- Smart SAFETY SHIELD -- */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -50,7 +50,7 @@ export default function DSSResultsView({ data, onReRun }: DSSResultsViewProps) {
       >
          <div className="flex items-center gap-4 text-indigo-400 font-black text-[10px] uppercase tracking-[0.4em]">
             <ShieldCheck size={18} />
-            Neural_Shield_Active: Simulation_Sandbox_Enabled
+            Smart_Shield_Active: Simulation_Sandbox_Enabled
          </div>
          <Badge className="bg-indigo-500/20 text-indigo-400 border-none text-[8px]">LOCAL_COMPUTE</Badge>
       </motion.div>
@@ -60,7 +60,7 @@ export default function DSSResultsView({ data, onReRun }: DSSResultsViewProps) {
          {/* Health Hub */}
          <div className="lg:col-span-4 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[3rem] p-10 flex flex-col items-center justify-center relative overflow-hidden group">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(99,102,241,0.05),transparent)]" />
-            <NeuralHealthScore score={data.business_health_score} label={data.business_health_label} />
+            <SmartHealthScore score={data.business_health_score} label={data.business_health_label} />
             <div className="grid grid-cols-5 gap-3 w-full mt-10">
                {Object.entries(data.health_score_breakdown || {}).map(([key, val]: [string, any], i) => (
                  <div key={i} className="text-center group/bar">
@@ -90,7 +90,7 @@ export default function DSSResultsView({ data, onReRun }: DSSResultsViewProps) {
                   <MessageSquare size={24} onClick={speakNarrative} className="cursor-pointer" />
                </div>
                <div>
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">VANI_NEURAL_STREAM</h3>
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">VANI_Smart_STREAM</h3>
                   <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Real-time narrative generation</p>
                </div>
             </div>
@@ -139,7 +139,7 @@ export default function DSSResultsView({ data, onReRun }: DSSResultsViewProps) {
                     <div className="absolute top-8 right-8 text-emerald-500 opacity-20 group-hover/rec:opacity-100 group-hover/rec:translate-x-2 transition-all">
                        <ArrowRight size={24} />
                     </div>
-                    <div className="text-[9px] font-black uppercase text-emerald-500 tracking-[0.2em] mb-3">{rec.engine || 'Neural'} Strategy</div>
+                    <div className="text-[9px] font-black uppercase text-emerald-500 tracking-[0.2em] mb-3">{rec.engine || 'Smart'} Strategy</div>
                     <div className="text-lg font-black text-white uppercase tracking-tighter mb-2">{rec.title}</div>
                     <p className="text-[10px] font-bold text-slate-400 leading-relaxed italic pr-12">"{rec.description}"</p>
                     <button className="mt-6 px-6 py-3 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">
@@ -154,7 +154,7 @@ export default function DSSResultsView({ data, onReRun }: DSSResultsViewProps) {
   );
 }
 
-function NeuralHealthScore({ score, label }: { score: number, label: string }) {
+function SmartHealthScore({ score, label }: { score: number, label: string }) {
   return (
     <div className="relative w-56 h-56 flex items-center justify-center">
       <svg className="w-full h-full transform -rotate-90">
@@ -291,7 +291,7 @@ function SimulationResultsView({ data, onReRun, business }: any) {
       {/* Narrative & Recommendations */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
          <div className="lg:col-span-8 bg-white/5 border border-white/10 rounded-[3rem] p-12">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 mb-10">Neural_Simulation_Narrative</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 mb-10">Smart_Simulation_Narrative</h3>
             <div className="space-y-8">
                {data.ai_insights.map((ins: any, i: number) => (
                  <div key={i} className="p-8 bg-white/5 rounded-3xl border border-white/5 relative group hover:border-indigo-500/30 transition-all">

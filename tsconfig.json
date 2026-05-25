@@ -28,6 +28,11 @@
     "node_modules",
     "supabase/functions",
     "server.ts",
-    "vyapari-gateway-main"
+    "vyapari-gateway-main",
+    "test_*.ts",
+    "test-*.ts",
+    "debug_*.ts",
+    "scratch/**/*.ts",
+    "set_secrets.ts"
   ]
 }

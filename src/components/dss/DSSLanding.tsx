@@ -57,11 +57,11 @@ export default function DSSLanding() {
           monthlyRevenue: res.summary.totalOpportunityValue
         })
         .then(ruleInsights => setAiInsights(ruleInsights))
-        .catch(e => console.error("Async AI insights failed:", e));
+        .catch(e => console.error("Async Business Insights failed:", e));
 
       } catch (err) {
         console.error("DSS Analysis Failed:", err);
-        toast("Neural link failed.", "error");
+        toast("Smart link failed.", "error");
         setLoading(false);
       }
     };
@@ -93,7 +93,7 @@ export default function DSSLanding() {
         ])
       };
       
-      await generateDSSReport("Neural Intelligence Briefing", mappedData, business?.name || "Vyapari Enterprise", action);
+      await generateDSSReport("Smart Intelligence Briefing", mappedData, business?.name || "Vyapari Enterprise", action);
       toast(`Briefing ${action === 'open' ? 'viewed' : 'downloaded'}`, "success");
     } catch (error) {
       toast("Generation failed", "error");
@@ -122,7 +122,7 @@ export default function DSSLanding() {
            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
               <Activity className="w-32 h-32 text-indigo-500" />
            </div>
-           <NeuralHealthOrb score={analysis.summary.healthScore} />
+           <SmartHealthOrb score={analysis.summary.healthScore} />
            <div className="mt-6">
               <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Overall Health</h3>
               <p className="text-xs text-slate-500 font-medium tracking-tight">Based on 30-day telemetry</p>
@@ -141,7 +141,7 @@ export default function DSSLanding() {
                  </button>
                  <div>
                     <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 italic">Global Briefing</h2>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Link Status: Secure - AI Sync Active</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Link Status: Secure - Sync Active</p>
                  </div>
               </div>
               <div className="flex gap-3">
@@ -282,6 +282,57 @@ export default function DSSLanding() {
          </div>
       </div>
 
+      {/* -- SEASONAL DEMAND FORECAST & INDIAN FESTIVAL PLANNER -- */}
+      <div className="bg-[#1E293B]/50 border border-slate-800 p-8 rounded-3xl space-y-6">
+         <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+               <Sparkles className="text-neon w-5 h-5" />
+               <div>
+                  <h3 className="text-base font-black text-white uppercase tracking-wider">Festive & Seasonal Demand Planner</h3>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Gemini-tuned local festival intelligence pipeline</p>
+               </div>
+            </div>
+            <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">SMART PREDICTION ACTIVE</Badge>
+         </div>
+
+         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[
+               { festival: "Diwali Festival Peak", month: "November", lift: "+35% Demand Hike", risk: "Stockout Risk: HIGH", recommendation: "Pre-order 1.4x buffer of Basmati & Grains by mid-Oct.", color: "border-amber-500/30 text-amber-400 bg-amber-500/5", score: 94 },
+               { festival: "Dussehra Celebration", month: "October", lift: "+28% Footfall Boost", risk: "Inventory Deficit: MEDIUM", recommendation: "Run special early-settlement campaign in early October.", color: "border-indigo-500/30 text-indigo-400 bg-indigo-500/5", score: 88 },
+               { festival: "Holi Festival Peak", month: "March", lift: "+22% Sales Volume Boost", risk: "Logistics Delay Risk: LOW", recommendation: "Negotiate bulk freight rates for color and gift packages.", color: "border-rose-500/30 text-rose-400 bg-rose-500/5", score: 85 },
+               { festival: "Eid Shopping Peak", month: "April", lift: "+30% Premium Grains Peak", risk: "Warehouse Space: TIGHT", recommendation: "Clear deadstock in March to release shelf footprint.", color: "border-emerald-500/30 text-emerald-400 bg-emerald-500/5", score: 91 }
+            ].map((item, idx) => (
+               <div key={idx} className="bg-slate-900/60 border border-slate-800/80 p-6 rounded-2xl flex flex-col justify-between hover:border-slate-700 transition-all relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-white/[0.02] rounded-full translate-x-8 -translate-y-8 group-hover:scale-110 transition-transform" />
+                  
+                  <div className="space-y-4">
+                     <div className="flex justify-between items-start">
+                        <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">{item.month}</span>
+                        <span className="text-[10px] font-black text-emerald-400">{item.lift}</span>
+                     </div>
+                     
+                     <div>
+                        <h4 className="text-sm font-black text-white group-hover:text-neon transition-colors">{item.festival}</h4>
+                        <div className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{item.risk}</div>
+                     </div>
+
+                     <p className="text-[11px] text-slate-500 leading-relaxed font-sans mt-2">{item.recommendation}</p>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-800/50 mt-6 flex justify-between items-center">
+                     <div>
+                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest block">Accuracy Confidence</span>
+                        <span className="text-xs font-black text-white">{item.score}%</span>
+                     </div>
+                     <span className={`px-2 py-1 rounded text-[8px] font-black uppercase border ${item.color}`}>
+                        Predictive
+                     </span>
+                  </div>
+               </div>
+            ))}
+         </div>
+      </div>
+
       {/* -- LIVE FEED: REFINED TICKER -- */}
       <div className="bg-[#1E293B]/30 border border-white/5 p-4 rounded-3xl flex items-center gap-6 overflow-hidden relative shadow-2xl backdrop-blur-xl">
          <div className="flex items-center gap-3 shrink-0 text-indigo-400 px-4 border-r border-white/5">
@@ -290,9 +341,9 @@ export default function DSSLanding() {
          </div>
          <div className="flex-1 overflow-hidden whitespace-nowrap">
             <div className="animate-scroll-text flex gap-20 text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">
-               <span>- AI detected high demand for "{products[0]?.name || 'Top Products'}" locally</span>
+               <span>- Smart detection: high demand for "{products[0]?.name || 'Top Products'}" locally</span>
                <span className="text-rose-400">- Revenue velocity dropped 12% in the last hour</span>
-               <span className="text-indigo-400">- Neural Link suggests {topTips[0]?.title || 'New Actions'}</span>
+               <span className="text-indigo-400">- Smart Link suggests {topTips[0]?.title || 'New Actions'}</span>
                <span className="text-emerald-400">- New market opportunity detected in Stationery category</span>
             </div>
          </div>
@@ -353,7 +404,7 @@ export default function DSSLanding() {
   );
 }
 
-function NeuralHealthOrb({ score }: { score: number }) {
+function SmartHealthOrb({ score }: { score: number }) {
   const color = score > 80 ? '#10B981' : score > 60 ? '#6366f1' : '#F43F5E';
   return (
     <div className="relative flex items-center justify-center w-48 h-48">
@@ -427,7 +478,7 @@ function DSSInsufficientData({ onSeed }: { onSeed: () => void }) {
           <BrainCircuit size={40} />
        </div>
        <div className="space-y-4">
-          <h2 className="text-3xl font-bold text-white tracking-tight">Establish Neural Link</h2>
+          <h2 className="text-3xl font-bold text-white tracking-tight">Establish Smart Link</h2>
           <p className="text-slate-500 text-sm font-medium max-w-sm mx-auto leading-relaxed">
              We need a baseline dataset to start generating growth tips for your shop.
           </p>

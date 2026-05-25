@@ -81,6 +81,7 @@ export default function Invoices() {
       type: 'sales',
       title: 'Sales & Invoice Summary',
       businessName: business?.name || 'My Business',
+      gstin: business?.gstin || "",
       dateRange: { from: invoices[invoices.length-1]?.invoice_date || new Date().toISOString(), to: new Date().toISOString() },
       rows: invoices.map(inv => ({
         ...inv,
@@ -444,12 +445,12 @@ export default function Invoices() {
               
                <button 
                 onClick={() => setActiveTab('ai')}
-                className={`px-4 py-2 rounded-2xl border transition-all flex items-center gap-2.5 font-black text-[10px] uppercase tracking-widest ${activeTab === 'ai' ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-500/20" : "bg-white text-indigo-600 border-indigo-100 hover:border-indigo-200 shadow-sm"}`}
+                className={`px-4 py-2 rounded-2xl border transition-all flex items-center gap-2.5 font-black text-[10px] uppercase tracking-widest ${(activeTab as string) === 'ai' ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-500/20" : "bg-white text-indigo-600 border-indigo-100 hover:border-indigo-200 shadow-sm"}`}
               >
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${activeTab === 'ai' ? 'bg-white/20' : 'bg-indigo-50'}`}>
-                  <Sparkles size={14} className={activeTab === 'ai' ? "animate-pulse" : ""} />
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${(activeTab as string) === 'ai' ? 'bg-white/20' : 'bg-indigo-50'}`}>
+                  <Sparkles size={14} className={(activeTab as string) === 'ai' ? "animate-pulse" : ""} />
                 </div>
-                Ask AI Helper
+                Smart Assistant
               </button>
 
               <button 

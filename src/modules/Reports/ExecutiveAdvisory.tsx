@@ -1,4 +1,4 @@
-﻿import { motion } from "motion/react";
+import { motion } from "motion/react";
 import { BrainCircuit, TrendingUp, Target, AlertTriangle, Zap, Copy, Share2 } from "lucide-react";
 import { Badge } from "../../components/common/UI";
 
@@ -57,7 +57,7 @@ export default function ExecutiveAdvisory({ advisory, loading }: ExecutiveAdviso
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                 <Badge status="Neural Advisory" />
+                 <Badge status="Smart Advisory" />
                  <div className="w-1 h-1 rounded-full bg-white/20"></div>
                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">Executive Summary</span>
               </div>

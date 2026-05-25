@@ -77,7 +77,7 @@ export const razorpayService = {
         },
         notes: {
           invoice_id: options.invoiceId,
-          source: "Vyapari InvoiceAI Console"
+          source: "Vyapari Smart Billing Console"
         },
         theme: {
           color: "#6366f1" // Premium Indigo matching our exact branding palette

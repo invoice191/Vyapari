@@ -24,23 +24,27 @@ export class ModuleErrorBoundary extends Component<Props, State> {
     console.error(`[ErrorBoundary] Module: ${this.props.moduleName || 'Unknown'}`, error, errorInfo);
     
     // Log to audit_logs table with type client_error
-    supabase.from('audit_logs').insert({
-      action: 'client_error',
-      module: this.props.moduleName || 'Unknown',
-      metadata: {
-        type: 'client_error',
-        error: error.message,
-        stack: error.stack,
-        componentStack: errorInfo.componentStack
-      },
-      severity: 'Error'
-    }).then(({ error: logError }) => {
-      if (logError) {
-        console.error('[ErrorBoundary] Failed to log error to audit_logs:', logError);
+    const logError = async () => {
+      try {
+        const { error: logErr } = await supabase.from('audit_logs').insert({
+          action: 'client_error',
+          module: this.props.moduleName || 'Unknown',
+          metadata: {
+            type: 'client_error',
+            error: error.message,
+            stack: error.stack,
+            componentStack: errorInfo.componentStack
+          },
+          severity: 'Error'
+        });
+        if (logErr) {
+          console.error('[ErrorBoundary] Failed to log error to audit_logs:', logErr);
+        }
+      } catch (err) {
+        console.error('[ErrorBoundary] Unhandled error during audit logging:', err);
       }
-    }).catch(err => {
-      console.error('[ErrorBoundary] Unhandled error during audit logging:', err);
-    });
+    };
+    logError();
   }
 
   public render() {

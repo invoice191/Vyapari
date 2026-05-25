@@ -47,7 +47,7 @@ export const DisputeGuardBadge: React.FC<{ invoiceId: string }> = ({ invoiceId }
         
         <div className="flex-1">
           <div className="flex justify-between items-center">
-            <span className="text-xs font-black uppercase tracking-widest">Conflict AI: {risk.probability}% Risk</span>
+            <span className="text-xs font-black uppercase tracking-widest">Dispute Guard: {risk.probability}% Risk</span>
             {isHighRisk && <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-md font-black">ACTION REQUIRED</span>}
           </div>
           <p className="text-[11px] font-medium leading-tight mt-0.5 opacity-90">{risk.reason}</p>

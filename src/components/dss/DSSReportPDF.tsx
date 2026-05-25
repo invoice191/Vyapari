@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { 
   Document, Page, Text, View, StyleSheet, 
   Image, Font, PDFDownloadLink, 
@@ -155,7 +155,7 @@ export const DSSReportPDF = ({ business, aiResult, scope = 'full', engineId }: D
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.subtitle}>VANI Neural Intelligence Briefing</Text>
+            <Text style={styles.subtitle}>VANI Smart Intelligence Briefing</Text>
             <Text style={{ fontSize: 11, fontStyle: 'italic', lineHeight: 1.5 }}>
               "{aiResult?.vani_narrative || 'Initializing intelligence briefing...'}"
             </Text>
@@ -334,7 +334,7 @@ export const DSSReportPDF = ({ business, aiResult, scope = 'full', engineId }: D
              </Text>
           </View>
 
-          <Text style={styles.footer}>- 2026 Vyapari AI - All Rights Reserved</Text>
+          <Text style={styles.footer}>- 2026 Vyapari - All Rights Reserved</Text>
         </Page>
       )}
     </Document>

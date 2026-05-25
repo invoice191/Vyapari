@@ -122,7 +122,7 @@ export const NotificationSettings = ({ data, onChange }: { data: any; onChange: 
           value={data.alert_routing || 'intelligent'} 
           onChange={(v) => onChange('alert_routing', v)}
           options={[
-            { label: 'Intelligent (AI predicts priority)', value: 'intelligent' },
+            { label: 'Intelligent (auto-prioritised)', value: 'intelligent' },
             { label: 'Critical -> SMS & Email, Warn -> In-App', value: 'critical_escalate' },
             { label: 'All Alerts to All Channels', value: 'broadcast' }
           ]}

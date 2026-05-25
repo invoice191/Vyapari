@@ -40,7 +40,7 @@ export default function DSSHub() {
       setInsights(ruleInsights);
       setLoading(false);
 
-      // Note: Streaming logic for AI insights is currently handled within generateInsights via Supabase Edge Functions
+      // Note: Streaming logic for Business Insights is currently handled within generateInsights via Supabase Edge Functions
     };
 
     runAnalysis();
@@ -72,7 +72,7 @@ export default function DSSHub() {
         
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-4 flex flex-col items-center justify-center relative">
-             <NeuralHealthOrb score={analysis?.summary.healthScore || 0} />
+             <SmartHealthOrb score={analysis?.summary.healthScore || 0} />
           </div>
           
           <div className="lg:col-span-8">
@@ -187,7 +187,7 @@ export default function DSSHub() {
   );
 }
 
-function NeuralHealthOrb({ score }: { score: number }) {
+function SmartHealthOrb({ score }: { score: number }) {
   const color = score > 80 ? '#10B981' : score > 60 ? '#F59E0B' : '#F43F5E';
   
   return (

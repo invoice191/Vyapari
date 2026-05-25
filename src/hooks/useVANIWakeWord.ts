@@ -35,7 +35,10 @@ export function useVANIWakeWord(onWake: () => void, lang: string = 'hi-IN') {
       if (detected) {
         recognition.stop();
         listeningRef.current = false;
-        onWake(); // Trigger full VANI activation
+        // 300ms cooldown to release microphone stream before activating main voice recognizer
+        setTimeout(() => {
+          onWake();
+        }, 300);
       }
     };
 

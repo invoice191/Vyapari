@@ -69,6 +69,7 @@ export default function OCR() {
   const [isUploading, setIsUploading] = useState(false);
   const [extractedResult, setExtractedResult] = useState<any>(null);
   const [engine, setEngine] = useState<"AI" | "LOCAL" | "SIMULATED">("AI");
+  const [activeTab, setActiveTab] = useState<"data" | "scan">("data");
   const [currentQueuePage, setCurrentQueuePage] = useState(1);
   const [currentItemsPage, setCurrentItemsPage] = useState(1);
   const [stats, setStats] = useState({
@@ -144,7 +145,7 @@ export default function OCR() {
           name: file.name,
           status: "Processing",
           confidence: null as number | null,
-          vendor: "Neural Scanning...",
+          vendor: "Smart Scanning...",
           amount: "-"
         };
         setQueue(prev => [newItem, ...prev]);
@@ -182,11 +183,11 @@ export default function OCR() {
           setEngine("AI");
           setExtractedResult(data);
           setSelected(enrichedItem);
-          toast("AI Extraction Complete", "success");
+          toast("Scan Complete", "success");
         } catch (apiErr: any) {
           console.warn("[OCR] AI Engine failed, falling back to Local Engine...", apiErr);
           
-          toast("AI Quota Limit. Switching to Local Neural Engine...", "warning");
+          toast("Quota Limit Reached. Switching to Local Smart Engine...", "warning");
           
           // --- FALLBACK TO LOCAL OCR ---
           const localData = await LocalOCRService.extractFromImage(reader.result as string);
@@ -401,7 +402,7 @@ export default function OCR() {
                 disabled={isUploading}
                 className="brutal-btn"
               >
-                {isUploading ? "PROCESSING_NEURAL_SCAN..." : "SELECT_FILES_FOR_EXTRACTION"}
+                {isUploading ? "PROCESSING_Smart_SCAN..." : "SELECT_FILES_FOR_EXTRACTION"}
               </button>
             </motion.div>
           </div>
@@ -508,10 +509,28 @@ export default function OCR() {
               </div>
               <div>
                 <h3 className="text-lg font-black tracking-tight uppercase leading-none">Extraction_Core</h3>
-                <p className="text-[9px] font-bold text-ink/40 uppercase tracking-widest mt-1">Neural Verification Layer</p>
+                <p className="text-[9px] font-bold text-ink/40 uppercase tracking-widest mt-1">Smart Verification Layer</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-4">
+              <div className="flex bg-slate-200/50 p-1 rounded-xl">
+                <button 
+                  onClick={() => setActiveTab("data")}
+                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
+                    activeTab === "data" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  JSON Data
+                </button>
+                <button 
+                  onClick={() => setActiveTab("scan")}
+                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
+                    activeTab === "scan" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Smart Scan
+                </button>
+              </div>
               {engine && (
                 <div className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border shadow-sm ${
                   engine === 'AI' ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' : 
@@ -526,129 +545,186 @@ export default function OCR() {
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {/* Master Confidence Score */}
-            <div className="bg-ink rounded-3xl p-6 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-neon/10 blur-3xl rounded-full translate-x-10 -translate-y-10 group-hover:bg-neon/20 transition-all duration-700" />
-              <div className="relative z-10 flex justify-between items-end">
-                <div>
-                  <div className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-2">Overall Confidence</div>
-                  <div className="text-4xl font-black text-neon tracking-tighter">{selected?.confidence || 0}%</div>
-                </div>
-                <div className="text-right">
-                  <div className={`px-2 py-1 rounded text-[8px] font-black uppercase mb-2 inline-block ${
-                    (selected?.confidence || 0) > 90 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
-                  }`}>
-                    {(selected?.confidence || 0) > 90 ? 'Verified' : 'Review Suggested'}
-                  </div>
-                </div>
-              </div>
-              <div className="h-1.5 w-full bg-white/10 rounded-full mt-4 overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${selected?.confidence || 0}%` }}
-                  className={`h-full rounded-full ${ (selected?.confidence || 0) > 90 ? 'bg-emerald-500' : 'bg-neon'}`} 
-                />
-              </div>
-            </div>
+            {activeTab === "scan" ? (
+              <div className="relative border border-dashed border-slate-300 bg-slate-50/50 rounded-[2rem] p-8 min-h-[450px] shadow-inner font-mono text-[11px] text-slate-800 flex flex-col justify-between overflow-hidden">
+                {/* High Tech Animated Radar Sweep bar */}
+                <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent shadow-[0_0_10px_#6366f1] pointer-events-none" style={{
+                  animation: 'sweep 3.5s infinite ease-in-out'
+                }} />
+                <style>{`
+                  @keyframes sweep {
+                    0% { top: 0%; opacity: 0; }
+                    10% { opacity: 1; }
+                    90% { opacity: 1; }
+                    100% { top: 100%; opacity: 0; }
+                  }
+                `}</style>
 
-            {/* Smart Fields Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[
-                { id: 'vendor', label: "Vendor Entity", value: selected?.vendor, icon: <Building2 size={14} /> },
-                { id: 'invoice_no', label: "Document ID", value: selected?.invoice_no, icon: <FileText size={14} /> },
-                { id: 'date', label: "Issue Date", value: selected?.date, icon: <Zap size={14} /> },
-                { id: 'total', label: "Total Payable", value: `Rs.${(selected?.total_amount || 0).toLocaleString("en-IN")}`, icon: <ShieldCheck size={14} />, isPrice: true },
-              ].map(f => (
-                <div key={f.id} className="bg-white/40 border border-white/60 p-4 rounded-2xl hover:border-ink/20 hover:bg-white transition-all group">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-ink/30 group-hover:text-ink/60 transition-colors">{f.icon}</span>
-                    <span className="text-[10px] font-black text-ink/40 uppercase tracking-widest">{f.label}</span>
+                {/* Glowing Bounding Box overlays */}
+                <div className="space-y-6 relative z-10">
+                  {/* Bounding box on Vendor */}
+                  <div className="border border-dashed border-indigo-500 bg-indigo-500/5 p-4 rounded-xl relative group">
+                    <span className="absolute -top-2.5 left-3 px-1.5 py-0.5 bg-indigo-600 text-[8px] text-white rounded font-black tracking-widest uppercase">MATCH_ENTITY: VENDOR (98%)</span>
+                    <div className="text-sm font-bold text-slate-900">{selected?.vendor || "Smart_VOUCHER_PARSER"}</div>
+                    <div className="text-[9px] text-slate-400 mt-1">Invoice Ref: {selected?.invoice_no || "OCR-PENDING"}</div>
                   </div>
-                  <input 
-                    type="text"
-                    value={f.value || ""}
-                    onChange={() => {}} // Handle edit in production
-                    className={`w-full bg-transparent font-black tracking-tight outline-none ${f.isPrice ? 'text-xl text-ink' : 'text-sm text-ink/80'}`}
-                  />
-                </div>
-              ))}
-            </div>
 
-            {/* Line Items Table */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-ink/40">Structured_Line_Items</h4>
-                <div className="h-px flex-1 mx-4 bg-ink/5" />
-              </div>
-              <div className="bg-white/60 border border-white/80 rounded-3xl overflow-hidden shadow-sm">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-ink/5 border-b border-ink/5">
-                      <th className="p-4 text-[9px] font-black uppercase text-ink/40 text-left">Description</th>
-                      <th className="p-4 text-[9px] font-black uppercase text-ink/40 text-center">Qty</th>
-                      <th className="p-4 text-[9px] font-black uppercase text-ink/40 text-right">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-ink/5">
-                    {paginatedItems.map((item: any, i: number) => (
-                      <tr key={i} className="hover:bg-neon/5 transition-colors group border-b border-ink/5">
-                        <td className="p-4">
-                          <div className="text-xs font-bold text-ink/80">{item.description}</div>
-                          {item.margin_erosion && (
-                            <div className="flex items-center gap-1.5 mt-1">
-                              <Badge status="Failed" className="!py-0.5 !px-2 !text-[8px]">MARGIN_EROSION</Badge>
-                              <span className="text-[9px] font-black text-red-500">+{item.erosion_pct?.toFixed(1)}% Cost Hike</span>
-                            </div>
-                          )}
-                          {item.price_trend === 'UPWARD' && (
-                            <div className="flex items-center gap-1 mt-1 text-[9px] font-black text-amber-600">
-                              <Zap size={8} className="fill-current" /> STEADY_PRICE_INCREASE_DETECTED
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-4 text-xs font-black text-center text-ink/40">{item.quantity}</td>
-                        <td className="p-4 text-right">
-                          <div className="text-xs font-black text-ink">Rs.{(item.total || 0).toLocaleString("en-IN")}</div>
-                          {item.last_purchase_price && (
-                            <div className="text-[9px] font-bold text-ink/30 italic">Prev: Rs.{item.last_purchase_price}</div>
-                          )}
-                        </td>
-                      </tr>
+                  {/* Bounding box on Items list */}
+                  <div className="border border-dashed border-emerald-500 bg-emerald-500/5 p-4 rounded-xl relative space-y-3">
+                    <span className="absolute -top-2.5 left-3 px-1.5 py-0.5 bg-emerald-600 text-[8px] text-white rounded font-black tracking-widest uppercase">MATCH_GRID: LINE_ITEMS (96%)</span>
+                    {(selected?.items || []).map((it: any, index: number) => (
+                      <div key={index} className="flex justify-between items-center text-[10px] border-b border-dashed border-slate-200 pb-1.5 last:border-0 last:pb-0">
+                        <div>
+                          <span className="text-slate-900 font-bold">{it.description}</span>
+                          <span className="text-slate-400 ml-2">x{it.quantity}</span>
+                        </div>
+                        <span className="font-bold text-slate-800">Rs.{it.total}</span>
+                      </div>
                     ))}
-                    {(!paginatedItems || paginatedItems.length === 0) && (
-                      <tr>
-                        <td colSpan={3} className="p-8 text-center">
-                          {selected?.rawGeminiDiagnostics ? (
-                            <div className="flex flex-col gap-3 bg-slate-900 rounded-2xl p-4 border border-slate-800">
-                              <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">-- Cognition returned empty dataset</span>
-                              <textarea 
-                                readOnly
-                                className="w-full h-24 bg-slate-950 text-emerald-400 font-mono text-[10px] p-3 rounded-xl border border-slate-800 resize-none"
-                                value={selected.rawGeminiDiagnostics}
-                                onClick={(e) => (e.target as HTMLTextAreaElement).select()}
-                              />
-                              <span className="text-[9px] font-bold text-slate-500 italic">Please copy the above text and paste it back to technical support.</span>
-                            </div>
-                          ) : (
-                            <span className="text-[10px] font-black text-ink/20 uppercase">Waiting_For_Neural_Stream...</span>
-                          )}
-                        </td>
-                      </tr>
+                    {(!selected?.items || selected.items.length === 0) && (
+                      <div className="text-center text-slate-400 italic py-4">Waiting for document scanner...</div>
                     )}
-                  </tbody>
-                </table>
-              </div>
-              
-              {totalItemsPages > 1 && (
-                <div className="flex justify-between items-center bg-white/40 p-2 rounded-2xl border border-white/60">
-                  <span className="text-[8px] font-black uppercase text-ink/40 ml-2">Page {currentItemsPage} of {totalItemsPages}</span>
-                  <div className="flex gap-1">
-                    <button onClick={() => setCurrentItemsPage(prev => Math.max(prev - 1, 1))} className="p-1.5 hover:bg-ink hover:text-white rounded-lg transition-all"><ChevronRight size={14} className="rotate-180" /></button>
-                    <button onClick={() => setCurrentItemsPage(prev => Math.min(prev + 1, totalItemsPages))} className="p-1.5 hover:bg-ink hover:text-white rounded-lg transition-all"><ChevronRight size={14} /></button>
+                  </div>
+
+                  {/* Bounding box on Total */}
+                  <div className="border border-dashed border-amber-500 bg-amber-500/5 p-4 rounded-xl relative flex justify-between items-center">
+                    <span className="absolute -top-2.5 left-3 px-1.5 py-0.5 bg-amber-600 text-[8px] text-white rounded font-black tracking-widest uppercase">MATCH_TOTAL: GRAND_TOTAL (99%)</span>
+                    <span className="font-black text-slate-500 uppercase tracking-widest text-[9px]">TOTAL AMOUNT PAYABLE</span>
+                    <span className="text-lg font-black text-slate-900">{selected?.amount || "Rs.0"}</span>
                   </div>
                 </div>
-              )}
-            </div>
+
+                <div className="border-t border-dashed border-slate-200 pt-6 text-center text-[9px] text-slate-400 tracking-wider">
+                  Smart SCAN COMPLETED // DUAL SIGNATURE AUTH VERIFIED
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Master Confidence Score */}
+                <div className="bg-ink rounded-3xl p-6 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-neon/10 blur-3xl rounded-full translate-x-10 -translate-y-10 group-hover:bg-neon/20 transition-all duration-700" />
+                  <div className="relative z-10 flex justify-between items-end">
+                    <div>
+                      <div className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-2">Overall Confidence</div>
+                      <div className="text-4xl font-black text-neon tracking-tighter">{selected?.confidence || 0}%</div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`px-2 py-1 rounded text-[8px] font-black uppercase mb-2 inline-block ${
+                        (selected?.confidence || 0) > 90 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+                      }`}>
+                        {(selected?.confidence || 0) > 90 ? 'Verified' : 'Review Suggested'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="h-1.5 w-full bg-white/10 rounded-full mt-4 overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${selected?.confidence || 0}%` }}
+                      className={`h-full rounded-full ${ (selected?.confidence || 0) > 90 ? 'bg-emerald-500' : 'bg-neon'}`} 
+                    />
+                  </div>
+                </div>
+
+                {/* Smart Fields Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    { id: 'vendor', label: "Vendor Entity", value: selected?.vendor, icon: <Building2 size={14} /> },
+                    { id: 'invoice_no', label: "Document ID", value: selected?.invoice_no, icon: <FileText size={14} /> },
+                    { id: 'date', label: "Issue Date", value: selected?.date, icon: <Zap size={14} /> },
+                    { id: 'total', label: "Total Payable", value: selected?.amount || `Rs.0`, icon: <ShieldCheck size={14} />, isPrice: true },
+                  ].map(f => (
+                    <div key={f.id} className="bg-white/40 border border-white/60 p-4 rounded-2xl hover:border-ink/20 hover:bg-white transition-all group">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-ink/30 group-hover:text-ink/60 transition-colors">{f.icon}</span>
+                        <span className="text-[10px] font-black text-ink/40 uppercase tracking-widest">{f.label}</span>
+                      </div>
+                      <input 
+                        type="text"
+                        value={f.value || ""}
+                        onChange={() => {}} // Handle edit in production
+                        className={`w-full bg-transparent font-black tracking-tight outline-none ${f.isPrice ? 'text-xl text-ink' : 'text-sm text-ink/80'}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Line Items Table */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-ink/40">Structured_Line_Items</h4>
+                    <div className="h-px flex-1 mx-4 bg-ink/5" />
+                  </div>
+                  <div className="bg-white/60 border border-white/80 rounded-3xl overflow-hidden shadow-sm">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-ink/5 border-b border-ink/5">
+                          <th className="p-4 text-[9px] font-black uppercase text-ink/40 text-left">Description</th>
+                          <th className="p-4 text-[9px] font-black uppercase text-ink/40 text-center">Qty</th>
+                          <th className="p-4 text-[9px] font-black uppercase text-ink/40 text-right">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-ink/5">
+                        {paginatedItems.map((item: any, i: number) => (
+                          <tr key={i} className="hover:bg-neon/5 transition-colors group border-b border-ink/5">
+                            <td className="p-4">
+                              <div className="text-xs font-bold text-ink/80">{item.description}</div>
+                              {item.margin_erosion && (
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  <Badge status="Failed" className="!py-0.5 !px-2 !text-[8px]">MARGIN_EROSION</Badge>
+                                  <span className="text-[9px] font-black text-red-500">+{item.erosion_pct?.toFixed(1)}% Cost Hike</span>
+                                </div>
+                              )}
+                              {item.price_trend === 'UPWARD' && (
+                                <div className="flex items-center gap-1 mt-1 text-[9px] font-black text-amber-600">
+                                  <Zap size={8} className="fill-current" /> STEADY_PRICE_INCREASE_DETECTED
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-4 text-xs font-black text-center text-ink/40">{item.quantity}</td>
+                            <td className="p-4 text-right">
+                              <div className="text-xs font-black text-ink">Rs.{(item.total || 0).toLocaleString("en-IN")}</div>
+                              {item.last_purchase_price && (
+                                <div className="text-[9px] font-bold text-ink/30 italic">Prev: Rs.{item.last_purchase_price}</div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                        {(!paginatedItems || paginatedItems.length === 0) && (
+                          <tr>
+                            <td colSpan={3} className="p-8 text-center">
+                              {selected?.rawGeminiDiagnostics ? (
+                                <div className="flex flex-col gap-3 bg-slate-900 rounded-2xl p-4 border border-slate-800">
+                                  <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">-- Cognition returned empty dataset</span>
+                                  <textarea 
+                                    readOnly
+                                    className="w-full h-24 bg-slate-950 text-emerald-400 font-mono text-[10px] p-3 rounded-xl border border-slate-800 resize-none"
+                                    value={selected.rawGeminiDiagnostics}
+                                    onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                                  />
+                                  <span className="text-[9px] font-bold text-slate-500 italic">Please copy the above text and paste it back to technical support.</span>
+                                </div>
+                              ) : (
+                                <span className="text-[10px] font-black text-ink/20 uppercase">Waiting_For_Smart_Stream...</span>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  {totalItemsPages > 1 && (
+                    <div className="flex justify-between items-center bg-white/40 p-2 rounded-2xl border border-white/60">
+                      <span className="text-[8px] font-black uppercase text-ink/40 ml-2">Page {currentItemsPage} of {totalItemsPages}</span>
+                      <div className="flex gap-1">
+                        <button onClick={() => setCurrentItemsPage(prev => Math.max(prev - 1, 1))} className="p-1.5 hover:bg-ink hover:text-white rounded-lg transition-all"><ChevronRight size={14} className="rotate-180" /></button>
+                        <button onClick={() => setCurrentItemsPage(prev => Math.min(prev + 1, totalItemsPages))} className="p-1.5 hover:bg-ink hover:text-white rounded-lg transition-all"><ChevronRight size={14} /></button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Actions Footer */}

@@ -60,7 +60,7 @@ export default function VisualVerification() {
         </div>
         <div className="relative z-10 px-4 py-2 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 flex items-center gap-3">
            <div className="w-2 h-2 rounded-full bg-neon animate-pulse" />
-           <span className="text-[10px] font-black text-white uppercase tracking-widest">Neural Vision Active</span>
+           <span className="text-[10px] font-black text-white uppercase tracking-widest">Smart Vision Active</span>
         </div>
       </div>
 
@@ -122,7 +122,7 @@ export default function VisualVerification() {
                                className="h-full bg-indigo-600"
                              />
                           </div>
-                          <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] animate-pulse">Running Neural Cross-Check...</p>
+                          <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] animate-pulse">Running Smart Cross-Check...</p>
                        </div>
                     </motion.div>
                  )}

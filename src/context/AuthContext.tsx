@@ -28,7 +28,10 @@ const AuthContext = createContext<AuthContextType>({
   resendSignUpOtp: async () => {},
   signOut: async () => {},
   updateBusiness: async () => {},
+  updatePassword: async () => {},
   fetchProfileAndBusiness: async () => {},
+  needsPasswordChange: false,
+  setNeedsPasswordChange: () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {

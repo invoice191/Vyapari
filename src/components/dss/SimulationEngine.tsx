@@ -58,7 +58,7 @@ export default function SimulationEngine({ onComplete, onBack }: SimulationEngin
     "Calculating price elasticity...",
     "Running demand forecasts...",
     "Analyzing market benchmarks...",
-    "Running AI intelligence layer...",
+    "Running Smart Engine layer...",
     "Generating comparison report...",
     "Finalizing recommendations..."
   ];
@@ -150,7 +150,7 @@ export default function SimulationEngine({ onComplete, onBack }: SimulationEngin
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-800">
         <div>
-          <h2 className="text-xl font-bold text-white tracking-tight">Neural Simulator</h2>
+          <h2 className="text-xl font-bold text-white tracking-tight">Smart Simulator</h2>
           <p className="text-xs text-slate-500 font-medium tracking-tight mt-1">High-fidelity predictive modeling for pricing and inventory strategy.</p>
         </div>
         <div className="flex gap-3">

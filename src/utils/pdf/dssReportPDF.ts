@@ -1,4 +1,4 @@
-﻿import jsPDF from "jspdf";
+import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { 
   downloadPDF,
@@ -47,7 +47,7 @@ export const generateDSSReport = (
     doc.roundedRect(104, y, 85, 20, 3, 3, "F");
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.text("AI CONFIDENCE", 110, y + 7);
+    doc.text("ACCURACY SCORE", 110, y + 7);
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.text(
@@ -63,7 +63,7 @@ export const generateDSSReport = (
   doc.rect(14, summaryY, 182, 20, "F");
   doc.setFontSize(8);
   doc.setTextColor(148, 163, 184);
-  doc.text("AI INSIGHT", 18, summaryY + 6);
+  doc.text("SMART INSIGHT", 18, summaryY + 6);
   doc.setFontSize(9);
   doc.setTextColor(71, 85, 105);
   const aiLines = doc.splitTextToSize(

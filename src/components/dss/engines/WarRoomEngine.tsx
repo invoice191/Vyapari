@@ -254,7 +254,7 @@ export const WarRoomEngine: React.FC = () => {
                   </div>
                   <div className="space-y-4">
                      <LogItem time="14:22" event="Signal Scanned" status="Success" />
-                     <LogItem time="14:05" event="Neural Link Stable" status="Success" />
+                     <LogItem time="14:05" event="Smart Link Stable" status="Success" />
                      <LogItem time="13:45" event="DDS Data Synced" status="Success" />
                   </div>
                </div>

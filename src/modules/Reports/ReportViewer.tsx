@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   Download, Filter, Printer, TrendingUp, TrendingDown, 
   Activity, RefreshCw, FileText, BarChart3, AlertCircle, Calendar 
@@ -544,7 +544,7 @@ export default function ReportViewer({
                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2 blur-2xl" />
                    <div className="relative z-10">
                      <div className="text-[10px] font-black uppercase text-white/50 mb-4 tracking-widest flex items-center gap-2">
-                        <Activity size={12} /> Neural Summary
+                        <Activity size={12} /> Smart Summary
                      </div>
                      <p className="text-sm font-bold text-white leading-relaxed italic">
                        "This record exhibits high integrity. Contribution to total period volume is calculated at {((Number(Object.values(selectedRow || {})[2]) || 0) / (Number(String(cards?.[0]?.value || '0').replace(/[^0-9.-]+/g,"")) || 1) * 100).toFixed(1)}%. No structural anomalies detected."

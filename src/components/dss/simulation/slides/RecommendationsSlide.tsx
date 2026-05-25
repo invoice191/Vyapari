@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion } from 'motion/react';
 import { Zap, AlertCircle, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { Theme } from '../PresentationMode';
@@ -24,7 +24,7 @@ export default function RecommendationsSlide({ data, theme }: SlideProps) {
       >
         <div className="flex items-center gap-4 mb-2">
            <Zap className="text-indigo-500 animate-pulse" size={32} />
-           <h2 className={`text-4xl font-black ${textColor} uppercase tracking-tight italic`}>AI Recommendations</h2>
+           <h2 className={`text-4xl font-black ${textColor} uppercase tracking-tight italic`}>Smart Recommendations</h2>
         </div>
         <div className="w-32 h-1.5 bg-indigo-500 rounded-full" />
       </motion.div>

@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useAutomationRules } from "../../hooks/useAutomationRules";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -337,7 +337,7 @@ export default function AutomationRules() {
                         </div>
                         {log.ai_decision && (
                           <div className="text-[9px] text-purple-600 mt-2 font-black uppercase tracking-widest bg-purple-50 border border-purple-100 px-2 py-1 rounded-md inline-block">
-                            AI Decision: {formatJSON(log.ai_decision)}
+                            Smart Decision: {formatJSON(log.ai_decision)}
                           </div>
                         )}
                       </div>

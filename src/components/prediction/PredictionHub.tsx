@@ -98,12 +98,12 @@ export default function PredictionHub() {
                 <BrainCircuit size={24} />
              </div>
              <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/60 font-black text-[9px] uppercase tracking-[0.4em]">
-                Neural Projection Lab
+                Smart Projection Lab
              </div>
           </div>
           <h1 className="text-6xl font-black tracking-tighter leading-none uppercase">Strategic <br/>Prediction <span className="text-neon italic">Engine</span></h1>
           <p className="text-slate-400 mt-8 text-lg max-w-2xl font-bold leading-relaxed opacity-80">
-            Simulate market variables and operational vectors to project future enterprise velocity and identify neural optimization paths.
+            Simulate market variables and operational vectors to project future enterprise velocity and identify Smart optimization paths.
           </p>
         </div>
       </div>
@@ -179,7 +179,7 @@ export default function PredictionHub() {
           <div className="brutal-card !p-10 bg-slate-900 text-white">
              <div className="flex items-center gap-3 mb-8">
                 <Cpu className="text-neon" size={20} />
-                <h3 className="font-black text-[10px] uppercase tracking-[0.4em] text-slate-400">Neural Insights</h3>
+                <h3 className="font-black text-[10px] uppercase tracking-[0.4em] text-slate-400">Smart Insights</h3>
              </div>
              <div className="space-y-6">
                 <div className="flex gap-4">
@@ -271,7 +271,7 @@ export default function PredictionHub() {
                   <Area 
                     type="monotone" 
                     dataKey="optimized" 
-                    name="Neural Optimized Path" 
+                    name="Smart Optimized Path" 
                     stroke="#9FEF00" 
                     fill="url(#colorOptimized)" 
                     strokeWidth={4} 

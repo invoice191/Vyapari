@@ -220,13 +220,13 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
   const applyDynamicDiscount = () => {
     if (aiDiscountApplied || total === 0) return;
     
-    // AI determines the exact discount needed to secure cash flow today
+    // System determines the exact discount needed to secure cash flow today
     const dynamicRate = paymentScore?.risk_level === 'high' ? 4.5 : 2.0; 
     const discountAmount = -(total * (dynamicRate / 100));
     
     setLineItems(prev => [...prev, {
       product_id: 'dynamic-discount', // Pseudo ID
-      name: `⚡ AI Early-Payment Discount (${dynamicRate}%)`,
+      name: `⚡ Early-Payment Reward (${dynamicRate}%)`,
       quantity: 1,
       unit_price: discountAmount,
       cost_price: 0,
@@ -571,7 +571,7 @@ export default function InvoiceCreateModal({ isOpen, onClose, onCreated, prefill
                       paymentScore.risk_level === 'medium' ? 'bg-amber-50 border border-amber-200 text-amber-600' :
                       'bg-emerald-50 border border-emerald-200 text-emerald-600'
                     }`}>
-                      <AlertTriangle size={14} /> AI Risk: {paymentScore.risk_level}
+                      <AlertTriangle size={14} /> Payment Risk: {paymentScore.risk_level}
                     </div>
                   )}
                 </div>

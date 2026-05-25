@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, ShieldCheck, Target } from 'lucide-react';
 import { Theme } from '../PresentationMode';
@@ -118,7 +118,7 @@ export default function CoverSlide({ data, business, theme }: SlideProps) {
                 <Target size={28} />
              </div>
              <div className="text-left">
-                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Neural Confidence</div>
+                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Smart Confidence</div>
                 <div className="text-base font-black text-indigo-400 uppercase tracking-tight italic">{data.summary?.overall_confidence || 87}% Aggregated</div>
              </div>
           </div>

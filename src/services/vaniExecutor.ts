@@ -5,7 +5,7 @@ import { smsService } from "./smsService";
 /**
  * Races any Supabase database query against a timeout so the UI never blocks.
  */
-const queryWithTimeout = async (promise: Promise<any>, timeoutMs = 800) => {
+const queryWithTimeout = async (promise: PromiseLike<any>, timeoutMs = 800) => {
   return Promise.race([
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), timeoutMs))
@@ -52,7 +52,14 @@ export const vaniExecutor = {
       switch (intent) {
         // ... (existing cases: NAVIGATE, CREATE_INVOICE, CHECK_STOCK, RUN_REPORT, SEND_REMINDER, GET_BRIEFING, CREATE_PURCHASE_ORDER, WHATSAPP_SEND) ...
         case 'NAVIGATE': {
-          const targetModule = (params?.target || params?.module || '').toLowerCase().trim();
+          let targetModule = '';
+          if (typeof params === 'string') {
+            targetModule = params;
+          } else {
+            targetModule = params?.target || params?.module || response.target || response.module || response.params?.target || '';
+          }
+          targetModule = targetModule.toLowerCase().trim();
+
           if (targetModule) {
             console.log(`[VANI_EXEC] Navigating to: ${targetModule}`);
             
@@ -67,6 +74,9 @@ export const vaniExecutor = {
                                targetModule;
 
             setActiveModule(mappedTarget);
+            
+            // Robust global event fallback to ensure App.tsx triggers navigation under all contexts
+            window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: mappedTarget } }));
             
             // For complex modules, trigger additional UI setup via events
             if (mappedTarget === 'pos') {
@@ -127,6 +137,7 @@ export const vaniExecutor = {
           );
           if (products && products.length > 0) {
             setActiveModule('inventory');
+            window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'inventory' } }));
             // Allow time for component mount if needed
             setTimeout(() => {
               window.dispatchEvent(new CustomEvent('app:inventory-search', { detail: { query: params.product_name } }));
@@ -139,6 +150,7 @@ export const vaniExecutor = {
 
         case 'STRATEGIC_PLAN': {
           setActiveModule('dashboard');
+          window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'dashboard' } }));
           window.dispatchEvent(new CustomEvent('app:toast', {
             detail: {
               title: "Strategic Advisor Active",
@@ -334,7 +346,10 @@ export const vaniExecutor = {
         intent: intent || 'unknown',
         confidence: response.confidence || 0.9,
         was_executed: true
-      }).catch(err => console.warn("Vani log save skipped:", err));
+      }).then(
+        () => {},
+        err => console.warn("Vani log save skipped:", err)
+      );
 
       // PROACTIVE STRATEGIC INSIGHT (JARVIS PROTOCOL)
       if (response.proactive_note) {
