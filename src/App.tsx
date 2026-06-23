@@ -25,6 +25,7 @@ import GatewayLanding from "./pages/Index";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import PaymentPortal from "./pages/PaymentPortal";
+import AuthCallback from "./pages/AuthCallback";
 import Onboarding from "./components/onboarding/Onboarding";
 import InvoiceAIConsole from "./components/invoices/InvoiceAIConsole";
 
@@ -133,6 +134,7 @@ function App() {
         <Route path="/" element={<GatewayLanding />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
