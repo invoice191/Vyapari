@@ -1,15 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { GoogleGenerativeAI } from "npm:@google/generative-ai";
-
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const gemini = new GoogleGenerativeAI(GEMINI_API_KEY!).getGenerativeModel({
-  model: "gemini-2.5-flash",
-});
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const fs = require('fs');
 
 const VANI_MASTER_PROMPT = `
 You are VANI-X.
@@ -90,56 +79,32 @@ GREETING (Use when user says hello, hi, namaste. Ensure vani_response is populat
 UNKNOWN (Use when completely unintelligible. Ensure vani_response asks for clarification)
 `;
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+const file = 'c:/Users/psgai/Downloads/Vyapari-main/supabase/functions/vani-brain/index.ts';
+let content = fs.readFileSync(file, 'utf-8');
 
-  try {
-    const { transcript, context } = await req.json();
+// The file currently has:
+// const VANI_MASTER_PROMPT = `
+// ...
+// `;
+// serve(async (req) => {
 
-    if (!transcript) {
-      throw new Error("Transcript is required.");
-    }
+// We need to replace the entire VANI_MASTER_PROMPT block.
+const startMarker = 'const VANI_MASTER_PROMPT = `';
+const endMarker = 'serve(async (req) => {';
 
-    const prompt = \`<transcript>\${transcript}</transcript><context>\${JSON.stringify(context)}</context>\`;
+const startIndex = content.indexOf(startMarker);
+const endIndex = content.indexOf(endMarker);
 
-    const result = await gemini.generateContent({
-      systemInstruction: VANI_MASTER_PROMPT,
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.15,
-        maxOutputTokens: 512,
-        responseMimeType: "application/json",
-      },
-    });
-
-    let text = result.response.text();
-    if (!text) throw new Error("AI returned empty response.");
-
-    text = text.trim();
-    if (text.startsWith("\`\`\`")) {
-      const match = text.match(/^(?:\`\`\`[a-zA-Z]*\\s*)?([\\s\\S]*?)(?:\\s*\`\`\`)?$/);
-      if (match && match[1]) text = match[1].trim();
-    }
-
-    const parsed = JSON.parse(text);
-
-    return new Response(JSON.stringify(parsed), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
-  } catch (error) {
-    console.error("[VANI-BRAIN] Handler Error:", error.message);
-    return new Response(JSON.stringify({
-      intent: "CLARIFY",
-      confidence: 0,
-      params: { clarification_question: "Neural alignment disrupted. Please repeat." },
-      vani_response: "Neural alignment disrupted. Command not processed.",
-      action_taken: false
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
-  }
-});
+if (startIndex !== -1 && endIndex !== -1) {
+  const newContent = content.substring(0, startIndex) +
+    'const VANI_MASTER_PROMPT = `' + VANI_MASTER_PROMPT + '`;\n\n' +
+    content.substring(endIndex);
+  
+  // also fix the fallback intent in the catch block
+  const fixedContent = newContent.replace('spoken_response:', 'vani_response:');
+  
+  fs.writeFileSync(file, fixedContent);
+  console.log("Successfully injected VANI-X Master Prompt.");
+} else {
+  console.log("Could not find prompt boundaries.");
+}

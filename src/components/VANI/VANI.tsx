@@ -84,7 +84,49 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
   }, [sttLang, availableVoices]);
 
   const speakText = async (text: string, lang = 'en-IN'): Promise<void> => {
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
+      // 1. Check for ElevenLabs High-Quality Voice API Key
+      const elevenLabsKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
+      if (elevenLabsKey) {
+        try {
+          // Default to a professional Indian/English voice id like 'EXAVITQu4vr4xnSDxMaL' (Sarah) or multilingual
+          const voiceId = "EXAVITQu4vr4xnSDxMaL"; // Sarah (Professional Female)
+          const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
+            method: 'POST',
+            headers: {
+              'Accept': 'audio/mpeg',
+              'xi-api-key': elevenLabsKey,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              text: text,
+              model_id: "eleven_multilingual_v2", // Supports Hindi/Hinglish/English perfectly
+              voice_settings: {
+                stability: 0.5,
+                similarity_boost: 0.75,
+                style: 0.0,
+                use_speaker_boost: true
+              }
+            })
+          });
+
+          if (!response.ok) throw new Error("ElevenLabs API Failed");
+
+          const blob = await response.blob();
+          const audioUrl = URL.createObjectURL(blob);
+          const audio = new Audio(audioUrl);
+          
+          audio.onended = () => resolve();
+          audio.onerror = () => resolve();
+          
+          audio.play();
+          return; // Early return to prevent browser TTS from playing
+        } catch (error) {
+          console.warn("ElevenLabs TTS failed, falling back to Browser TTS:", error);
+        }
+      }
+
+      // 2. Fallback to Browser Native TTS
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
 
@@ -154,13 +196,13 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
       // Play vocalized response (non-blocking so VANI acts instantly in under 1s!)
       setState('speaking');
       
-      if (response.spoken_response) {
-        if (response.spoken_response === lastSpokenResponse.current) {
+      if (response.vani_response) {
+        if (response.vani_response === lastSpokenResponse.current) {
           console.warn("VANI: Duplicate response detected, suppressing.");
           setState('idle');
         } else {
-          lastSpokenResponse.current = response.spoken_response;
-          speakText(response.spoken_response, response.language_detected).then(() => {
+          lastSpokenResponse.current = response.vani_response;
+          speakText(response.vani_response, response.vani_response_language || response.language_detected).then(() => {
             setState(s => s === 'speaking' ? 'idle' : s);
           });
         }
@@ -169,17 +211,17 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
       }
 
       // Handle clarifying question
-      if (response.follow_up_question) {
-        if (response.follow_up_question !== lastSpokenResponse.current) {
-          lastSpokenResponse.current = response.follow_up_question;
-          speakText(response.follow_up_question, response.language_detected);
+      if (response.needs_clarification && response.clarification_question) {
+        if (response.clarification_question !== lastSpokenResponse.current) {
+          lastSpokenResponse.current = response.clarification_question;
+          speakText(response.clarification_question, response.vani_response_language || response.language_detected);
         }
         setState('idle');
         return;
       }
 
       // Confirmation barrier for risky actions — must check BEFORE executing
-      if (response.requires_confirmation) {
+      if (response.action?.type === 'CONFIRM_REQUIRED' || response.requires_confirmation) {
         setPendingAction(response);
         setState('confirming');
         return;

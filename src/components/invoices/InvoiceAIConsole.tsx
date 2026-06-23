@@ -14,6 +14,7 @@ import { stripeService } from "../../services/stripeService";
 import { useToast } from "../common/Toast";
 import { useAuth } from "../../hooks/useAuth";
 import { useGlobalData } from "../../context/DataContext";
+import { generateInvoicePDF, InvoiceData } from "../../utils/pdf/invoicePDF";
 
 interface Message {
   id: string;
@@ -99,10 +100,23 @@ export default function InvoiceAIConsole(props: InvoiceAIConsoleProps) {
 
   const handleAction = async (action: string, data: any) => {
     switch (action) {
-      case 'WHATSAPP_REMINDER':
-        window.open(`https://wa.me/${data.phone}?text=${encodeURIComponent(data.message)}`, '_blank');
-        toast("WhatsApp Opened: Reminder draft sent", "success");
+      case 'WHATSAPP_REMINDER': {
+        const processWhatsApp = async () => {
+          let finalMessage = data.message;
+          if (data.invoice_id) {
+            toast("Generating secure payment link...", "info");
+            // If amount isn't passed, default to 0 for the generic API simulation
+            const linkRes = await razorpayService.generatePaymentLink(data.invoice_id, data.amount || 0, {});
+            if (linkRes.success && linkRes.url) {
+              finalMessage += `\n\nPay securely here: ${linkRes.url}`;
+            }
+          }
+          window.open(`https://wa.me/${data.phone}?text=${encodeURIComponent(finalMessage)}`, '_blank');
+          toast("WhatsApp Opened: Reminder draft sent", "success");
+        };
+        processWhatsApp();
         break;
+      }
       
       case 'MATCH_PAYMENT':
         try {
@@ -159,97 +173,36 @@ export default function InvoiceAIConsole(props: InvoiceAIConsoleProps) {
         break;
 
       case 'DOWNLOAD_RECEIPT':
-        const receiptHtml = `
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <style>
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-                body { font-family: 'Inter', sans-serif; color: #1e293b; line-height: 1.5; padding: 0; margin: 0; background: #f8fafc; }
-                .receipt-card { max-width: 600px; margin: 40px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; position: relative; overflow: hidden; }
-                .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
-                .biz-info h1 { margin: 0; font-size: 24px; color: #0f172a; }
-                .biz-info p { margin: 4px 0; color: #64748b; font-size: 14px; }
-                .title-badge { background: #f1f5f9; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; }
-                .main-stats { background: #f8fafc; padding: 24px; border-radius: 8px; margin-bottom: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-                .stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
-                .stat-value { font-size: 18px; color: #0f172a; font-weight: 600; }
-                .amount-highlight { grid-column: span 2; background: #1e293b; color: white; padding: 20px; border-radius: 6px; margin-top: 8px; text-align: center; }
-                .amount-highlight .stat-label { color: #94a3b8; }
-                .amount-highlight .stat-value { font-size: 32px; color: white; }
-                .details-grid { display: grid; grid-template-columns: 100px 1fr; gap: 12px; font-size: 14px; }
-                .details-label { color: #64748b; }
-                .details-value { font-weight: 500; color: #334155; }
-                .settled-stamp { position: absolute; top: 120px; right: -20px; transform: rotate(15deg); border: 4px solid #10b981; color: #10b981; padding: 10px 30px; font-weight: 800; font-size: 32px; border-radius: 8px; opacity: 0.2; pointer-events: none; text-transform: uppercase; }
-                .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #f1f5f9; text-align: center; font-size: 12px; color: #94a3b8; }
-              </style>
-            </head>
-            <body>
-              <div class="receipt-card">
-                <div class="settled-stamp">Settled</div>
-                <div class="header">
-                  <div class="biz-info">
-                    <h1>${business?.name || 'Vyapari Store'}</h1>
-                    <p>${business?.address || 'Digital Commerce'}</p>
-                    <p>${business?.phone || ''}</p>
-                  </div>
-                  <div class="title-badge">Payment Receipt</div>
-                </div>
-                
-                <div class="main-stats">
-                  <div>
-                    <div class="stat-label">Invoice Reference</div>
-                    <div class="stat-value">#${data.matched_invoice || 'INV-001'}</div>
-                  </div>
-                  <div style="text-align: right;">
-                    <div class="stat-label">Receipt Date</div>
-                    <div class="stat-value">${new Date().toLocaleDateString('en-IN')}</div>
-                  </div>
-                  <div class="amount-highlight">
-                    <div class="stat-label">Total Amount Settled</div>
-                    <div class="stat-value">Rs.${(data.payment_received || 0).toLocaleString('en-IN')}</div>
-                  </div>
-                </div>
-
-                <div class="details-grid">
-                  <div class="details-label">Client Name</div>
-                  <div class="details-value">${data.client_name || 'Valued Customer'}</div>
-                  
-                  <div class="details-label">Payment Mode</div>
-                  <div class="details-value">Bank Transfer / UPI</div>
-                  
-                  <div class="details-label">Auth Code</div>
-                  <div class="details-value">${Math.random().toString(36).substring(7).toUpperCase()}</div>
-                </div>
-
-                <div class="footer">
-                  This is a computer-generated receipt. No signature required.<br/>
-                  Powered by Vyapari Smart Engine
-                </div>
-              </div>
-              <script>
-                // Auto trigger print to save as PDF
-                window.onload = () => {
-                  setTimeout(() => {
-                    // window.print();
-                  }, 500);
-                };
-              </script>
-            </body>
-          </html>
-        `;
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-          printWindow.document.write(receiptHtml);
-          printWindow.document.close();
-          printWindow.focus();
-          // Give it a moment to load styles/fonts
-          setTimeout(() => {
-            printWindow.print();
-            // printWindow.close(); // Optional: close after print
-          }, 500);
+        try {
+          const invoiceObj: InvoiceData = {
+            invoice_number: data.matched_invoice || 'REC-001',
+            created_at: data.date || new Date().toISOString(),
+            status: 'paid',
+            business: {
+              name: profile?.business_name || 'Vyapari Retail',
+            },
+            customer: {
+              name: data.customer || data.client_name || 'Walk-in Customer',
+            },
+            items: [{
+              name: "Payment Receipt / Settlement",
+              quantity: 1,
+              rate: data.amount || data.payment_received || 0,
+              total: data.amount || data.payment_received || 0,
+              tax_rate: 0
+            }],
+            subtotal: data.amount || data.payment_received || 0,
+            grand_total: data.amount || data.payment_received || 0,
+            amount_paid: data.amount || data.payment_received || 0,
+            amount_remaining: 0,
+            notes: "Auto-generated payment receipt via Vyapari VANI AI."
+          };
+          generateInvoicePDF(invoiceObj, 'download');
+          toast("Receipt PDF downloaded successfully!", "success");
+        } catch (err) {
+          console.error("PDF generation failed:", err);
+          toast("Failed to generate PDF receipt.", "error");
         }
-        toast("Premium Receipt Generated! Print and Save as PDF.", "success");
         break;
 
       case 'EDIT_DRAFT':
@@ -397,6 +350,7 @@ export default function InvoiceAIConsole(props: InvoiceAIConsoleProps) {
             action: "FOLLOW_UP",
             result: {
               invoice_id: selectedInvoice.id,
+              amount: selectedInvoice.total_amount,
               client_phone: clientPhone,
               message: `Hi ${clientName}, this is a gentle reminder regarding Invoice #${selectedInvoice.invoice_number} for Rs.${(selectedInvoice.total_amount || 0).toLocaleString("en-IN")}. It is currently outstanding. You can pay via the portal link. Thanks!`,
               channel: "whatsapp"
@@ -1451,7 +1405,7 @@ function LatePaymentRiskWidget({ data, onAction }: { data: any, onAction: (a: st
           
           <div className="flex gap-3">
             <button 
-              onClick={() => onAction('WHATSAPP_REMINDER', { phone: data.client_phone, message: `Hi ${data.client_name}, this is a reminder regarding your invoice for ${data.invoice_number}.` })}
+              onClick={() => onAction('WHATSAPP_REMINDER', { invoice_id: data.invoice_id, phone: data.client_phone, message: `Hi ${data.client_name}, this is a reminder regarding your invoice for ${data.invoice_number}.` })}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
             >
               <Phone size={14} className="text-indigo-600" />
@@ -1601,7 +1555,7 @@ function FollowUpWidget({ data, onAction }: { data: any, onAction: (a: string, d
         <p className="text-[13px] text-white/90 font-medium leading-relaxed italic pr-2">"{data.message}"</p>
       </div>
       <button 
-        onClick={() => onAction('WHATSAPP_REMINDER', { phone: data.client_phone, message: data.message })}
+        onClick={() => onAction('WHATSAPP_REMINDER', { invoice_id: data.invoice_id, amount: data.amount, phone: data.client_phone, message: data.message })}
         className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2.5 active:scale-[0.98]"
       >
         <MessageCircle size={16} />

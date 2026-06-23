@@ -2,10 +2,11 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { generateFilename, triggerDownload, ReportType, ReportMetadata } from "./downloadReport";
 
+// ── BRAND CONFIG ─────────────────────────────────────────────
 const BRAND = {
-  primary:   [79,  70,  229] as [number, number, number],
-  dark:      [15,  23,  42]  as [number, number, number],
-  neon:      [159, 239,  0]  as [number, number, number],
+  primary:   [79,  70,  229] as [number, number, number], // #4F46E5 indigo
+  dark:      [15,  23,  42]  as [number, number, number], // #0F172A deep slate
+  neon:      [159, 239,  0]  as [number, number, number], // #9FEF00 neon lime
   white:     [255, 255, 255] as [number, number, number],
   lightGray: [248, 250, 252] as [number, number, number],
   mutedText: [100, 116, 139] as [number, number, number],
@@ -37,9 +38,11 @@ export function generatePDFReport(config: PDFReportConfig): void {
   const pageH = doc.internal.pageSize.getHeight();
   let y = 0;
 
+  // ── HEADER BAND ───────────────────────────────────────────
   doc.setFillColor(...BRAND.dark);
   doc.rect(0, 0, pageW, 28, "F");
 
+  // Logo text (replace with actual logo image if available)
   doc.setTextColor(...BRAND.neon);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
@@ -50,6 +53,7 @@ export function generatePDFReport(config: PDFReportConfig): void {
   doc.setFontSize(8);
   doc.text("Retail Intelligence Platform", 10, 18);
 
+  // Report title (right aligned)
   doc.setTextColor(...BRAND.white);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
@@ -64,6 +68,7 @@ export function generatePDFReport(config: PDFReportConfig): void {
 
   y = 34;
 
+  // ── META INFO ROW ─────────────────────────────────────────
   doc.setFontSize(8);
   doc.setTextColor(...BRAND.mutedText);
   doc.setFont("helvetica", "normal");
@@ -87,11 +92,13 @@ export function generatePDFReport(config: PDFReportConfig): void {
     y += 5;
   }
 
+  // ── DIVIDER ───────────────────────────────────────────────
   doc.setDrawColor(...BRAND.primary);
   doc.setLineWidth(0.6);
   doc.line(10, y, pageW - 10, y);
   y += 6;
 
+  // ── SUMMARY STATS ─────────────────────────────────────────
   if (config.summaryStats && config.summaryStats.length > 0) {
     const boxW = (pageW - 20 - (config.summaryStats.length - 1) * 4) / config.summaryStats.length;
     config.summaryStats.forEach((stat, i) => {
@@ -110,6 +117,7 @@ export function generatePDFReport(config: PDFReportConfig): void {
     y += 22;
   }
 
+  // ── DATA TABLES ───────────────────────────────────────────
   config.sections.forEach((section) => {
     doc.setTextColor(...BRAND.dark);
     doc.setFont("helvetica", "bold");
@@ -139,6 +147,7 @@ export function generatePDFReport(config: PDFReportConfig): void {
         fillColor: BRAND.lightGray,
       },
       didDrawPage: (hookData) => {
+        // Footer on every page
         const totalPages = doc.getNumberOfPages();
         const pageNum = hookData.pageNumber;
         doc.setFontSize(7);
@@ -156,6 +165,7 @@ export function generatePDFReport(config: PDFReportConfig): void {
     y = (doc as any).lastAutoTable.finalY + 8;
   });
 
+  // ── DOWNLOAD ──────────────────────────────────────────────
   const filename = generateFilename(config.reportType, config.meta, "pdf");
   const blob = doc.output("blob");
   triggerDownload(blob, filename);

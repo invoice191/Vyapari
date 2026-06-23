@@ -1,7 +1,5 @@
-﻿import jsPDF from "jspdf";
+import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { saveAs } from 'file-saver';
-
 //  CORE DOWNLOAD FUNCTION 
 // Use this for every single PDF download
 export const downloadPDF = (
@@ -21,23 +19,18 @@ export const downloadPDF = (
   const cleanName = `${baseName}-${dateStr}`.replace(/--+/g, '-') + '.pdf';
 
   try {
-    // 2. Generate explicit ArrayBuffer and pack into forced-type Blob
-    const pdfBytes = doc.output('arraybuffer');
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    
-    // 3. Dispatch via industry-standard hardened downloader
-    // saveAs provides exhaustive fallback matrices for all browsers to prevent UUID renames.
-    saveAs(blob, cleanName);
-
+    // Force Data URI to completely bypass Blob URL UUID bugs in WebViews/Safari
+    const dataUri = doc.output('datauristring');
+    const link = document.createElement('a');
+    link.href = dataUri;
+    link.download = cleanName;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => document.body.removeChild(link), 200);
   } catch (error) {
-    console.error('[PDF] Optimized transport failed, attempting native save:', error);
-    try {
-      // Last ditch fallback provided by jsPDF native engine
-      doc.save(cleanName);
-    } catch (fallbackError) {
-      console.error('[PDF] Critical failure downloading PDF:', fallbackError);
-      alert('Could not initiate download automatically. Please try viewing and saving manually.');
-    }
+    console.error('[PDF] Critical failure downloading PDF:', error);
+    alert('Could not initiate download automatically. Please try viewing and saving manually.');
   }
 };
 

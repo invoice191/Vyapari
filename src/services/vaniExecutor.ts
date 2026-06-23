@@ -1,29 +1,9 @@
 import { supabase } from "../lib/supabase";
 import { vaniService } from "./vaniService";
-import { smsService } from "./smsService";
 
 /**
- * Races any Supabase database query against a timeout so the UI never blocks.
- */
-const queryWithTimeout = async (promise: PromiseLike<any>, timeoutMs = 800) => {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), timeoutMs))
-  ]).catch(err => {
-    console.warn("DB Query timed out or failed, using local parameters:", err);
-    return { data: null };
-  });
-};
-
-/** Fire a global navigation event and sync the active module state */
-const navigateTo = (module: string, setActiveModule: (m: string) => void, props?: object) => {
-  setActiveModule(module);
-  window.dispatchEvent(new CustomEvent("app:navigate", { detail: { module, ...(props || {}) } }));
-};
-
-/**
- * VANI Executor — GOD MODE
- * Maps all 21 AI intents to frontend Neural Event Bus actions, DB writes, and third-party APIs.
+ * VANI Executor — GOD MODE (Dynamic Action Dispatcher)
+ * This executor strictly follows the structured action schema returned by the Master Prompt.
  */
 export const vaniExecutor = {
   execute: async (
@@ -32,132 +12,130 @@ export const vaniExecutor = {
     setActiveModule: (m: string) => void,
     onSuccess?: () => void
   ) => {
-    const { intent, params, actions } = response;
-    console.log(`[VANI_EXEC] GOD MODE — Intent: ${intent}`, { params, actions });
+    console.log(`[VANI_EXEC] GOD MODE — Intent: ${response.intent}`, response);
 
-    // Handle Multi-Action Chains
-    if (actions && actions.length > 0) {
-      console.log(`[VANI_EXEC] Sequential Chain: ${actions.length} steps`);
-      for (const action of actions.sort((a: any, b: any) => a.sequence - b.sequence)) {
-        await vaniExecutor.execute({ intent: action.type, params: action.params }, businessId, setActiveModule);
+    // Handle Multi-Intent Chains
+    if (response.is_multi_intent && response.multi_intents && response.multi_intents.length > 0) {
+      console.log(`[VANI_EXEC] Sequential Chain: ${response.multi_intents.length} steps`);
+      for (const step of response.multi_intents.sort((a: any, b: any) => a.step - b.step)) {
+        // Execute each step recursively
+        await vaniExecutor.execute({ ...step, is_multi_intent: false }, businessId, setActiveModule);
       }
+      
       if (onSuccess) onSuccess();
       return;
+    }
+
+    // Safely enforce vani_response
+    if (!response.vani_response) {
+      if (response.intent === "GREETING") {
+        response.vani_response = "Hello! I am VANI. How can I assist you today?";
+      } else if (response.intent === "UNKNOWN" || response.intent === "UNCLEAR") {
+        response.vani_response = "I'm sorry, I didn't quite catch that. Could you please repeat?";
+      } else {
+        response.vani_response = `Executing ${response.intent.replace(/_/g, " ")}...`;
+      }
     }
 
     // Visual feedback toast
     window.dispatchEvent(new CustomEvent("app:toast", {
       detail: {
-        title: `VANI: ${intent.replace(/_/g, " ")}`,
-        message: response.spoken_response || "Processing autonomous request...",
+        title: `VANI: ${(response.intent || "Unknown").replace(/_/g, " ")}`,
+        message: response.vani_response,
         type: "smart"
       }
     }));
 
     try {
-      switch (intent) {
-        case "NAVIGATE":
-          window.dispatchEvent(new CustomEvent("app:navigate", { detail: params?.target_page }));
-          break;
-        case "CREATE_INVOICE":
-          window.dispatchEvent(new CustomEvent("app:open-invoice-drawer", { detail: params }));
-          break;
-        case "CHECK_STOCK":
-          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "inventory" }));
-          window.dispatchEvent(new CustomEvent("app:inventory-search", { detail: params?.query }));
-          break;
-        case "QUERY_CUSTOMER":
-          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "contacts" }));
-          window.dispatchEvent(new CustomEvent("app:contact-search", { detail: params?.contact_name }));
-          break;
-        case "SEND_REMINDER":
-          window.dispatchEvent(new CustomEvent("app:send-reminder", { detail: params }));
-          break;
-        case "AUTONOMOUS_REORDER":
-          window.dispatchEvent(new CustomEvent("app:trigger-reorder", { detail: params }));
-          break;
-        case "STRATEGIC_PLAN":
-          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "simulation" }));
-          break;
-        case "SHOW_REPORT":
-          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "reports" }));
-          break;
-        case "ITC_STATUS":
-          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "compliance" }));
-          break;
-        case "FRAUD_CHECK":
-          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "fraud" }));
-          break;
-        case "CREDIT_RISK":
-          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "contacts" }));
-          break;
-        case "LIQUID_INVOICE":
-          window.dispatchEvent(new CustomEvent("app:open-liquid-invoice", { detail: params }));
-          break;
-        case "MESH_INBOX":
-          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "mesh" }));
-          break;
-        case "BIOMETRIC_ACTION":
-          window.dispatchEvent(new CustomEvent("app:trigger-biometric", { detail: params }));
-          break;
-        case "MARKET_SIMULATION":
-          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "simulation" }));
-          break;
-        case "PAYMENT_PORTAL":
-          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "payment-portal" }));
-          break;
-        case "PAYMENT_STATUS":
-          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "invoices" }));
-          window.dispatchEvent(new CustomEvent("app:invoice-search", { detail: params?.contact_name }));
-          break;
-        case "QUERY_INVOICE":
-          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "invoices" }));
-          window.dispatchEvent(new CustomEvent("app:invoice-search", { detail: params?.invoice_number ?? params?.query }));
-          break;
-        case "VPOD_VERIFY":
-          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "inventory" }));
-          window.dispatchEvent(new CustomEvent("app:open-vpod", { detail: params }));
-          break;
-        case "SMART_DUNNING":
-          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "dunning" }));
-          break;
-        case "CLARIFY":
-          if (params?.clarification_question || response.spoken_response) {
-            vaniService.speak(params?.clarification_question ?? response.spoken_response);
+      // If clarification is needed, speak it and return
+      if (response.needs_clarification || response.intent === "UNCLEAR" || response.intent === "CLARIFY") {
+        const text = response.clarification_question || response.vani_response;
+        if (text) vaniService.speak(text);
+        if (onSuccess) onSuccess();
+        return;
+      }
+
+      // Action Execution Engine
+      const action = response.action;
+      if (action && action.type !== "NONE") {
+        
+        // Manual Intent Overrides (To handle prompt/edge function mismatches)
+        if (response.intent === "CREATE_INVOICE") {
+          window.dispatchEvent(new CustomEvent("app:navigate", { 
+            detail: { module: "invoices", props: { mode: "create", prefill: response.params } } 
+          }));
+        } else if (response.intent === "SHOW_LATEST_INVOICE" || response.intent === "SHOW_INVOICES_BY_CUSTOMER" || response.intent === "QUERY_INVOICE") {
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: { module: "invoices" } }));
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent("app:invoice-search", { detail: response.params?.customer_name || response.params?.query || "latest" }));
+          }, 300);
+        } else if (response.intent === "SEND_REMINDER" || response.intent === "SMART_DUNNING" || response.intent === "SCHEDULE_REMINDER") {
+          // No global dunning event exists in the app yet, so we route to invoices and filter by the customer to let the user manually trigger
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: { module: "invoices" } }));
+          setTimeout(() => {
+             window.dispatchEvent(new CustomEvent("app:invoice-search", { detail: response.params?.contact_name || response.params?.customer_name || "" }));
+          }, 300);
+        } else if (response.intent === "SHOW_LOW_STOCK" || response.intent === "CHECK_STOCK_ITEM" || response.intent === "SHOW_ALL_PRODUCTS" || response.intent === "SHOW_INVENTORY_HEATMAP" || response.intent === "SHOW_FAST_MOVING" || response.intent === "SHOW_DEAD_STOCK") {
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: { module: "inventory" } }));
+          if (response.params?.product_name || response.params?.query) {
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent("app:inventory-search", { detail: response.params?.product_name || response.params?.query }));
+            }, 300);
           }
-          if (onSuccess) onSuccess();
-          return;
-        default:
-          console.warn(`[VANI_EXEC] No route defined for intent: ${intent}`);
+        } else if (response.intent === "SHOW_CUSTOMER_PROFILE" || response.intent === "SHOW_TOP_CUSTOMERS" || response.intent === "SHOW_AT_RISK_CUSTOMERS" || response.intent === "SHOW_CUSTOMER_LEDGER" || response.intent === "SHOW_SUPPLIER_LIST") {
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: { module: "contacts" } }));
+          if (response.params?.customer_name || response.params?.query) {
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent("app:contact-search", { detail: response.params?.customer_name || response.params?.query }));
+            }, 300);
+          }
+        } else {
+          // Normal execution
+          if (action.target && action.type === "NAVIGATE") {
+            window.dispatchEvent(new CustomEvent("app:navigate", { detail: { module: action.target } }));
+          }
+
+          if (action.event) {
+            window.dispatchEvent(new CustomEvent(action.event, { detail: action.payload || response.params }));
+          } else if (action.type === "OPEN_MODAL" && action.target === "create_invoice_drawer") {
+            window.dispatchEvent(new CustomEvent("app:navigate", { detail: { module: "invoices", props: { mode: "create" } } }));
+          } else if (action.type === "FETCH" && action.target === "invoices") {
+            window.dispatchEvent(new CustomEvent("app:invoice-search", { detail: response.params?.customer_name || response.params?.query }));
+          } else if (action.type === "FETCH" && action.target === "inventory") {
+            window.dispatchEvent(new CustomEvent("app:inventory-search", { detail: response.params?.product_name || response.params?.query }));
+          } else if (action.type === "FETCH" && action.target === "contacts") {
+            window.dispatchEvent(new CustomEvent("app:contact-search", { detail: response.params?.customer_name || response.params?.query }));
+          } else if (action.type === "CONFIRM_REQUIRED") {
+            window.dispatchEvent(new CustomEvent("app:toast", {
+              detail: { title: "Confirmation Required", message: response.vani_response, type: "warning" }
+            }));
+          }
+        }
       }
 
-      if (response.spoken_response) {
-        vaniService.speak(response.spoken_response);
-      }
-
-      // ── Log execution to vani_logs (fire-and-forget) ──
+      // Log execution to vani_logs (fire-and-forget)
       supabase.from("vani_logs").insert({
         business_id: businessId,
         transcript: response.transcript || "",
-        intent: intent || "unknown",
+        intent: response.intent || "unknown",
         confidence: response.confidence || 0.9,
-        params: params || {},
-        spoken_response: response.spoken_response || "",
+        params: response.params || {},
+        spoken_response: response.vani_response || "",
         execution_status: "executed",
         was_executed: true
       }).then(() => {}, err => console.warn("Vani log save skipped:", err));
 
       // ── Proactive Strategic Insight (J.A.R.V.I.S. Protocol) ──
-      if (response.proactive_note) {
+      if (response.followup_suggestions && response.followup_suggestions.length > 0) {
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent("app:toast", {
             detail: {
               title: "Strategic Insight",
-              message: response.proactive_note,
+              message: response.followup_suggestions[0],
               type: "smart"
             }
           }));
-        }, 2000);
+        }, 2500);
       }
 
       if (onSuccess) onSuccess();

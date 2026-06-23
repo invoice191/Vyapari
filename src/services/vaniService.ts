@@ -81,18 +81,23 @@ function localFuzzyParse(transcript: string, contextData: any): any {
     'ব্যাংক': 'banker',                'প্রতিবেদন': 'dss',
   };
 
-  // If the query is just a single module keyword or contains navigation intent
+  // Extract common numbers safely
+  const extractAmount = (text: string) => {
+    // Matches "5000", "5000 rupees", "rs 5000", "₹5000"
+    const match = text.match(/(?:rs\.?|₹|rupees?|of)?\s*(\d+)\s*(?:rs\.?|₹|rupees?)?/i);
+    return match && match[1] ? parseInt(match[1], 10) : null;
+  };
+
+  // Check navigation intent first
   for (const [key, targetModule] of Object.entries(targetMap)) {
     if (t === key || t === `${key} page` || t === `open ${key}` || t.includes(`go to ${key}`) || t.includes(`navigate to ${key}`) || t.includes(`show ${key}`) ||
-        // Hindi nav patterns: "खाता खोलो", "माल दिखाओ"
         t.includes(`${key} खोलो`) || t.includes(`${key} दिखाओ`) || t.includes(`${key} पेज`) ||
-        // Marathi nav patterns: "खातेवही उघडा"
         t.includes(`${key} उघडा`) || t.includes(`${key} दाखवा`)) {
       return {
         intent: 'NAVIGATE',
         confidence: 0.95,
-        params: { target: targetModule },
-        spoken_response: `Opening the ${key} control deck, Sir.`,
+        params: { target_page: targetModule },
+        vani_response: `Opening the ${key} workspace, Sir.`,
         summary_card: {
           title: "Navigation",
           subtitle: `Redirected to ${targetModule}`,
@@ -102,75 +107,92 @@ function localFuzzyParse(transcript: string, contextData: any): any {
       };
     }
   }
+  // 1.5. QUERY_INVOICE
+  const queryInvoiceKeywords = [
+    'show invoice', 'latest invoice', 'recent invoice', 'find invoice', 'search invoice', 'invoice status', 'check invoice',
+    'show bill', 'latest bill', 'recent bill', 'find bill', 'search bill', 'bill status', 'check bill',
+    'पुराने बिल', 'बिल दिखाओ', 'चालान दिखाओ', 'बिल शो', 'इनवॉइस दिखाओ'
+  ];
+  if (queryInvoiceKeywords.some(kw => t.includes(kw)) || ((t.includes('invoice') || t.includes('bill') || t.includes('बिल') || t.includes('चालान')) && (t.includes('show') || t.includes('latest') || t.includes('find') || t.includes('search') || t.includes('दिखाओ') || t.includes('बताओ')))) {
+    let queryParam = 'latest';
+    // try to extract invoice number or customer name
+    const forMatch = t.match(/(?:for|of)\s+([a-zA-Z0-9\s]+)$/i);
+    if (forMatch && forMatch[1]) {
+      queryParam = forMatch[1].trim();
+    }
+    
+    return {
+      intent: 'QUERY_INVOICE',
+      confidence: 0.9,
+      params: { query: queryParam },
+      vani_response: "Accessing the invoice registry to pull up the requested records.",
+      summary_card: {
+        title: "Invoice Query",
+        subtitle: "Searching records",
+        items: [{ label: "Search Term", value: queryParam }],
+        status: "success"
+      }
+    };
+  }
 
-  // 2. CREATE_INVOICE fallback (English + Indian languages)
+  // 2. CREATE_INVOICE fallback
   const invoiceKeywords = [
-    'invoice', 'bill', 'billing', 'create bill',       // English
-    'चालान', 'बिल', 'बिल बनाओ', 'बिल बनाना', 'बिल करो',  // Hindi
-    'इनवॉइस बनाओ', 'बिल बना दो',                          // Hindi variants
-    'बिल करा', 'पावती', 'बिल बनवा',                       // Marathi
-    'ரசீது', 'பில்',                                      // Tamil
-    'బిల్లు', 'ఇన్వాయిస్',                                // Telugu
-    'ઇનવૉઇસ', 'બિલ',                                     // Gujarati
+    'invoice', 'bill', 'billing', 'create bill', 
+    'चालान', 'बिल', 'बिल बनाओ', 'बिल बनाना', 'बिल करो',
+    'इनवॉइस बनाओ', 'बिल बना दो', 
+    'बिल करा', 'पावती', 'बिल बनवा'
   ];
   if (invoiceKeywords.some(kw => t.includes(kw))) {
     let contact_name = "Walk-in Customer";
-    const forMatch = t.match(/(?:for|to)\s+([a-zA-Z\s]+?)(?:\s+for|\s+of|\s+with|$)/);
+    // Match "for [name]" or "to [name]"
+    const forMatch = t.match(/(?:for|to)\s+([a-zA-Z\s]+?)(?:\s+(?:for|of|with|amount|rupees|rs|₹)|$)/i);
     if (forMatch && forMatch[1]) {
       contact_name = forMatch[1].trim();
     }
+    
+    // Fuzzy search in context
     if (contextData?.contacts) {
       const match = contextData.contacts.find((c: any) => c.name.toLowerCase().includes(contact_name.toLowerCase()));
       if (match) contact_name = match.name;
     }
 
-    let total = 0;
-    const amountMatch = t.match(/(?:rs\.?|₹|rupees?|of)\s*(\d+)/i);
-    if (amountMatch && amountMatch[1]) {
-      total = parseInt(amountMatch[1], 10);
-    }
+    const total = extractAmount(t) || 100;
 
     return {
       intent: 'CREATE_INVOICE',
       confidence: 0.9,
-      params: { contact_name, items: [{ name: 'General Merchandise', qty: 1, price: total || 100 }], total: total || 100 },
-      spoken_response: `I have prepared a sales invoice draft for ${contact_name} amounting to ₹${total || 100}. Proceeding to billing desk.`,
+      params: { contact_name, items: [{ name: 'General Merchandise', qty: 1, price: total }], total },
+      vani_response: `I have prepared a sales invoice draft for ${contact_name} amounting to ₹${total}. Proceeding to billing desk.`,
       summary_card: {
         title: "Draft Created",
         subtitle: `Invoice pre-filled for ${contact_name}`,
         items: [
           { label: "Customer", value: contact_name },
-          { label: "Total Amount", value: `₹${total || 100}` }
+          { label: "Total Amount", value: `₹${total}` }
         ],
         status: "success"
       }
     };
   }
 
-  // 3. SEND_REMINDER / SMART_DUNNING (multilingual)
+  // 3. SEND_REMINDER / SMART_DUNNING
   const reminderKeywords = [
-    'remind', 'reminder', 'dunn', 'dunning', 'recovery',       // English
-    'याद दिलाओ', 'याद दिला', 'रिमाइंडर', 'वसूली',            // Hindi
-    'बकाया', 'उधार वसूल', 'पैसे मांगो',                      // Hindi variants
-    'आठवण करून दे', 'वसुली',                                  // Marathi
-    'நினைவூட்டு', 'வசூல்',                                   // Tamil
-    'రిమైండర్', 'బకాయి',                                     // Telugu
-    'યાદ અપાવો', 'વસૂલ',                                     // Gujarati
+    'remind', 'reminder', 'dunn', 'dunning', 'recovery',
+    'याद दिलाओ', 'याद दिला', 'रिमाइंडर', 'वसूली', 
+    'बकाया', 'उधार वसूल', 'पैसे मांगो', 
+    'आठवण करून दे', 'वसुली'
   ];
   if (reminderKeywords.some(kw => t.includes(kw))) {
     let contact_name = "Customer";
-    const match = t.match(/(?:to|for)\s+([a-zA-Z\s]+?)(?:\s+for|\s+of|$)/);
+    const match = t.match(/(?:to|for|of)\s+([a-zA-Z\s]+?)(?:\s+(?:for|of|with|amount|rupees|rs|₹)|$)/i);
     if (match && match[1]) contact_name = match[1].trim();
+    
     if (contextData?.contacts) {
       const found = contextData.contacts.find((c: any) => c.name.toLowerCase().includes(contact_name.toLowerCase()));
       if (found) contact_name = found.name;
     }
 
-    let amount = 2500;
-    const amountMatch = t.match(/(?:rs\.?|₹|rupees?|of)\s*(\d+)/i);
-    if (amountMatch && amountMatch[1]) {
-      amount = parseInt(amountMatch[1], 10);
-    }
+    const amount = extractAmount(t) || 2500;
 
     return {
       intent: 'SEND_REMINDER',
@@ -189,32 +211,38 @@ function localFuzzyParse(transcript: string, contextData: any): any {
     };
   }
 
-  // 4. CHECK_STOCK / INVENTORY (multilingual)
+  // 4. CHECK_STOCK / INVENTORY
   const stockKeywords = [
     'stock', 'inventory', 'quantity', 'godown', 'warehouse',
-    'स्टॉक', 'माल', 'सामान', 'गोदाम', 'स्टॉक देखो', 'माल कितना है',    // Hindi
-    'साठा', 'माल साठा',                                                  // Marathi
-    'சரக்கு', 'கிடங்கு',                                                // Tamil
-    'జాబితా', 'స్టాక్',                                                  // Telugu
-    'સ્ટૉક', 'ગોડાઉન',                                                   // Gujarati
-    'ಸ್ಟಾಕ್', 'ಗೋಡೌನ್',                                               // Kannada
-    'মজুদ',                                                               // Bengali
+    'स्टॉक', 'माल', 'सामान', 'गोदाम', 'स्टॉक देखो', 'माल कितना है',
+    'साठा', 'माल साठा'
   ];
   if (stockKeywords.some(kw => t.includes(kw))) {
     let product_name = "items";
-    const words = t.split(' ');
-    const stockIndex = words.findIndex(w => w.includes('stock') || w.includes('inventory') || w.includes('माल') || w.includes('साठा'));
-    if (stockIndex !== -1 && words[stockIndex + 1]) {
-      product_name = words[stockIndex + 1];
-    } else if (words[0] && words[0] !== 'check' && words[0] !== 'show' && words[0] !== 'देखो' && words[0] !== 'दिखाओ') {
-      product_name = words[0];
+    // Find what follows 'for' or what comes right before 'stock'
+    const forMatch = t.match(/(?:for|of)\s+([a-zA-Z\s]+?)(?:\s|$)/i);
+    if (forMatch && forMatch[1]) {
+      product_name = forMatch[1].trim();
+    } else {
+      const words = t.split(' ');
+      const stockIndex = words.findIndex(w => w.includes('stock') || w.includes('inventory') || w.includes('माल') || w.includes('साठा'));
+      if (stockIndex > 0 && words[stockIndex - 1] !== 'check' && words[stockIndex - 1] !== 'the') {
+        product_name = words[stockIndex - 1];
+      } else if (stockIndex !== -1 && words[stockIndex + 1]) {
+        product_name = words[stockIndex + 1];
+      }
+    }
+
+    if (contextData?.products) {
+      const match = contextData.products.find((p: any) => p.name.toLowerCase().includes(product_name.toLowerCase()));
+      if (match) product_name = match.name;
     }
 
     return {
       intent: 'CHECK_STOCK',
       confidence: 0.85,
-      params: { product_name },
-      spoken_response: `Searching safety registry for stock levels of ${product_name}, Sir.`,
+      params: { query: product_name },
+      spoken_response: `Searching registry for stock levels of ${product_name}, Sir.`,
       summary_card: {
         title: "Stock Query",
         subtitle: `Query: ${product_name}`,
@@ -247,7 +275,7 @@ function localFuzzyParse(transcript: string, contextData: any): any {
   }
 
   // 6. STRATEGIC_PLAN / PREDICTION
-  if (t.includes('strategic') || t.includes('plan') || t.includes('prediction') || t.includes('forecast') || t.includes('simulate') || t.includes('simulation') || t.includes('what-if') || t.includes('what if')) {
+  if (t.includes('strategic') || t.includes('plan') || t.includes('prediction') || t.includes('forecast') || t.includes('simulate') || t.includes('what-if') || t.includes('what if')) {
     return {
       intent: 'STRATEGIC_PLAN',
       confidence: 0.9,
@@ -265,10 +293,10 @@ function localFuzzyParse(transcript: string, contextData: any): any {
     };
   }
 
-  // 7. RUN_REPORT
+  // 7. SHOW_REPORT
   if (t.includes('report') || t.includes('reports') || t.includes('sales') || t.includes('profit')) {
     return {
-      intent: 'RUN_REPORT',
+      intent: 'SHOW_REPORT',
       confidence: 0.9,
       params: { report_type: 'sales' },
       spoken_response: "Compiling monthly sales ledger and tax compliance velocity reports.",
@@ -286,14 +314,11 @@ function localFuzzyParse(transcript: string, contextData: any): any {
 
   // 8. GET_BRIEFING / STATUS (multilingual detection)
   const briefingKeywords = [
-    'briefing', 'brief', 'status', 'check', 'update', 'sync',          // English
-    'बताओ', 'कितना', 'हाल', 'आज का', 'रिपोर्ट दो', 'स्थिति',         // Hindi
-    'सांग', 'किती', 'आजचा',                                             // Marathi
-    'சொல்', 'நிலை', 'இன்றைய',                                         // Tamil
-    'చెప్పు', 'స్థితి',                                                  // Telugu
-    'જણાવ', 'સ્થિતિ',                                                   // Gujarati
+    'briefing', 'brief', 'status', 'check', 'update', 'sync',
+    'बताओ', 'कितना', 'हाल', 'आज का', 'रिपोर्ट दो', 'स्थिति',
+    'सांग', 'किती', 'आजचा'
   ];
-  if (briefingKeywords.some(kw => t.includes(kw)) || t.startsWith('hi') || t.startsWith('hello') || t.startsWith('नमस्ते') || t.startsWith('नमस्कार') || t.startsWith('வணக்கம்') || t.startsWith('నమస్కారం')) {
+  if (briefingKeywords.some(kw => t.includes(kw)) || t.startsWith('hi') || t.startsWith('hello') || t.startsWith('नमस्ते')) {
     return {
       intent: 'GET_BRIEFING',
       confidence: 0.95,
@@ -334,27 +359,13 @@ export const vaniService = {
   processCommand: async (transcript: string, context: any) => {
     let contextData: any = {};
     try {
-      // 1. Log the attempt to audit_logs for compliance (as per Architecture Sec 5)
       await supabase.from('audit_logs').insert({
-        action: 'VANI_VOICE_COMMAND',
+        action: 'VANI_VOICE_COMMAND_OFFLINE',
         module: context.activeModule || 'System',
         metadata: { transcript },
         severity: 'Info'
       });
 
-      const t = transcript.toLowerCase();
-      
-      // ----------------------------------------------------
-      // JARVIS HYBRID NEURAL NLP PARSER (ZERO-LATENCY DECK)
-      // ----------------------------------------------------
-      
-      // 0. The aggressive local intercepts have been removed.
-      // DUAL-PASS ARCHITECTURE: Only exact-match quick navigation should be intercepted locally.
-      // All other commands (including fuzzy matches) are delegated to the Gemini 2.5 Flash Edge Function.
-
-      // ----------------------------------------------------
-      // DIRECT GEMINI CLOUD BRAIN (Ultra-Low Latency)
-      // ----------------------------------------------------
       let ownerName = "Vyapari Owner";
       let businessSettings = {};
 
@@ -372,37 +383,19 @@ export const vaniService = {
 
       const [invoices, products, contacts, ledgerEntries, recentLogs] = await Promise.all([
         context.profile?.business_id
-          ? supabase.from('invoices')
-              .select('id, invoice_number, contact_name, total_amount, status, due_date')
-              .eq('business_id', context.profile.business_id)
-              .order('created_at', { ascending: false })
-              .limit(20)
+          ? supabase.from('invoices').select('id, invoice_number, contact_name, total_amount, status, due_date').eq('business_id', context.profile.business_id).order('created_at', { ascending: false }).limit(20)
           : Promise.resolve({ data: [] }),
         context.profile?.business_id
-          ? supabase.from('products')
-              .select('id, name, quantity, category')
-              .eq('business_id', context.profile.business_id)
-              .limit(50)
+          ? supabase.from('products').select('id, name, quantity, category').eq('business_id', context.profile.business_id).limit(50)
           : Promise.resolve({ data: [] }),
         context.profile?.business_id
-          ? supabase.from('contacts')
-              .select('id, name, phone, outstanding_balance')
-              .eq('business_id', context.profile.business_id)
-              .limit(50)
+          ? supabase.from('contacts').select('id, name, phone, outstanding_balance').eq('business_id', context.profile.business_id).limit(50)
           : Promise.resolve({ data: [] }),
         context.profile?.business_id
-          ? supabase.from('ledger_entries')
-              .select('id, entry_type, amount, created_at')
-              .eq('business_id', context.profile.business_id)
-              .order('created_at', { ascending: false })
-              .limit(10)
+          ? supabase.from('ledger_entries').select('id, entry_type, amount, created_at').eq('business_id', context.profile.business_id).order('created_at', { ascending: false }).limit(10)
           : Promise.resolve({ data: [] }),
         context.profile?.business_id
-          ? supabase.from('vani_logs')
-              .select('transcript, intent, spoken_response')
-              .eq('business_id', context.profile.business_id)
-              .order('created_at', { ascending: false })
-              .limit(5)
+          ? supabase.from('vani_logs').select('transcript, intent, spoken_response').eq('business_id', context.profile.business_id).order('created_at', { ascending: false }).limit(5)
           : Promise.resolve({ data: [] })
       ]);
       
@@ -417,21 +410,28 @@ export const vaniService = {
         recent_vani_logs: recentLogs.data || []
       };
 
+      // Try to use the Cloud LLM (Gemini) for Jarvis-level Natural Language Understanding
       try {
         const { data, error } = await supabase.functions.invoke('vani-brain', {
           body: { transcript, context: contextData }
         });
 
         if (error) throw error;
-        
-        return data;
-      } catch (invokeError) {
-        console.error("VANI Edge Function Failure, falling back to local:", invokeError);
+        if (data && data.intent) {
+          console.log("🧠 VANI Brain (Gemini) Output:", data);
+          return data;
+        }
+      } catch (aiError) {
+        console.warn("VANI Brain Cloud unreachable or out of tokens. Falling back to offline Regex mode.", aiError);
+        // Fallback to local regex/keyword matching if the internet is down or tokens run out
         return localFuzzyParse(transcript, contextData);
       }
+      
+      // Safety catch
+      return localFuzzyParse(transcript, contextData);
 
     } catch (err) {
-      console.error("VANI Brain Error, falling back to local fuzzy parsing:", err);
+      console.error("VANI Execution Error:", err);
       return localFuzzyParse(transcript, contextData);
     }
   },

@@ -119,9 +119,17 @@ export default function Invoices() {
         }
       }
     };
+    const handleSearch = (e: any) => {
+      if (typeof e.detail === 'string') {
+        setSearch(e.detail === 'latest' ? '' : e.detail);
+        setActiveTab('list');
+      }
+    };
     window.addEventListener('app:navigate', handleGlobalNav);
+    window.addEventListener('app:invoice-search', handleSearch);
     return () => {
       window.removeEventListener('app:navigate', handleGlobalNav);
+      window.removeEventListener('app:invoice-search', handleSearch);
       supabase.removeAllChannels();
     };
   }, []);

@@ -46,20 +46,17 @@ const generateFilename = (type: string, ext: string): string => {
 
 /** Trigger browser download safely across all browsers */
 const triggerDownload = (blob: Blob, filename: string): void => {
-  import('file-saver').then(({ saveAs }) => {
-    saveAs(blob, filename);
-  }).catch(() => {
-    // Minimal fallback if dynamic import fails
-    const url = URL.createObjectURL(blob);
+  const reader = new FileReader();
+  reader.readAsDataURL(blob);
+  reader.onloadend = () => {
     const link = document.createElement('a');
-    link.href = url;
+    link.href = reader.result as string;
     link.download = filename;
     link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  });
+    setTimeout(() => document.body.removeChild(link), 200);
+  };
 };
 
 /** Capture a DOM element as PNG - strips dark-mode before capture */

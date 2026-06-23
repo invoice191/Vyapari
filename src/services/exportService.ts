@@ -348,7 +348,6 @@ export const exportService = {
    */
   exportTallyXML: async (businessName: string, data: any[]) => {
     try {
-      const { saveAs } = await import("file-saver");
       
       let voucherNodes = "";
       data.forEach((item, index) => {
@@ -401,7 +400,18 @@ export const exportService = {
 </ENVELOPE>`;
 
       const blob = new Blob([finalXML], { type: "text/xml;charset=utf-8" });
-      saveAs(blob, `Vyapari_TallyExport_${new Date().toISOString().split('T')[0]}.xml`);
+      const filename = `Vyapari_TallyExport_${new Date().toISOString().split('T')[0]}.xml`;
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = () => {
+        const link = document.createElement('a');
+        link.href = reader.result as string;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => document.body.removeChild(link), 200);
+      };
       return true;
     } catch (error) {
       console.error("[TallyXML] Critical Failure:", error);
@@ -415,7 +425,6 @@ export const exportService = {
    */
   exportGSTR1JSON: async (businessConfig: any, invoices: any[]) => {
     try {
-      const { saveAs } = await import("file-saver");
       const currentMonth = new Date().getMonth() + 1;
       const currentYear = new Date().getFullYear();
       
@@ -458,7 +467,18 @@ export const exportService = {
       });
 
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
-      saveAs(blob, `GSTR1_${payload.fp}_${payload.gstin}.json`);
+      const filename = `GSTR1_${payload.fp}_${payload.gstin}.json`;
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = () => {
+        const link = document.createElement('a');
+        link.href = reader.result as string;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => document.body.removeChild(link), 200);
+      };
       return true;
     } catch (error) {
       console.error("[GSTR1 Export] Failure:", error);

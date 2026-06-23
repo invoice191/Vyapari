@@ -1,12 +1,17 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 
+// ═══════════════════════════════════════════════════════════
+// Vyapari Universal Report Download Utility
+// Fixes: UUID filenames, missing extensions, wrong formats
+// ═══════════════════════════════════════════════════════════
+
 export type ReportFormat = "pdf" | "xlsx" | "csv";
 
 export interface ReportDownloadOptions {
   reportType: ReportType;
-  format?: ReportFormat;
-  data: Record<string, unknown>;
-  metadata: ReportMetadata;
+  format?: ReportFormat;              // override default format if needed
+  data: Record<string, unknown>;      // the report data payload
+  metadata: ReportMetadata;           // business context for filename
 }
 
 export interface ReportMetadata {
@@ -41,6 +46,7 @@ export type ReportType =
   | "STOCK_MOVEMENT"
   | "DISPUTE_GUARD";
 
+// ── 1. FILENAME GENERATOR ────────────────────────────────────
 function sanitize(str: string): string {
   return (str ?? "Unknown")
     .trim()
@@ -50,7 +56,7 @@ function sanitize(str: string): string {
 }
 
 function today(): string {
-  return new Date().toISOString().split("T")[0];
+  return new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 }
 
 function monthYear(): string {
@@ -96,6 +102,7 @@ export function generateFilename(
   return map[reportType] ?? `Vyapari_Report_${today()}.${ext}`;
 }
 
+// ── 2. DEFAULT FORMAT PER REPORT TYPE ───────────────────────
 export const DEFAULT_FORMAT: Record<ReportType, ReportFormat> = {
   INVOICE_PDF:            "pdf",
   SALES_REPORT:           "xlsx",
@@ -117,12 +124,14 @@ export const DEFAULT_FORMAT: Record<ReportType, ReportFormat> = {
   DISPUTE_GUARD:          "pdf",
 };
 
+// ── 3. MIME TYPE MAP ─────────────────────────────────────────
 export const MIME_TYPE: Record<ReportFormat, string> = {
   pdf:  "application/pdf",
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   csv:  "text/csv;charset=utf-8;",
 };
 
+// ── 4. CORE DOWNLOAD TRIGGER ─────────────────────────────────
 export function triggerDownload(
   blob: Blob,
   filename: string
@@ -137,9 +146,12 @@ export function triggerDownload(
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
+// ── 5. SUPABASE STORAGE FIX (for PDFs stored as UUIDs) ──────
+// If your PDF is already in Supabase Storage under a UUID path,
+// fetch it and re-trigger with the correct filename.
 export async function downloadFromSupabase(
   supabase: SupabaseClient,
-  storagePath: string,
+  storagePath: string,           // e.g. "invoices/3796d1c8-a862-4fd9.pdf"
   reportType: ReportType,
   meta: ReportMetadata
 ): Promise<void> {
@@ -147,7 +159,7 @@ export async function downloadFromSupabase(
   const filename = generateFilename(reportType, meta, format);
 
   const { data, error } = await supabase.storage
-    .from("reports")
+    .from("reports")                // your storage bucket name
     .download(storagePath);
 
   if (error || !data) {
@@ -155,6 +167,7 @@ export async function downloadFromSupabase(
     throw new Error(`Failed to download report: ${error?.message}`);
   }
 
+  // Re-blob with correct MIME type
   const blob = new Blob([data], { type: MIME_TYPE[format] });
   triggerDownload(blob, filename);
 }
