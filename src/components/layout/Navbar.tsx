@@ -44,6 +44,18 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { products = [], contacts = [] } = useGlobalData();
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
   const [unreadCount, setUnreadCount] = React.useState(0);
+  const [isOnline, setIsOnline] = React.useState(navigator.onLine);
+
+  React.useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
   
   // Search Logic
   const [isSearching, setIsSearching] = React.useState(false);
@@ -87,29 +99,36 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="h-16 bg-white/60 backdrop-blur-3xl border-b border-slate-200/50 flex items-center px-4 sm:px-8 sticky top-0 z-[200] gap-4 sm:gap-6" style={{boxShadow:'0 1px 0 rgba(0,0,0,0.04), 0 4px 16px -8px rgba(15,23,42,0.08)'}}>
       {/* Mobile Menu Toggle / Breadcrumb */}
-      <div className="flex items-center gap-4 flex-shrink-0">
+      <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 min-w-0">
         {isMobile && (
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => setDrawerOpen(!drawerOpen)}
-            className="w-10 h-10 flex items-center justify-center text-slate-600 bg-white border border-slate-200 rounded-xl shadow-sm"
+            className="w-9 h-9 flex-shrink-0 flex items-center justify-center text-slate-600 bg-white border border-slate-200 rounded-xl shadow-sm"
           >
-            {drawerOpen ? <X size={20} /> : <Menu size={20} />}
+            {drawerOpen ? <X size={18} /> : <Menu size={18} />}
           </motion.button>
         )}
         
-        <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[8px] font-bold text-emerald-600 uppercase tracking-widest hidden sm:inline">Live</span>
-            </div>
+        <div className="flex flex-col gap-0.5 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {isOnline ? (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[8px] font-bold text-emerald-600 uppercase tracking-widest hidden sm:inline">Live</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-50 border border-rose-100 animate-bounce">
+                <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                <span className="text-[8px] font-bold text-rose-600 uppercase tracking-widest">Offline (Saving Locally)</span>
+              </div>
+            )}
             <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200/80">
               <Shield size={9} className="text-slate-400" />
               <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Secured</span>
             </div>
           </div>
-          <h1 className="text-[15px] font-bold text-slate-900 tracking-tight whitespace-nowrap leading-tight">
+          <h1 className="text-[13px] sm:text-[15px] font-bold text-slate-900 tracking-tight whitespace-nowrap leading-tight truncate max-w-[130px] sm:max-w-none">
             {activeTitle}
           </h1>
         </div>
@@ -282,7 +301,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-3 sm:gap-5 flex-shrink-0 ml-auto">
+      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-auto">
         {/* Branch Selector */}
         <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100/60 border border-slate-200/60 rounded-lg cursor-pointer hover:bg-white hover:border-slate-300 hover:shadow-sm transition-all">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />

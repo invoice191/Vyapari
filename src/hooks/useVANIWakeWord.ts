@@ -67,7 +67,7 @@ export function useVANIWakeWord(onWake: () => void, lang: string = 'hi-IN') {
     } catch (e) {
       console.error("[WakeWord] Start failed:", e);
     }
-  }, [onWake]);
+  }, [onWake, lang]);
 
   const stopWakeWordDetection = useCallback(() => {
     listeningRef.current = false;

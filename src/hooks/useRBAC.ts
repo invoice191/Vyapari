@@ -1,6 +1,6 @@
 import { useAuth } from "../context/AuthContext";
 
-export type Role = 'owner' | 'manager' | 'staff' | 'banker';
+export type Role = 'owner' | 'manager' | 'staff' | 'banker' | 'sales_agent';
 
 interface Permissions {
   [module: string]: {
@@ -34,6 +34,12 @@ const ROLE_PERMISSIONS: Record<Role, Permissions> = {
     'banker': { 'view': true },
     'reports': { 'view': true },
     'ledger': { 'view': true },
+  },
+  sales_agent: {
+    'pos': { 'view': true, 'create': true },
+    'invoices': { 'view': true, 'create': true },
+    'contacts': { 'view': true, 'create': true },
+    'inventory': { 'view': true, 'edit': false } // Can inspect stock, but not modify
   }
 };
 
@@ -59,6 +65,7 @@ export const useRBAC = () => {
   const isManager = role === 'manager';
   const isStaff = role === 'staff';
   const isBanker = role === 'banker';
+  const isSalesAgent = role === 'sales_agent';
 
-  return { role, can, isOwner, isManager, isStaff, isBanker };
+  return { role, can, isOwner, isManager, isStaff, isBanker, isSalesAgent };
 };

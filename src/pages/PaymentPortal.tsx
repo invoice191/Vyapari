@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { stripeService } from "../services/stripeService";
 import { razorpayService } from "../services/razorpayService";
@@ -29,6 +29,8 @@ export default function PaymentPortal() {
 
   const searchParams = new URLSearchParams(window.location.search);
   const invoiceNum = searchParams.get("inv");
+  const stripeStatus = searchParams.get("status");
+  const stripeSessionId = searchParams.get("session_id");
 
   useEffect(() => {
     async function fetchInvoice() {
@@ -47,12 +49,30 @@ export default function PaymentPortal() {
 
         if (fetchErr || !data) {
           setError("Invoice not found in system directory.");
-        } else {
-          setInvoice(data);
-          if (data.status === "paid") {
-            setPaymentStep("success");
-            setTxId("tx_prepaid_db_sync");
-          }
+          setLoading(false);
+          return;
+        }
+
+        setInvoice(data);
+
+        // Handle Stripe redirect back to portal
+        if (stripeStatus === "success" && stripeSessionId) {
+          setPaymentMethod("Stripe");
+          setPaymentStep("processing");
+          // Update invoice to paid in DB after Stripe confirms
+          const { error: updateErr } = await supabase
+            .from("invoices")
+            .update({ status: "paid" })
+            .eq("invoice_number", invoiceNum);
+          if (updateErr) console.error("Failed to mark invoice paid:", updateErr);
+          setTxId(stripeSessionId);
+          setPaymentStep("success");
+        } else if (stripeStatus === "cancelled") {
+          // User cancelled at Stripe — just show pending state
+          setPaymentStep("pending");
+        } else if (data.status === "paid") {
+          setPaymentStep("success");
+          setTxId("tx_prepaid_db_sync");
         }
       } catch (err: any) {
         setError(err.message || "Failed to retrieve payment details.");
@@ -62,7 +82,7 @@ export default function PaymentPortal() {
     }
 
     fetchInvoice();
-  }, [invoiceNum]);
+  }, [invoiceNum, stripeStatus, stripeSessionId]);
 
   const handlePayStripe = async () => {
     if (!invoice) return;
@@ -71,6 +91,7 @@ export default function PaymentPortal() {
     
     const success = await stripeService.payInvoice({
       invoiceId: invoice.id,
+      businessId: invoice.business_id,
       amount: invoice.total_amount,
       customerName: invoice.contacts?.name || "Customer",
       customerPhone: invoice.contacts?.phone,
@@ -95,6 +116,7 @@ export default function PaymentPortal() {
 
     const success = await razorpayService.payInvoice({
       invoiceId: invoice.id,
+      businessId: invoice.business_id,
       amount: invoice.total_amount,
       customerName: invoice.contacts?.name || "Customer",
       customerPhone: invoice.contacts?.phone,

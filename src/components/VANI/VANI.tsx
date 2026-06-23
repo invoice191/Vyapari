@@ -5,7 +5,7 @@ import { useToast } from "../../components/common/Toast";
 import { vaniService } from "../../services/vaniService";
 import { vaniExecutor } from "../../services/vaniExecutor";
 import { useVANIWakeWord } from "../../hooks/useVANIWakeWord";
-import { Mic, RefreshCw, AlertTriangle, Play, CheckCircle, XCircle, Brain, Activity, Sparkles } from "lucide-react";
+import { Mic, AlertTriangle, Activity, Sparkles, Volume2, Play, XCircle } from "lucide-react";
 import VaniMascot from "./VaniMascot";
 
 interface VANIProps {
@@ -15,16 +15,31 @@ interface VANIProps {
 
 type VANIState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'confirming';
 
+const LANGUAGE_OPTIONS = [
+  { code: 'hi-IN', label: 'हि', name: 'Hindi' },
+  { code: 'en-IN', label: 'EN', name: 'English (India)' },
+  { code: 'mr-IN', label: 'मर', name: 'Marathi' },
+  { code: 'ta-IN', label: 'தம', name: 'Tamil' },
+  { code: 'te-IN', label: 'తె', name: 'Telugu' },
+  { code: 'gu-IN', label: 'ગુ', name: 'Gujarati' },
+  { code: 'kn-IN', label: 'ಕನ', name: 'Kannada' },
+  { code: 'bn-IN', label: 'বা', name: 'Bengali' },
+];
+
 export default function VANI({ activeModule, onCommand }: VANIProps) {
   const { profile } = useAuth();
   const { toast } = useToast();
   const [state, setState] = useState<VANIState>('idle');
-  const [sttLang, setSttLang] = useState('hi-IN'); // 'hi-IN' | 'en-IN' | 'mr-IN'
+  const [sttLang, setSttLang] = useState('hi-IN');
   const [transcript, setTranscript] = useState("");
   const [lastResponse, setLastResponse] = useState<any>(null);
   const [pendingAction, setPendingAction] = useState<any>(null);
   const [permError, setPermError] = useState(false);
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState<string>('');
+  const [showVoicePicker, setShowVoicePicker] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const lastSpokenResponse = useRef<string>("");
 
   // Load language preference from profile
   useEffect(() => {
@@ -32,34 +47,92 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
       const pref = profile.language_preference;
       if (pref === 'hi') setSttLang('hi-IN');
       else if (pref === 'mr') setSttLang('mr-IN');
-      else if (pref === 'en') setSttLang('en-IN');
+      else if (pref === 'ta') setSttLang('ta-IN');
+      else if (pref === 'te') setSttLang('te-IN');
+      else if (pref === 'gu') setSttLang('gu-IN');
+      else if (pref === 'kn') setSttLang('kn-IN');
+      else if (pref === 'bn') setSttLang('bn-IN');
+      else setSttLang('en-IN');
     }
   }, [profile]);
+
+  // Load all browser TTS voices
+  useEffect(() => {
+    const loadVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        setAvailableVoices(voices);
+        // Auto-select first voice matching current language
+        const match = voices.find(v => v.lang.startsWith(sttLang.split('-')[0]));
+        if (match && !selectedVoiceURI) setSelectedVoiceURI(match.voiceURI);
+      }
+    };
+    loadVoices();
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+  }, [sttLang]);
+
+  // Auto-select best matching voice when language changes
+  useEffect(() => {
+    if (availableVoices.length > 0) {
+      const langCode = sttLang.split('-')[0];
+      const match = availableVoices.find(v =>
+        v.lang === sttLang && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Heera') || v.name.includes('Hemant'))
+      ) || availableVoices.find(v => v.lang.startsWith(langCode));
+      if (match) setSelectedVoiceURI(match.voiceURI);
+    }
+  }, [sttLang, availableVoices]);
 
   const speakText = async (text: string, lang = 'en-IN'): Promise<void> => {
     return new Promise((resolve) => {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      
-      // Map detected language to voice
-      if (lang === 'hi' || lang === 'hi-IN') utterance.lang = 'hi-IN';
-      else if (lang === 'mr' || lang === 'mr-IN') utterance.lang = 'mr-IN';
-      else utterance.lang = 'en-IN';
 
-      utterance.rate = 0.92; // Natural slow paced cadence for Indian languages
-      utterance.pitch = 1.02; // Soft warm frequency
-      
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(v =>
-        v.lang === utterance.lang && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Heera') || v.name.includes('Hemant'))
-      ) || voices.find(v => v.lang.startsWith(utterance.lang.split('-')[0]));
-      
-      if (preferredVoice) utterance.voice = preferredVoice;
-      
+      // Map language codes
+      const langMap: Record<string, string> = {
+        'hi': 'hi-IN', 'mr': 'mr-IN', 'ta': 'ta-IN',
+        'te': 'te-IN', 'gu': 'gu-IN', 'kn': 'kn-IN', 'bn': 'bn-IN',
+        'en': 'en-IN',
+      };
+      const base = lang.split('-')[0];
+      utterance.lang = langMap[base] || lang || sttLang;
+
+      utterance.rate = 0.92;
+      utterance.pitch = 1.02;
       utterance.onend = () => resolve();
       utterance.onerror = () => resolve();
-      window.speechSynthesis.speak(utterance);
+
+      const applyVoiceAndSpeak = (voices: SpeechSynthesisVoice[]) => {
+        // 1. Use user-selected voice if available
+        if (selectedVoiceURI) {
+          const picked = voices.find(v => v.voiceURI === selectedVoiceURI);
+          if (picked) { utterance.voice = picked; }
+        }
+        // 2. Fallback: best-matching voice for language
+        if (!utterance.voice) {
+          const fallback = voices.find(v =>
+            v.lang === utterance.lang && (v.name.includes('Natural') || v.name.includes('Google'))
+          ) || voices.find(v => v.lang.startsWith(base));
+          if (fallback) utterance.voice = fallback;
+        }
+        window.speechSynthesis.speak(utterance);
+      };
+
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        applyVoiceAndSpeak(voices);
+      } else {
+        window.speechSynthesis.addEventListener('voiceschanged', () => {
+          applyVoiceAndSpeak(window.speechSynthesis.getVoices());
+        }, { once: true });
+        setTimeout(() => { if (!utterance.voice) window.speechSynthesis.speak(utterance); }, 300);
+      }
     });
+  };
+
+  const previewVoice = () => {
+    const langName = LANGUAGE_OPTIONS.find(l => l.code === sttLang)?.name || 'English';
+    speakText(`Hello! I am VANI, your business assistant. Currently speaking in ${langName}.`, sttLang);
   };
 
   const processText = async (text: string) => {
@@ -81,42 +154,54 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
       // Play vocalized response (non-blocking so VANI acts instantly in under 1s!)
       setState('speaking');
       
-      // -- IMMEDIATE ACTION: Trigger execution concurrently with speech
-      // This makes VANI feel "instant" as the UI responds while she starts talking
-      if (!response.requires_confirmation && !response.follow_up_question) {
-        // Use a slight timeout to ensure state transitions don't clash
-        setTimeout(() => {
-          vaniExecutor.execute(response, profile?.business_id || '', onCommand);
-        }, 50);
-      }
-
       if (response.spoken_response) {
-        speakText(response.spoken_response, response.language_detected).then(() => {
-          setState(s => s === 'speaking' ? 'idle' : s);
-        });
+        if (response.spoken_response === lastSpokenResponse.current) {
+          console.warn("VANI: Duplicate response detected, suppressing.");
+          setState('idle');
+        } else {
+          lastSpokenResponse.current = response.spoken_response;
+          speakText(response.spoken_response, response.language_detected).then(() => {
+            setState(s => s === 'speaking' ? 'idle' : s);
+          });
+        }
       } else {
         setState('idle');
       }
 
       // Handle clarifying question
       if (response.follow_up_question) {
-        speakText(response.follow_up_question, response.language_detected);
+        if (response.follow_up_question !== lastSpokenResponse.current) {
+          lastSpokenResponse.current = response.follow_up_question;
+          speakText(response.follow_up_question, response.language_detected);
+        }
         setState('idle');
         return;
       }
+
+      // Confirmation barrier for risky actions — must check BEFORE executing
+      if (response.requires_confirmation) {
+        setPendingAction(response);
+        setState('confirming');
+        return;
+      }
+
+      // -- SAFE EXECUTION: Only fires after confirmation guard passed
+      // Use a slight timeout to ensure state transitions don't clash
+      setTimeout(() => {
+        if (profile?.business_id) {
+          vaniExecutor.execute(response, profile.business_id, onCommand);
+        } else {
+          window.dispatchEvent(new CustomEvent('app:toast', {
+            detail: { title: 'VANI', message: 'Profile not loaded yet. Please wait.', type: 'warning' }
+          }));
+        }
+      }, 50);
 
       // Proactive advisory note - restricted to greetings or briefings to prevent repetitive vocal interruptions on direct user commands
       if (response.proactive_note && (response.intent === 'GET_BRIEFING' || text.toLowerCase().includes('hi') || text.toLowerCase().includes('hello') || text.toLowerCase().includes('morning') || text.toLowerCase().includes('briefing') || text.toLowerCase().includes('system check'))) {
         setTimeout(() => {
           speakText(response.proactive_note, response.language_detected);
         }, 1500);
-      }
-
-      // Confirmation barrier for risky actions
-      if (response.requires_confirmation) {
-        setPendingAction(response);
-        setState('confirming');
-        return;
       }
     } catch (e) {
       console.error("[VANI_UI] Extraction Failure:", e);
@@ -146,7 +231,7 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
 
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
-      recognition.interimResults = true;
+      recognition.interimResults = false;
       recognition.lang = sttLang;
       recognitionRef.current = recognition;
 
@@ -154,21 +239,17 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
       setTranscript("");
       setPermError(false);
 
-      const finalTranscriptRef = { current: "" };
       recognition.onresult = (event: any) => {
-        const current = Array.from(event.results)
-          .map((r: any) => r[0].transcript)
-          .join('');
+        const current = event.results[event.results.length - 1][0].transcript;
         setTranscript(current);
-        finalTranscriptRef.current = current;
+        processText(current);
       };
 
-      recognition.onend = async () => {
-        if (!finalTranscriptRef.current) {
-          setState('idle');
-          return;
+      recognition.onend = () => {
+        // Restart only if still listening (not transitioned to thinking)
+        if (state === 'listening' && recognitionRef.current) {
+          try { recognition.start(); } catch (e) {}
         }
-        await processText(finalTranscriptRef.current);
       };
 
       recognition.onerror = (event: any) => {
@@ -405,26 +486,79 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
                     <div className="mt-3 pt-3 border-t border-white/5 flex items-start space-x-2 relative z-10">
                       <Sparkles className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5 animate-pulse" />
                       <p className="text-[10px] text-blue-300/80 italic leading-relaxed font-sans">
-                        "Sir, {lastResponse.proactive_note}"
+                        {"Sir, " + lastResponse.proactive_note}
                       </p>
                     </div>
                   )}
                 </motion.div>
               )}
 
-              {/* Language Controls */}
-              <div className="flex justify-center gap-3.5 pt-2">
-                {['hi-IN', 'en-IN', 'mr-IN'].map((lang) => (
+              {/* Language + Voice Controls */}
+              <div className="space-y-3 pt-2">
+                {/* Language Selector */}
+                <div className="flex justify-center flex-wrap gap-2">
+                  {LANGUAGE_OPTIONS.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => setSttLang(lang.code)}
+                      title={lang.name}
+                      className={`w-9 h-9 rounded-xl text-[10px] font-black tracking-wide uppercase transition-all border ${
+                        sttLang === lang.code
+                          ? 'bg-blue-500/20 border-blue-500/40 text-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.3)]'
+                          : 'bg-white/[0.02] border-white/[0.05] text-slate-500 hover:text-slate-300 hover:border-white/20'
+                      } cursor-pointer`}
+                    >
+                      {lang.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Voice Picker Toggle */}
+                <div className="flex items-center gap-2">
                   <button
-                    key={lang}
-                    onClick={() => setSttLang(lang)}
-                    className={`text-[8px] font-black tracking-widest uppercase transition-all ${
-                      sttLang === lang ? 'text-blue-400' : 'text-slate-600 hover:text-slate-400'
-                    } cursor-pointer`}
+                    onClick={() => setShowVoicePicker(v => !v)}
+                    className="flex-1 flex items-center gap-2 text-[9px] font-bold tracking-widest uppercase text-slate-500 hover:text-slate-300 transition-all py-1.5 px-3 rounded-lg bg-white/[0.02] border border-white/[0.05] hover:border-white/10 cursor-pointer"
                   >
-                    {lang.split('-')[0]}
+                    <Volume2 className="w-3 h-3" />
+                    <span>Voice: {availableVoices.find(v => v.voiceURI === selectedVoiceURI)?.name?.slice(0, 18) || 'Auto'}</span>
                   </button>
-                ))}
+                  <button
+                    onClick={previewVoice}
+                    title="Test current voice"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer"
+                  >
+                    <Play className="w-3 h-3" />
+                  </button>
+                </div>
+
+                {/* Voice Dropdown */}
+                {showVoicePicker && availableVoices.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="max-h-40 overflow-y-auto rounded-xl bg-slate-900 border border-white/10 custom-scrollbar"
+                  >
+                    {availableVoices
+                      .filter(v => {
+                        // Show voices matching language OR all if none match
+                        const langBase = sttLang.split('-')[0];
+                        return v.lang.startsWith(langBase) || availableVoices.filter(x => x.lang.startsWith(langBase)).length === 0;
+                      })
+                      .map((voice) => (
+                        <button
+                          key={voice.voiceURI}
+                          onClick={() => { setSelectedVoiceURI(voice.voiceURI); setShowVoicePicker(false); }}
+                          className={`w-full text-left px-3 py-2 text-[10px] transition-all hover:bg-white/5 ${
+                            selectedVoiceURI === voice.voiceURI ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400'
+                          } cursor-pointer`}
+                        >
+                          <span className="font-bold">{voice.name}</span>
+                          <span className="text-slate-600 ml-1">({voice.lang})</span>
+                          {voice.localService && <span className="text-emerald-600 ml-1">· local</span>}
+                        </button>
+                      ))}
+                  </motion.div>
+                )}
               </div>
             </div>
 
@@ -488,7 +622,7 @@ export default function VANI({ activeModule, onCommand }: VANIProps) {
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">Protocol Authorization</h3>
               <p className="text-slate-400 italic mb-8 leading-relaxed">
-                "{pendingAction.confirmation_message || "Sir, this action requires your explicit authorization. Shall we proceed?"}"
+                {pendingAction.confirmation_message || "Sir, this action requires your explicit authorization. Shall we proceed?"}
               </p>
               <div className="flex gap-4">
                 <button onClick={confirmAction} className="flex-1 bg-white text-slate-950 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-400 transition-all">

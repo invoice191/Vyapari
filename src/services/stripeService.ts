@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 
 export interface StripePaymentOptions {
   invoiceId: string;
+  businessId: string;
   amount: number; // in INR or USD
   customerName: string;
   customerPhone?: string;
@@ -37,46 +38,42 @@ export const stripeService = {
     onCancel?: () => void
   ): Promise<boolean> => {
     try {
-      const loaded = await stripeService.loadScript();
-      if (!loaded) {
-        throw new Error("Stripe SDK failed to load. Please check your internet connection.");
-      }
-
       const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
       if (!publishableKey) {
-        console.warn("Stripe Publishable Key is not configured in environment variables.");
+        throw new Error("Stripe Publishable Key is not configured in environment variables (VITE_STRIPE_PUBLISHABLE_KEY).");
       }
 
-      // Initialize the Stripe SDK client
-      const stripeInstance = (window as any).Stripe ? new (window as any).Stripe(publishableKey) : null;
-      console.log("Stripe initialized successfully with key:", publishableKey ? "Configured" : "Missing");
+      console.log("Initiating real Stripe Checkout session...");
 
-      // In a live-server production, you would make an API call to create a Stripe Checkout Session:
-      // const session = await fetch("/api/stripe/create-session", { method: "POST", body: JSON.stringify(options) }).then(r => r.json());
-      // await stripeInstance.redirectToCheckout({ sessionId: session.id });
-
-      // For instant frontend experience, we run a gorgeous client-side processing callback
-      // that directly simulates the secure Stripe webhook event & mutates the database in real-time.
-      return new Promise((resolve) => {
-        setTimeout(async () => {
-          try {
-            // Update the real database record to Paid
-            const { error } = await supabase
-              .from("invoices")
-              .update({ status: "paid" })
-              .eq("id", options.invoiceId);
-
-            if (error) throw error;
-
-            onSuccess(`ch_test_mock_${Math.random().toString(36).substring(7)}`);
-            resolve(true);
-          } catch (err) {
-            console.error("Failed to update invoice status after Stripe checkout:", err);
-            onSuccess(`ch_test_mock_error_bypass`);
-            resolve(true);
-          }
-        }, 1200);
+      // Call our Supabase Edge Function to create a Checkout Session
+      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+        body: {
+          invoiceId: options.invoiceId,
+          businessId: options.businessId,
+          amount: options.amount,
+          customerName: options.customerName,
+          customerEmail: options.customerEmail
+        }
       });
+
+      if (error || !data) {
+        console.error("Edge Function Error:", error);
+        throw new Error("Failed to create Stripe Checkout session on the server.");
+      }
+      
+      if (data.error) {
+         throw new Error(data.error);
+      }
+
+      // The Edge Function returns the Stripe session URL
+      if (data.url) {
+        // Redirect the user to the secure Stripe Checkout hosted page
+        window.location.href = data.url;
+        return true;
+      } else {
+        throw new Error("No checkout URL returned from server.");
+      }
+
     } catch (err) {
       console.error("Stripe integration error:", err);
       if (onCancel) onCancel();
@@ -85,14 +82,16 @@ export const stripeService = {
   },
 
   /**
-   * Generates a Stripe Payment Link URL (mocked for demo purposes, as real Stripe Payment Links require backend API).
+   * Generates a Stripe Payment Link URL
    */
-  generatePaymentLink: async (invoiceId: string, amount: number, customer: any): Promise<{success: boolean; url: string}> => {
+  generatePaymentLink: async (invoiceId: string, amount: number, customer: any, invoiceNumber?: string): Promise<{success: boolean; url: string}> => {
     return new Promise((resolve) => {
       setTimeout(() => {
-        // Generate a mock Stripe payment link
-        const mockLink = `https://buy.stripe.com/test_${Math.random().toString(36).substring(2, 10)}?client_reference_id=${invoiceId}`;
-        resolve({ success: true, url: mockLink });
+        // Instead of a fake stripe.com link, we generate a link to our secure Payment Portal
+        // We use window.location.origin so it works locally and in production
+        const invParam = invoiceNumber || invoiceId;
+        const localLink = `${window.location.origin}/pay?inv=${invParam}`;
+        resolve({ success: true, url: localLink });
       }, 800);
     });
   }

@@ -36,8 +36,6 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import { ModuleErrorBoundary } from "./components/ModuleErrorBoundary";
 import { useRealtime } from "./hooks/useRealtime";
-import { vaniService } from "./services/vaniService";
-import { vaniExecutor } from "./services/vaniExecutor";
 import { useAutomationDaemon } from "./hooks/useAutomationDaemon";
 import { RoleGuard } from "./components/common/RoleGuard";
 import html2canvas from "html2canvas";
@@ -45,6 +43,7 @@ import jsPDF from "jspdf";
 
 import { Sidebar } from "./components/layout/Sidebar";
 import { Navbar } from "./components/layout/Navbar";
+import { LayoutDashboard, Receipt, Box, Users, BookOpen, MoreHorizontal, X, Zap } from "lucide-react";
 
 const MODULES = [
   { key: "dashboard", label: "Dashboard", icon: "--" },
@@ -182,6 +181,14 @@ function App() {
 
 
 
+  const BOTTOM_NAV = [
+    { key: "dashboard", label: "Home", icon: LayoutDashboard },
+    { key: "inventory", label: "Stock", icon: Box },
+    { key: "pos", label: "Quick POS", icon: Zap },
+    { key: "contacts", label: "Clients", icon: Users },
+    { key: "invoices", label: "Bills", icon: Receipt },
+  ];
+
   return (
     <div className="h-screen flex flex-col selection:bg-neon selection:text-ink relative overflow-hidden">
       {/* 3D Visual Experience */}
@@ -189,8 +196,6 @@ function App() {
       
       {/* Security Intercept for new staff */}
       {needsPasswordChange && <ForcePasswordChange />}
-      
-
 
       <Navbar 
         activeTitle={moduleTitles[active]} 
@@ -205,9 +210,10 @@ function App() {
       />
 
       <div className="flex flex-1 overflow-hidden">
-        {!isMobile && (
+        {/* Desktop sidebar — always visible, spring-animated width */}
+        {!isMobile && !isTablet && (
           <motion.aside 
-            animate={{ width: sidebarOpen ? 280 : 80 }}
+            animate={{ width: sidebarOpen ? 280 : 72 }}
             transition={{ type: "spring", stiffness: 280, damping: 32, mass: 1 }}
             className="h-full flex-shrink-0 z-[100] will-change-[width]"
           >
@@ -224,6 +230,23 @@ function App() {
           </motion.aside>
         )}
 
+        {/* Tablet: icon-only fixed sidebar, never collapses */}
+        {isTablet && (
+          <aside className="h-full w-[72px] flex-shrink-0 z-[100]">
+            <Sidebar 
+              active={active}
+              setActive={setActive}
+              sidebarOpen={false}
+              setSidebarOpen={() => {}}
+              isMobile={false}
+              drawerOpen={false}
+              setDrawerOpen={() => {}}
+              logout={logout}
+            />
+          </aside>
+        )}
+
+        {/* Mobile: slide-in drawer overlay */}
         <AnimatePresence>
           {isMobile && drawerOpen && (
             <>
@@ -238,6 +261,7 @@ function App() {
                 initial={{ x: -280 }}
                 animate={{ x: 0 }}
                 exit={{ x: -280 }}
+                transition={{ type: "spring", stiffness: 320, damping: 35 }}
                 className="fixed top-0 left-0 bottom-0 w-[280px] z-[400]"
               >
                 <Sidebar 
@@ -255,7 +279,9 @@ function App() {
           )}
         </AnimatePresence>
 
-        <main className="flex-1 p-4 sm:p-10 min-w-0 relative overflow-y-auto h-full custom-scrollbar">
+        <main className={`flex-1 min-w-0 relative overflow-y-auto h-full custom-scrollbar ${
+          isMobile ? 'p-3 pb-24' : isTablet ? 'p-5 sm:p-6' : 'p-6 sm:p-10'
+        }`}>
           <div className="max-w-[1600px] mx-auto">
             <AnimatePresence mode="wait">
               <motion.div
@@ -271,6 +297,80 @@ function App() {
           </div>
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation Bar */}
+      {isMobile && (
+        <nav className="fixed bottom-0 left-0 right-0 z-[350] bg-white/95 backdrop-blur-2xl border-t border-slate-200/60 px-2 pb-safe" style={{boxShadow:'0 -4px 24px -8px rgba(15,23,42,0.12)'}}>
+          <div className="flex items-center justify-around py-2">
+            {BOTTOM_NAV.map(({ key, label, icon: Icon }) => {
+              const isActive = active === key;
+              const isPOS = key === 'pos';
+              if (isPOS) {
+                return (
+                  <button
+                    key={key}
+                    onClick={() => { setActive(key); setDrawerOpen(false); }}
+                    className="flex flex-col items-center gap-1 -mt-4 relative z-10 min-w-[56px]"
+                  >
+                    <div 
+                      className={`w-12 h-12 rounded-full flex items-center justify-center text-white transition-all duration-200 ${
+                        isActive 
+                          ? 'bg-amber-500 shadow-[0_4px_12px_rgba(245,158,11,0.4)] scale-105' 
+                          : 'bg-indigo-600 shadow-[0_4px_12px_rgba(99,102,241,0.4)] hover:bg-indigo-500 active:scale-95'
+                      }`}
+                    >
+                      <Icon size={20} strokeWidth={2.5} />
+                    </div>
+                    <span className={`text-[9px] font-bold uppercase tracking-wider leading-none ${
+                      isActive ? 'text-amber-600 font-black' : 'text-indigo-600'
+                    }`}>{label}</span>
+                  </button>
+                );
+              }
+              return (
+                <button
+                  key={key}
+                  onClick={() => { setActive(key); setDrawerOpen(false); }}
+                  className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl transition-all duration-200 min-w-[52px] ${
+                    isActive
+                      ? 'text-indigo-600'
+                      : 'text-slate-400 active:scale-95'
+                  }`}
+                >
+                  <div className={`relative p-1.5 rounded-xl transition-all duration-200 ${
+                    isActive ? 'bg-indigo-100 shadow-sm' : ''
+                  }`}>
+                    <Icon size={isActive ? 20 : 19} strokeWidth={isActive ? 2.5 : 1.8} />
+                    {isActive && (
+                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-500 rounded-full border-2 border-white" />
+                    )}
+                  </div>
+                  <span className={`text-[9px] font-bold uppercase tracking-wider leading-none ${
+                    isActive ? 'text-indigo-600' : 'text-slate-400'
+                  }`}>{label}</span>
+                </button>
+              );
+            })}
+
+            {/* More button that opens the drawer */}
+            <button
+              onClick={() => setDrawerOpen(!drawerOpen)}
+              className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl transition-all duration-200 min-w-[52px] ${
+                drawerOpen ? 'text-indigo-600' : 'text-slate-400 active:scale-95'
+              }`}
+            >
+              <div className={`p-1.5 rounded-xl transition-all duration-200 ${drawerOpen ? 'bg-indigo-100' : ''}`}>
+                {drawerOpen
+                  ? <X size={20} strokeWidth={2.5} />
+                  : <MoreHorizontal size={19} strokeWidth={1.8} />}
+              </div>
+              <span className="text-[9px] font-bold uppercase tracking-wider leading-none">
+                {drawerOpen ? 'Close' : 'More'}
+              </span>
+            </button>
+          </div>
+        </nav>
+      )}
 
       {/* VANI Assistant Overlay */}
       <VANI 

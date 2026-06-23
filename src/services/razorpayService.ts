@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 
 export interface RazorpayPaymentOptions {
   invoiceId: string;
+  businessId: string;
   amount: number; // in INR
   customerName: string;
   customerPhone?: string;
@@ -38,62 +39,84 @@ export const razorpayService = {
     onCancel?: () => void
   ): Promise<boolean> => {
     try {
+      // Step 1: Load the Razorpay checkout script
       const loaded = await razorpayService.loadScript();
       if (!loaded) {
         throw new Error("Razorpay SDK failed to load. Please check your internet connection.");
       }
 
-      const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_default_vyapari_key";
-      
+      // Step 2: Call our Edge Function to create a real Razorpay Order
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/razorpay-checkout`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            invoiceId: options.invoiceId.slice(0, 8),
+            businessId: options.businessId,
+            amount: options.amount,
+          }),
+        }
+      );
+
+      const orderData = await response.json();
+
+      if (!response.ok || orderData.error) {
+        throw new Error(orderData.error || "Failed to create Razorpay order.");
+      }
+
+      // Step 3: Open the official Razorpay Checkout popup with the real Order ID
       const rzpOptions = {
-        key: keyId,
-        amount: Math.round(options.amount * 100), // Razorpay expects amount in subunits (paise)
-        currency: "INR",
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency || "INR",
         name: "Vyapari ERP",
-        description: `Invoice Payment for #${options.invoiceId}`,
-        image: "https://vyapari.io/logo.png", // Fallback logo
+        description: `Invoice Payment`,
+        order_id: orderData.orderId,
+        image: "https://vyapari.io/logo.png",
         handler: async function (response: any) {
           try {
-            // Update the database to mark invoice as paid
+            // Update the invoice as paid in Supabase after successful payment
             const { error } = await supabase
               .from("invoices")
               .update({ status: "paid" })
               .eq("id", options.invoiceId);
-
             if (error) throw error;
-
-            // Trigger success callback
             onSuccess(response.razorpay_payment_id);
           } catch (err) {
-            console.error("Failed to update invoice status after Razorpay payment:", err);
-            // Even if DB fails, complete callback with payment ID
+            console.error("Failed to update invoice after Razorpay payment:", err);
             onSuccess(response.razorpay_payment_id);
           }
         },
         prefill: {
           name: options.customerName,
           email: options.customerEmail || "customer@vyapari.com",
-          contact: options.customerPhone || "9999999999"
+          contact: options.customerPhone || "9999999999",
         },
         notes: {
           invoice_id: options.invoiceId,
-          source: "Vyapari Smart Billing Console"
+          source: "Vyapari Smart Billing",
         },
         theme: {
-          color: "#6366f1" // Premium Indigo matching our exact branding palette
+          color: "#6366f1",
         },
         modal: {
           ondismiss: function () {
             if (onCancel) onCancel();
-          }
-        }
+          },
+        },
       };
 
       const rzp = new (window as any).Razorpay(rzpOptions);
       rzp.open();
       return true;
+
     } catch (err) {
       console.error("Razorpay integration error:", err);
+      if (onCancel) onCancel();
       return false;
     }
   },

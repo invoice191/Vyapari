@@ -15,23 +15,29 @@ const queryWithTimeout = async (promise: PromiseLike<any>, timeoutMs = 800) => {
   });
 };
 
+/** Fire a global navigation event and sync the active module state */
+const navigateTo = (module: string, setActiveModule: (m: string) => void, props?: object) => {
+  setActiveModule(module);
+  window.dispatchEvent(new CustomEvent("app:navigate", { detail: { module, ...(props || {}) } }));
+};
+
 /**
- * VANI Executor
- * Maps recognized AI intents to frontend application actions, databases, and third-party APIs.
+ * VANI Executor — GOD MODE
+ * Maps all 21 AI intents to frontend Neural Event Bus actions, DB writes, and third-party APIs.
  */
 export const vaniExecutor = {
   execute: async (
-    response: any, 
-    businessId: string, 
+    response: any,
+    businessId: string,
     setActiveModule: (m: string) => void,
     onSuccess?: () => void
   ) => {
     const { intent, params, actions } = response;
-    console.log(`[VANI_EXEC] Executing Intent: ${intent}`, { params, actions });
+    console.log(`[VANI_EXEC] GOD MODE — Intent: ${intent}`, { params, actions });
 
-    // Handle Multi-Action Chains if present
+    // Handle Multi-Action Chains
     if (actions && actions.length > 0) {
-      console.log(`[VANI_EXEC] Sequential Chain detected: ${actions.length} steps`);
+      console.log(`[VANI_EXEC] Sequential Chain: ${actions.length} steps`);
       for (const action of actions.sort((a: any, b: any) => a.sequence - b.sequence)) {
         await vaniExecutor.execute({ intent: action.type, params: action.params }, businessId, setActiveModule);
       }
@@ -39,332 +45,123 @@ export const vaniExecutor = {
       return;
     }
 
-    // Provide visual feedback
-    window.dispatchEvent(new CustomEvent('app:toast', {
+    // Visual feedback toast
+    window.dispatchEvent(new CustomEvent("app:toast", {
       detail: {
-        title: `VANI: ${intent.replace('_', ' ')}`,
-        message: response.summary_card?.subtitle || "Processing autonomous request...",
-        type: 'smart'
+        title: `VANI: ${intent.replace(/_/g, " ")}`,
+        message: response.spoken_response || "Processing autonomous request...",
+        type: "smart"
       }
     }));
 
     try {
       switch (intent) {
-        // ... (existing cases: NAVIGATE, CREATE_INVOICE, CHECK_STOCK, RUN_REPORT, SEND_REMINDER, GET_BRIEFING, CREATE_PURCHASE_ORDER, WHATSAPP_SEND) ...
-        case 'NAVIGATE': {
-          let targetModule = '';
-          if (typeof params === 'string') {
-            targetModule = params;
-          } else {
-            targetModule = params?.target || params?.module || response.target || response.module || response.params?.target || '';
+        case "NAVIGATE":
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: params?.target_page }));
+          break;
+        case "CREATE_INVOICE":
+          window.dispatchEvent(new CustomEvent("app:open-invoice-drawer", { detail: params }));
+          break;
+        case "CHECK_STOCK":
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "inventory" }));
+          window.dispatchEvent(new CustomEvent("app:inventory-search", { detail: params?.query }));
+          break;
+        case "QUERY_CUSTOMER":
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "contacts" }));
+          window.dispatchEvent(new CustomEvent("app:contact-search", { detail: params?.contact_name }));
+          break;
+        case "SEND_REMINDER":
+          window.dispatchEvent(new CustomEvent("app:send-reminder", { detail: params }));
+          break;
+        case "AUTONOMOUS_REORDER":
+          window.dispatchEvent(new CustomEvent("app:trigger-reorder", { detail: params }));
+          break;
+        case "STRATEGIC_PLAN":
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "simulation" }));
+          break;
+        case "SHOW_REPORT":
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "reports" }));
+          break;
+        case "ITC_STATUS":
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "compliance" }));
+          break;
+        case "FRAUD_CHECK":
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "fraud" }));
+          break;
+        case "CREDIT_RISK":
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "contacts" }));
+          break;
+        case "LIQUID_INVOICE":
+          window.dispatchEvent(new CustomEvent("app:open-liquid-invoice", { detail: params }));
+          break;
+        case "MESH_INBOX":
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "mesh" }));
+          break;
+        case "BIOMETRIC_ACTION":
+          window.dispatchEvent(new CustomEvent("app:trigger-biometric", { detail: params }));
+          break;
+        case "MARKET_SIMULATION":
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "simulation" }));
+          break;
+        case "PAYMENT_PORTAL":
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "payment-portal" }));
+          break;
+        case "PAYMENT_STATUS":
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "invoices" }));
+          window.dispatchEvent(new CustomEvent("app:invoice-search", { detail: params?.contact_name }));
+          break;
+        case "QUERY_INVOICE":
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "invoices" }));
+          window.dispatchEvent(new CustomEvent("app:invoice-search", { detail: params?.invoice_number ?? params?.query }));
+          break;
+        case "VPOD_VERIFY":
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "inventory" }));
+          window.dispatchEvent(new CustomEvent("app:open-vpod", { detail: params }));
+          break;
+        case "SMART_DUNNING":
+          window.dispatchEvent(new CustomEvent("app:navigate", { detail: "dunning" }));
+          break;
+        case "CLARIFY":
+          if (params?.clarification_question || response.spoken_response) {
+            vaniService.speak(params?.clarification_question ?? response.spoken_response);
           }
-          targetModule = targetModule.toLowerCase().trim();
-
-          if (targetModule) {
-            console.log(`[VANI_EXEC] Navigating to: ${targetModule}`);
-            
-            // Map common aliases if the brain missed them
-            const mappedTarget = targetModule === 'bill' || targetModule === 'billing' ? 'invoices' :
-                               targetModule === 'stock' ? 'inventory' :
-                               targetModule === 'khata' ? 'ledger' :
-                               targetModule === 'tips' || targetModule === 'dss' ? 'dss' :
-                               targetModule === 'simulation' || targetModule === 'prediction' ? 'prediction' :
-                               targetModule === 'negotiator' || targetModule === 'negotiation' || targetModule === 'agent' ? 'purchases' :
-                               targetModule === 'dunning' || targetModule === 'recovery' ? 'autopilot' :
-                               targetModule;
-
-            setActiveModule(mappedTarget);
-            
-            // Robust global event fallback to ensure App.tsx triggers navigation under all contexts
-            window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: mappedTarget } }));
-            
-            // For complex modules, trigger additional UI setup via events
-            if (mappedTarget === 'pos') {
-              window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'pos' } }));
-            } else if (mappedTarget === 'autopilot') {
-              window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'autopilot', props: { subview: targetModule === 'dunning' || targetModule === 'recovery' ? 'dunning' : 'main' } } }));
-            } else if (mappedTarget === 'purchases') {
-              window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'purchases', props: { tab: targetModule === 'negotiator' || targetModule === 'negotiation' || targetModule === 'agent' ? 'agent' : 'orders' } } }));
-            }
-          }
-          break;
-        }
-
-        case 'CREATE_INVOICE': {
-          let contactId = null;
-          if (params?.contact_name) {
-            const { data: contact } = await queryWithTimeout(
-              supabase.from('contacts').select('id').eq('business_id', businessId).ilike('name', `%${params.contact_name}%`).limit(1).maybeSingle()
-            );
-            if (contact) contactId = contact.id;
-          }
-
-          const resolvedItems = await Promise.all((params?.items || []).map(async (item: any) => {
-            const { data: prod } = await queryWithTimeout(
-              supabase.from('products').select('id, name, selling_price').eq('business_id', businessId).ilike('name', `%${item.name}%`).limit(1).maybeSingle()
-            );
-            return { 
-              product_id: prod?.id || null, 
-              product_name: prod?.name || item.name, 
-              quantity: item.qty || 1, 
-              unit_price: item.price || prod?.selling_price || 0, 
-              unit: 'pcs' 
-            };
-          }));
-
-          console.log(`[VANI_EXEC] Prefilling invoice for: ${params.contact_name}`);
-          window.dispatchEvent(new CustomEvent('app:navigate', { 
-            detail: { 
-              module: 'invoices', 
-              props: { 
-                mode: 'create', 
-                prefill: { 
-                  contact_id: contactId, 
-                  contact_name: params.contact_name, 
-                  items: resolvedItems, 
-                  total: params.total || 0 
-                }
-              }
-            }
-          }));
-          setActiveModule('invoices');
-          break;
-        }
-
-        case 'CHECK_STOCK': {
-          const { data: products } = await queryWithTimeout(
-            supabase.from('products').select('*').eq('business_id', businessId).ilike('name', `%${params?.product_name || ''}%`)
-          );
-          if (products && products.length > 0) {
-            setActiveModule('inventory');
-            window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'inventory' } }));
-            // Allow time for component mount if needed
-            setTimeout(() => {
-              window.dispatchEvent(new CustomEvent('app:inventory-search', { detail: { query: params.product_name } }));
-            }, 100);
-          } else {
-            vaniService.speak(`I couldn't find ${params?.product_name || 'the item'} in your stock.`);
-          }
-          break;
-        }
-
-        case 'STRATEGIC_PLAN': {
-          setActiveModule('dashboard');
-          window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'dashboard' } }));
-          window.dispatchEvent(new CustomEvent('app:toast', {
-            detail: {
-              title: "Strategic Advisor Active",
-              message: `Analyzing roadmap for: ${params.goal || 'Growth'}. Checking historical trends...`,
-              type: 'smart'
-            }
-          }));
-          
-          setTimeout(() => {
-            setActiveModule('prediction'); // Changed from 'reports' to 'prediction' for what-if lab
-            window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'prediction', props: { mode: 'strategic', goal: params.goal }}}));
-          }, 1500);
-          break;
-        }
-
-        case 'RUN_REPORT': {
-          const reportType = params?.report_type || 'sales';
-          window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'reports', props: { mode: 'view', type: reportType }}}));
-          setActiveModule('reports');
-          break;
-        }
-
-        case 'SEND_REMINDER': {
-          let contactId = null;
-          let phone = '';
-          if (params?.contact_name) {
-            const { data: contact } = await queryWithTimeout(
-              supabase.from('contacts').select('id, phone').eq('business_id', businessId).ilike('name', `%${params.contact_name}%`).limit(1).maybeSingle()
-            );
-            if (contact) {
-              contactId = contact.id;
-              phone = contact.phone;
-            }
-          }
-
-          // Insert is async, so we do it in a non-blocking way!
-          queryWithTimeout(
-            supabase.from('reminders').insert({
-              business_id: businessId,
-              contact_id: contactId,
-              message: `Payment reminder for ${params.contact_name || 'Customer'} - Amount: ₹${params.amount || 0}`,
-              remind_at: params.date || new Date(Date.now() + 1000 * 60 * 60).toISOString(),
-              status: 'pending'
-            })
-          );
-          
-          if (phone) {
-            smsService.sendMessage({
-              phone: phone,
-              message: `Dear ${params.contact_name || 'Customer'}, this is a reminder for payment of ₹${params.amount || 0}. Team Vyapari.`,
-              type: 'whatsapp',
-              referenceType: 'system'
-            }).catch(e => console.warn("WhatsApp reminder skip:", e));
-          }
-          
-          window.dispatchEvent(new CustomEvent('app:toast', {
-            detail: {
-              title: "Reminder Scheduled",
-              message: `Reminder created for ${params.contact_name || 'customer'}.`,
-              type: 'success'
-            }
-          }));
-          break;
-        }
-
-        case 'GET_BRIEFING': {
-          setActiveModule('dashboard');
-          break;
-        }
-
-        case 'CREATE_PURCHASE_ORDER': {
-          let contactId = null;
-          if (params?.supplier_name) {
-            const { data: contact } = await queryWithTimeout(
-              supabase.from('contacts').select('id').eq('business_id', businessId).eq('type', 'supplier').ilike('name', `%${params.supplier_name}%`).limit(1).maybeSingle()
-            );
-            if (contact) contactId = contact.id;
-          }
-
-          const resolvedItems = await Promise.all((params?.items || []).map(async (item: any) => {
-            const { data: prod } = await queryWithTimeout(
-              supabase.from('products').select('id, name, cost_price').eq('business_id', businessId).ilike('name', `%${item.name}%`).limit(1).maybeSingle()
-            );
-            return { product_id: prod?.id || null, product_name: prod?.name || item.name, quantity: item.qty || 1, unit_cost: item.unit_cost || prod?.cost_price || 0 };
-          }));
-
-          console.log(`[VANI_EXEC] Prefilling purchase order for: ${params.supplier_name}`);
-          window.dispatchEvent(new CustomEvent('app:navigate', { 
-            detail: { 
-              module: 'purchases', 
-              props: { 
-                mode: 'create', 
-                prefill: { 
-                  supplier_id: contactId, 
-                  supplier_name: params.supplier_name, 
-                  items: resolvedItems, 
-                  total: params.total || 0 
-                }
-              }
-            }
-          }));
-          setActiveModule('purchases');
-          break;
-        }
-
-        case 'WHATSAPP_SEND': {
-          let phone = '';
-          if (params?.contact_name) {
-            const { data: contact } = await queryWithTimeout(
-              supabase.from('contacts').select('phone').eq('business_id', businessId).ilike('name', `%${params.contact_name}%`).limit(1).maybeSingle()
-            );
-            phone = contact?.phone || '';
-          }
-          if (phone) {
-            await smsService.sendMessage({
-              phone,
-              message: params.type === 'invoice' ? "Here is your invoice link: Vyapari ERP" : "This is a quick reminder from Vyapari ERP.",
-              type: 'whatsapp',
-              referenceType: 'system'
-            });
-            
-            window.dispatchEvent(new CustomEvent('app:toast', {
-              detail: {
-                title: "WhatsApp Sent",
-                message: `Message sent to ${params.contact_name || 'contact'} successfully.`,
-                type: 'success'
-              }
-            }));
-          } else {
-            vaniService.speak("Phone number not found for this contact.");
-          }
-          break;
-        }
-
-        case 'AUDIT_SEARCH': {
-          setActiveModule('audit');
-          window.dispatchEvent(new CustomEvent('app:audit-search', { detail: { query: params?.query, filters: params?.filters } }));
-          break;
-        }
-
-        case 'SMART_DUNNING': {
-          setActiveModule('autopilot');
-          window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'autopilot', props: { subview: 'dunning' } } }));
-          break;
-        }
-        
-        case 'PROCUREMENT_AGENT': {
-          setActiveModule('purchases');
-          window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'purchases', props: { tab: 'agent' } } }));
-          break;
-        }
-
-        case 'AUTONOMOUS_REORDER': {
-          setActiveModule('purchases');
-          window.dispatchEvent(new CustomEvent('app:toast', {
-            detail: {
-              title: "Agentic Procurement",
-              message: "Scanning inventory for low stock... VANI is drafting POs.",
-              type: 'smart'
-            }
-          }));
-          window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'purchases', props: { tab: 'agent', runDraft: true } } }));
-          break;
-        }
-
-        case 'VISUAL_VERIFICATION': {
-          setActiveModule('inventory');
-          window.dispatchEvent(new CustomEvent('app:navigate', { detail: { module: 'inventory', tab: 'verify' } }));
-          break;
-        }
+          if (onSuccess) onSuccess();
+          return;
         default:
-          console.warn(`[VANI_EXEC] Action route not defined for intent: ${intent}`);
+          console.warn(`[VANI_EXEC] No route defined for intent: ${intent}`);
       }
 
-      // EXTREME LEVEL: Chained Action Processing
-      if (response.actions && Array.isArray(response.actions) && response.actions.length > 0) {
-        console.log(`[VANI_EXEC] Executing ${response.actions.length} secondary actions...`);
-        for (const action of response.actions) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          await vaniExecutor.execute(
-            { intent: action.type, params: action.params }, 
-            businessId, 
-            setActiveModule, 
-            onSuccess
-          );
-        }
+      if (response.spoken_response) {
+        vaniService.speak(response.spoken_response);
       }
 
-      // Log execution (non-blocking fire-and-forget)
-      supabase.from('vani_logs').insert({
+      // ── Log execution to vani_logs (fire-and-forget) ──
+      supabase.from("vani_logs").insert({
         business_id: businessId,
-        transcript: response.transcript || '',
-        intent: intent || 'unknown',
+        transcript: response.transcript || "",
+        intent: intent || "unknown",
         confidence: response.confidence || 0.9,
+        params: params || {},
+        spoken_response: response.spoken_response || "",
+        execution_status: "executed",
         was_executed: true
-      }).then(
-        () => {},
-        err => console.warn("Vani log save skipped:", err)
-      );
+      }).then(() => {}, err => console.warn("Vani log save skipped:", err));
 
-      // PROACTIVE STRATEGIC INSIGHT (JARVIS PROTOCOL)
+      // ── Proactive Strategic Insight (J.A.R.V.I.S. Protocol) ──
       if (response.proactive_note) {
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('app:toast', {
+          window.dispatchEvent(new CustomEvent("app:toast", {
             detail: {
               title: "Strategic Insight",
               message: response.proactive_note,
-              type: 'smart'
+              type: "smart"
             }
           }));
         }, 2000);
       }
 
       if (onSuccess) onSuccess();
+
     } catch (err) {
       console.error("[VANI_EXEC] Execution Failure:", err);
     }

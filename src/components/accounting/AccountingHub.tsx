@@ -145,20 +145,37 @@ export default function AccountingHub() {
           <p className="text-slate-400 font-bold text-xs uppercase tracking-widest pl-14">Business Health & Tax Reports</p>
         </motion.div>
 
-        <div className="flex items-center gap-3 bg-white/60 backdrop-blur-md p-2 rounded-2xl border border-white/80 shadow-sm">
-          <input 
-            type="date" 
-            value={dateRange.start}
-            onChange={e => setDateRange({...dateRange, start: e.target.value})}
-            className="bg-transparent font-black text-[10px] uppercase tracking-wider text-slate-600 outline-none px-2"
-          />
-          <ArrowRight size={12} className="text-slate-300" />
-          <input 
-            type="date" 
-            value={dateRange.end}
-            onChange={e => setDateRange({...dateRange, end: e.target.value})}
-            className="bg-transparent font-black text-[10px] uppercase tracking-wider text-slate-600 outline-none px-2"
-          />
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={handleTallyExport}
+            className="px-4 py-2.5 bg-indigo-50 border border-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-200 flex items-center gap-2 shadow-sm"
+          >
+            <DownloadCloud size={14} />
+            Tally XML Export
+          </button>
+          <button
+            onClick={handleGSTR1Export}
+            className="px-4 py-2.5 bg-amber-50 border border-amber-100 text-amber-700 hover:bg-amber-500 hover:text-slate-950 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-200 flex items-center gap-2 shadow-sm"
+          >
+            <FileJson size={14} />
+            GSTR-1 JSON Export
+          </button>
+
+          <div className="flex items-center gap-3 bg-white/60 backdrop-blur-md p-2 rounded-2xl border border-white/80 shadow-sm">
+            <input 
+              type="date" 
+              value={dateRange.start}
+              onChange={e => setDateRange({...dateRange, start: e.target.value})}
+              className="bg-transparent font-black text-[10px] uppercase tracking-wider text-slate-600 outline-none px-2"
+            />
+            <ArrowRight size={12} className="text-slate-300" />
+            <input 
+              type="date" 
+              value={dateRange.end}
+              onChange={e => setDateRange({...dateRange, end: e.target.value})}
+              className="bg-transparent font-black text-[10px] uppercase tracking-wider text-slate-600 outline-none px-2"
+            />
+          </div>
         </div>
       </div>
 

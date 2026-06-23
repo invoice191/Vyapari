@@ -133,7 +133,7 @@ export function KPICard({ title, value, change, changeLabel, icon, color = '#4f4
 
   return (
     <Card 
-      className={`group relative border border-white/5 bg-slate-950 hover:bg-slate-900 transition-all duration-500 overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/20' : ''}`} 
+      className={`group relative border border-white/5 bg-slate-950 hover:bg-slate-900 transition-all duration-500 overflow-hidden !p-0 ${onClick ? 'cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/20' : ''}`} 
       onClick={onClick}
     >
       <div 
@@ -144,29 +144,29 @@ export function KPICard({ title, value, change, changeLabel, icon, color = '#4f4
         }}
       />
       
-      <div className="flex justify-between items-start relative z-10 p-7">
-        <div className="space-y-5">
-          <div className="flex items-center gap-3">
+      <div className="flex justify-between items-start relative z-10 p-4 sm:p-6">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2.5">
             <div className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: color, color }} />
             <div className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">{title}</div>
           </div>
           <motion.div 
             initial={{ opacity: 0, x: -5 }}
             animate={{ opacity: 1, x: 0 }}
-            className="text-4xl font-black tracking-tighter text-white drop-shadow-sm"
+            className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tighter text-white drop-shadow-sm"
           >
             {value}
           </motion.div>
-          <div className="flex items-center gap-3">
-            <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg border ${isPos ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/10' : 'border-rose-500/20 text-rose-400 bg-rose-500/10'}`}>
-              {isPos ? "-" : "-"} {Math.abs(change)}%
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <span className={`text-[9px] sm:text-[10px] font-black px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border ${isPos ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/10' : 'border-rose-500/20 text-rose-400 bg-rose-500/10'}`}>
+              {isPos ? "+" : "-"} {Math.abs(change)}%
             </span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{changeLabel}</span>
+            <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest">{changeLabel}</span>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-3">
-          <div className="w-14 h-14 flex items-center justify-center text-white border border-white/20 rounded-2xl bg-white/10 transition-all group-hover:border-indigo-500/50 group-hover:bg-indigo-500/10 group-hover:shadow-[0_0_20px_rgba(79,70,229,0.2)]">
-            <span className="text-2xl transform group-hover:scale-110 transition-transform">{icon}</span>
+        <div className="flex flex-col items-end gap-3 flex-shrink-0">
+          <div className="w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center text-white border border-white/20 rounded-xl sm:rounded-2xl bg-white/10 transition-all group-hover:border-indigo-500/50 group-hover:bg-indigo-500/10 group-hover:shadow-[0_0_20px_rgba(79,70,229,0.2)]">
+            <span className="text-xl sm:text-2xl transform group-hover:scale-110 transition-transform">{icon}</span>
           </div>
         </div>
       </div>

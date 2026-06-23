@@ -3,11 +3,13 @@ import { Landmark, ShieldCheck, TrendingUp, FileText, AlertCircle, CheckCircle2,
 import { motion } from 'motion/react';
 import { useGlobalData } from '../../../context/DataContext';
 import { useToast } from '../../common/Toast';
+import { useAuth } from '../../../hooks/useAuth';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export const BankerEngine: React.FC = () => {
   const { invoices } = useGlobalData();
   const { toast } = useToast();
+  const { business } = useAuth();
   const [loading, setLoading] = useState(true);
   const [score, setScore] = useState(0);
   
@@ -152,18 +154,27 @@ export const BankerEngine: React.FC = () => {
                 </div>
                 
                 <button 
-                   onClick={() => {
+                   onClick={async () => {
                      toast("Generating Cryptographically Signed Banker Pack...", "info");
                      setLoading(true);
-                     setTimeout(() => {
-                       setLoading(false);
+                     try {
+                       const { exportService } = await import('../../../services/exportService');
+                       const businessName = business?.name || "Vyapari Business";
+                       await exportService.generateBankerPackPDF(
+                         businessName,
+                         score,
+                         simulatedLoan,
+                         interestRate,
+                         "12 Mo.",
+                         "94%"
+                       );
                        toast("Banker Pack Sealed & Exported.", "success");
-                       // Simulation of download
-                       const link = document.createElement('a');
-                       link.href = '#';
-                       link.download = 'Banker_Pack_Vyapari.pdf';
-                       link.click();
-                     }, 300);
+                     } catch (err) {
+                       console.error(err);
+                       toast("Failed to export Banker Pack", "error");
+                     } finally {
+                       setLoading(false);
+                     }
                    }}
                    className="w-full mt-8 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-xl shadow-lg border border-indigo-400 flex items-center justify-center gap-2 transition-all group"
                  >

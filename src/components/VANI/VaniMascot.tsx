@@ -35,13 +35,16 @@ export default function VaniMascot({ state, transcript, responseBrief }: VaniMas
     setWiggle(true);
     const timer1 = setTimeout(() => setWiggle(false), 600);
     const timer2 = setTimeout(() => setBlushActive(false), 2000);
-    
-    // Spawn transition particles
-    spawnBurst(100, 100, 15, state === 'listening' ? 'rose' : state === 'speaking' ? 'emerald' : 'cyan');
+
+    // Spawn transition particles — wrapped in rAF so canvas loop is guaranteed running
+    const rafId = requestAnimationFrame(() => {
+      spawnBurst(100, 100, 15, state === 'listening' ? 'rose' : state === 'speaking' ? 'emerald' : 'cyan');
+    });
 
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
+      cancelAnimationFrame(rafId);
     };
   }, [state]);
 

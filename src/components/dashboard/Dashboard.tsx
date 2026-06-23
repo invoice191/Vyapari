@@ -602,7 +602,7 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <div className="bg-white/[0.03] backdrop-blur-3xl p-8 rounded-[2rem] border border-white/5 min-w-[300px] text-right shadow-2xl relative overflow-hidden group/time">
+          <div className="bg-white/[0.03] backdrop-blur-3xl p-5 sm:p-8 rounded-[2rem] border border-white/5 w-full md:w-auto md:min-w-[300px] text-right shadow-2xl relative overflow-hidden group/time">
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
             <div className="text-[10px] font-black uppercase tracking-[0.5em] text-indigo-400 mb-6 border-b border-white/5 pb-4 text-center">
               Current Time

@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { auditService } from './auditService';
 import { smsService } from './smsService';
+import { communicationService } from './communicationService';
 
 export const automationService = {
   /**
@@ -147,12 +148,31 @@ export const automationService = {
 
       // 3. Daily Briefing
       if (config.dailyBriefing) {
-        logs.push({
-          action: 'Daily Briefing Sent',
-          target: 'Owner (Telegram/WhatsApp)',
-          detail: 'System health metrics delivered',
-          status: 'success'
-        });
+        const { data: biz, error: bizError } = await supabase
+          .from('businesses')
+          .select('name, phone')
+          .eq('id', businessId)
+          .single();
+
+        if (!bizError && biz?.phone) {
+          const sent = await communicationService.sendDailySummary(businessId, biz.phone, biz.name || 'Vyapari Retailer');
+          if (sent) {
+            logs.push({
+              action: 'Daily Briefing Sent',
+              target: `${biz.name || 'Owner'} (${biz.phone})`,
+              detail: 'Automated strategic summary message dispatched.',
+              status: 'success'
+            });
+            await auditService.logAction({
+              business_id: businessId,
+              user_id: userId,
+              user_email: userEmail,
+              action: 'automated_daily_briefing',
+              module: 'AutoPilot',
+              details: { phone: biz.phone }
+            });
+          }
+        }
       }
 
       return { success: true, logs };

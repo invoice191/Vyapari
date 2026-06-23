@@ -7,7 +7,7 @@ import { automationService } from '../services/automationService';
  * while the business owner is using the application.
  */
 export function useAutomationDaemon(intervalMinutes = 60) {
-  const { profile, user } = useAuth();
+  const { profile, user, business } = useAuth();
   const isRunning = useRef(false);
 
   useEffect(() => {
@@ -33,23 +33,25 @@ export function useAutomationDaemon(intervalMinutes = 60) {
       isRunning.current = true;
       try {
         console.log("[Daemon] Running background automation check...");
-        // Fetch config from somewhere or use defaults
-        const defaultConfig = {
-          autoDunning: true,
-          dunningDaysBefore: 3,
-          dunningDaysAfter: 5,
-          autoLateFee: true,
-          lateFeePercent: 2,
-          autoRestock: true,
-          restockThreshold: 10,
-          dailyBriefing: false
+        
+        // Fetch config dynamically from business settings
+        const bizSettings = business?.settings || {};
+        const config = {
+          autoDunning: bizSettings.dunning_daemon ?? true,
+          dunningDaysBefore: bizSettings.dunning_days_before ?? 3,
+          dunningDaysAfter: bizSettings.dunning_days_after ?? 5,
+          autoLateFee: bizSettings.auto_late_fee ?? true,
+          lateFeePercent: bizSettings.late_fee_percent ?? 2,
+          autoRestock: bizSettings.auto_restock ?? true,
+          restockThreshold: bizSettings.restock_threshold ?? 10,
+          dailyBriefing: bizSettings.daily_briefing ?? false
         };
         
         await automationService.runAutoPilot(
           profile?.business_id!, 
           user?.id!, 
           user?.email || 'system', 
-          defaultConfig
+          config
         );
       } catch (e) {
         console.error("[Daemon] Execution failed:", e);
@@ -57,5 +59,5 @@ export function useAutomationDaemon(intervalMinutes = 60) {
         isRunning.current = false;
       }
     }
-  }, [profile?.business_id, user, intervalMinutes]);
+  }, [profile?.business_id, user, business, intervalMinutes]);
 }

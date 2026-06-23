@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchProfileAndBusiness = async (userId: string) => {
     try {
       // 1. Fetch Profile with maybeSingle to avoid errors on new users
-      let { data: profileData, error: profileError } = await supabase
+      const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
@@ -87,10 +87,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // 2. Self-Healing: If profile is missing or business_id is missing, use the initialization RPC
       if (!profileData || !profileData.business_id) {
         console.log("[AuthContext] Profile or Business missing, triggering initialization RPC...");
-        
+
         const { data: { user: authUser } } = await supabase.auth.getUser();
         const meta = authUser?.user_metadata;
-        
+
         const { data: initData, error: initError } = await supabase.rpc('initialize_new_business', {
           p_business_name: meta?.business_name || 'My New Business',
           p_full_name: meta?.full_name || 'New Vyapari'
@@ -98,7 +98,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         if (initError) {
           console.error("[AuthContext] Initialization RPC failed:", initError);
-          // Fallback: try to set profile if at least that exists
           if (profileData) setProfile(profileData);
           throw initError;
         }
@@ -109,7 +108,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         // Normal flow: fetch existing business
         setProfile(profileData);
-        
+
         const { data: businessData, error: businessError } = await supabase
           .from('businesses')
           .select('*')
@@ -138,9 +137,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
         if (error) throw error;
       } else {
-        const targetEmail = email || "saurabhprajwal2220@gmail.com";
-        const targetPassword = password || "admin@123";
-        const { error } = await supabase.auth.signInWithPassword({ email: targetEmail, password: targetPassword });
+        // Security: no hardcoded credential fallbacks
+        if (!email || !password) throw new Error('Email and password are required.');
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
     } catch (err) {
@@ -152,12 +151,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signUp = async (email?: string, password?: string, fullName?: string) => {
     setLoading(true);
     try {
-      const targetEmail = email || "saurabhprajwal2220@gmail.com";
-      const targetPassword = password || "admin@123";
-      
+      // Security: no hardcoded credential fallbacks
+      if (!email || !password) throw new Error('Email and password are required.');
       const { error } = await supabase.auth.signUp({
-        email: targetEmail,
-        password: targetPassword,
+        email,
+        password,
         options: {
           data: {
             full_name: fullName || 'New User',
@@ -225,7 +223,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .from('profiles')
         .update({ requires_password_change: false })
         .eq('id', user?.id);
-      
+
       if (profileError) throw profileError;
 
       // Refresh profile state
@@ -237,9 +235,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, profile, business, loading, 
-      signIn, signUp, resendSignUpOtp, signOut, 
+    <AuthContext.Provider value={{
+      user, profile, business, loading,
+      signIn, signUp, resendSignUpOtp, signOut,
       updateBusiness, updatePassword,
       fetchProfileAndBusiness,
       needsPasswordChange,

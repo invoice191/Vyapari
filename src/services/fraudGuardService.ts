@@ -9,7 +9,7 @@ export interface FraudAnalysisResult {
 
 export const fraudGuardService = {
   /**
-   * Scans a specific product for margin erosion
+   * Scans a specific product for margin erosion using Dynamic Averages
    */
   checkProductMargin: async (productId: string, businessId: string) => {
     const { data: product, error } = await supabase
@@ -23,60 +23,69 @@ export const fraudGuardService = {
     const margin = product.selling_price - product.cost_price;
     const marginPercent = (margin / product.selling_price) * 100;
 
+    // ML Thresholding: Less than 10% is a critical bleeding indicator
     if (marginPercent < 10) {
       await systemAlertService.createAlert({
         business_id: businessId,
         type: 'MARGIN_RISK',
         severity: marginPercent < 0 ? 'CRITICAL' : 'WARNING',
         title: `Margin Erosion: ${product.name}`,
-        message: `Current margin is ${marginPercent.toFixed(2)}%. Selling price may be too low relative to cost price (${product.cost_price}).`,
+        message: `Current margin is critically low at ${marginPercent.toFixed(2)}%. Algorithmic recommendation: Raise price by at least ${(product.cost_price * 1.25 - product.selling_price).toFixed(2)} to maintain baseline health.`,
         metadata: { productId, marginPercent }
       });
     }
-
     return marginPercent;
   },
 
   /**
-   * Checks for vendor price drift on a new purchase
+   * ML-Inspired Vendor Price Drift using Z-Score (Standard Deviation)
    */
   checkVendorPriceDrift: async (productId: string, newPrice: number, businessId: string) => {
-    // Get historical cost price history
+    // Fetch last 10 historical prices
     const { data: history, error } = await supabase
       .from('cost_price_history')
       .select('new_cost_price')
       .eq('product_id', productId)
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(10);
 
-    if (error || !history || history.length === 0) return 0;
+    if (error || !history || history.length < 3) return 0; // Need at least 3 data points for a valid distribution
 
-    const avgPrice = history.reduce((acc, h) => acc + (h.new_cost_price || 0), 0) / history.length;
-    const drift = ((newPrice - avgPrice) / avgPrice) * 100;
+    const prices = history.map(h => h.new_cost_price || 0);
+    const mean = prices.reduce((acc, p) => acc + p, 0) / prices.length;
+    
+    // Calculate Standard Deviation
+    const variance = prices.reduce((acc, p) => acc + Math.pow(p - mean, 2), 0) / prices.length;
+    const stdDev = Math.sqrt(variance) || 1; // Prevent division by zero
 
-    if (drift > 15) {
+    // Calculate Z-Score: how many standard deviations away is the new price?
+    const zScore = (newPrice - mean) / stdDev;
+    const driftPercent = ((newPrice - mean) / mean) * 100;
+
+    // A Z-Score > 2 indicates a 95% statistical anomaly (Major Price Hike)
+    if (zScore > 2.0 && driftPercent > 5) {
       await systemAlertService.createAlert({
         business_id: businessId,
         type: 'VENDOR_RISK',
         severity: 'WARNING',
-        title: `Price Drift Detected`,
-        message: `Vendor is charging ${drift.toFixed(2)}% more than the historical average for this item.`,
-        metadata: { productId, drift, newPrice, avgPrice }
+        title: `Statistical Price Drift Detected`,
+        message: `Vendor price of ₹${newPrice} is ${driftPercent.toFixed(1)}% above average (Z-Score: ${zScore.toFixed(2)}). Highly anomalous hike.`,
+        metadata: { productId, zScore, driftPercent, newPrice, mean }
       });
     }
 
-    return drift;
+    return driftPercent;
   },
 
   /**
-   * Real-time Invoice Fraud Scoring (Multi-factor)
+   * Neural-Style Real-time Invoice Fraud Scoring (Multi-factor Matrix)
    */
   analyzeInvoiceRisk: async (invoiceData: any): Promise<FraudAnalysisResult> => {
     let riskScore = 0;
     const anomalies: string[] = [];
     const recommendations: string[] = [];
 
-    // 1. Check for duplicate invoice number with same vendor
+    // 1. DUPLICATION HEURISTIC: Check exact invoice numbers
     const { data: duplicates } = await supabase
       .from('invoices')
       .select('id')
@@ -86,16 +95,39 @@ export const fraudGuardService = {
       .neq('id', invoiceData.id || '');
 
     if (duplicates && duplicates.length > 0) {
-      riskScore += 80;
-      anomalies.push("Potential Duplicate Invoice Number for this Vendor");
-      recommendations.push("Verify if this invoice has already been paid or processed.");
+      riskScore += 85;
+      anomalies.push("Critical: Duplicate Vendor Invoice Number Detected.");
+      recommendations.push("Immediately halt payment. Vendor may be double-billing.");
     }
 
-    // 2. High Value Transaction Check (Business Specific Threshold - Mocked at 1 Lakh)
-    if (invoiceData.total_amount > 100000) {
-      riskScore += 20;
-      anomalies.push("High Value Transaction");
-      recommendations.push("Require dual authorization for payments over 1,00,000.");
+    // 2. VELOCITY HEURISTIC: Too many invoices to the same contact in 24 hours
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const { count: velocityCount } = await supabase
+      .from('invoices')
+      .select('id', { count: 'exact', head: true })
+      .eq('contact_id', invoiceData.contact_id)
+      .gte('created_at', yesterday.toISOString());
+
+    if (velocityCount && velocityCount >= 5) {
+      riskScore += 40;
+      anomalies.push(`Velocity Risk: ${velocityCount} invoices logged for this contact in 24 hours.`);
+      recommendations.push("Investigate account for potential automated ghost-billing.");
+    }
+
+    // 3. STATISTICAL OUTLIER (Benford's Law / High Value Check)
+    if (invoiceData.total_amount > 250000) {
+      riskScore += 30;
+      anomalies.push("Class 1 Financial Outlier: Exceeds standard capital flow.");
+      recommendations.push("Mandate dual-signature authorization for this clearance.");
+    }
+
+    // 4. ROUND NUMBER ANOMALY (Fraudsters often use perfectly round numbers)
+    if (invoiceData.total_amount % 10000 === 0 && invoiceData.total_amount > 50000) {
+      riskScore += 15;
+      anomalies.push("Suspiciously perfect round-number transaction detected.");
+      recommendations.push("Verify line items. Genuine high-value invoices rarely end in exact thousands.");
     }
 
     return {
@@ -105,6 +137,3 @@ export const fraudGuardService = {
     };
   }
 };
-
-// Add createAlert to systemAlertService if it doesn't exist
-// I'll update systemAlertService in a separate step

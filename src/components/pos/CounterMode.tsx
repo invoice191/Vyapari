@@ -52,6 +52,7 @@ export default function POSCounterMode() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'upi' | 'card'>('cash');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isScannerActive, setIsScannerActive] = useState(true);
+  const [mobileTab, setMobileTab] = useState<'products' | 'cart'>('products');
 
   // BARCODE SCANNER BUFFER LISTENER
   const barcodeBuffer = useRef("");
@@ -269,8 +270,29 @@ export default function POSCounterMode() {
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100vh-160px)] w-full bg-[#0b0f19] border border-slate-800/60 rounded-[2rem] overflow-hidden shadow-[0_24px_70px_rgba(0,0,0,0.4)] relative select-none antialiased">
       
+      {/* MOBILE TAB CONTROLLER - Sleek tab bar visible only below lg breakpoint */}
+      <div className="lg:hidden flex bg-[#070913] border-b border-slate-800/40 p-2 gap-2 flex-shrink-0">
+        <button 
+          onClick={() => setMobileTab('products')}
+          className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${mobileTab === 'products' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-900/60 text-slate-400 hover:text-white'}`}
+        >
+          <Package size={16} /> Products ({filteredProducts.length})
+        </button>
+        <button 
+          onClick={() => setMobileTab('cart')}
+          className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 relative ${mobileTab === 'cart' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-900/60 text-slate-400 hover:text-white'}`}
+        >
+          <ShoppingCart size={16} /> Cart ({cart.reduce((s, i) => s + i.qty, 0)})
+          {cart.length > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center text-[9px] font-black animate-bounce">
+              {cart.reduce((s, i) => s + i.qty, 0)}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* 1. PRODUCT EXPLORER PORTAL */}
-      <div className="flex-1 flex flex-col h-full relative bg-[#070913] border-r border-slate-800/40">
+      <div className={`flex-1 flex flex-col h-full relative bg-[#070913] border-r border-slate-800/40 ${mobileTab === 'products' ? 'flex' : 'hidden lg:flex'}`}>
         
         {/* AESTHETIC GHOST BACKGROUND */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.04),transparent_40%)] pointer-events-none" />
@@ -431,9 +453,9 @@ export default function POSCounterMode() {
                         </div>
 
                         <div className={`text-[9px] font-black px-2 py-1 rounded-lg border shadow-inner ${
-                          stock === 0 ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
-                          stock < 10 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                          'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                           stock === 0 ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
+                           stock < 10 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                           'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                         }`}>
                           {stock === 0 ? 'OUT OF STOCK' : `STK: ${stock}`}
                         </div>
@@ -495,7 +517,7 @@ export default function POSCounterMode() {
       </div>
 
       {/* 2. RIGHT TERMINAL PANEL: CUSTOMER, QUEUE, AND PAYMENT SYSTEM */}
-      <div className="w-full lg:w-[420px] bg-[#090d16] flex flex-col h-full border-l border-slate-800/40 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] relative z-20">
+      <div className={`w-full lg:w-[420px] bg-[#090d16] flex flex-col h-full border-l border-slate-800/40 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] relative z-20 ${mobileTab === 'cart' ? 'flex' : 'hidden lg:flex'}`}>
         
         {/* CLIENT ASSOCIATION LAYER */}
         <div className="p-6 border-b border-slate-800/40 bg-slate-950/20 relative">

@@ -1,5 +1,6 @@
-﻿import { useState, useEffect, useCallback } from 'react';
-import { vaniExecutor } from '../utils/vaniExecutor';
+import { useState, useCallback } from 'react';
+import { vaniService } from '../services/vaniService';
+import { vaniExecutor } from '../services/vaniExecutor';
 
 export function useVANI(setActive: (module: string) => void) {
   const [isListening, setIsListening] = useState(false);
@@ -21,11 +22,18 @@ export function useVANI(setActive: (module: string) => void) {
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
     
-    recognition.onresult = (event: any) => {
+    recognition.onresult = async (event: any) => {
       const transcript = event.results[0][0].transcript;
       setLastTranscript(transcript);
-      const res = vaniExecutor.processCommand(transcript, setActive);
-      setFeedback(res);
+      try {
+        const response = await vaniService.processCommand(transcript, { activeModule: '' });
+        setFeedback(response?.spoken_response || 'Command received.');
+        if (response && response.intent !== 'error') {
+          vaniExecutor.execute(response, '', setActive);
+        }
+      } catch (e) {
+        setFeedback('Error processing voice command.');
+      }
     };
 
     recognition.start();

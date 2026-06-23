@@ -1003,18 +1003,14 @@ Hello! I am your simple business assistant. I can explain any feature in very ea
   };
 
   const quickActions = [
-    { id: 1, name: "Payment Risk", icon: "-", desc: "Predict late payers" },
-    { id: 2, name: "Match Payment", icon: "--", desc: "Reconcile bank entries" },
-    { id: 11, name: "Forecast", icon: "--", desc: "30-day cash projections" },
-    { id: 10, name: "Tax Savvy", icon: "--", desc: "Optimize GST/Taxes" },
-    { id: 5, name: "Fraud Guard", icon: "---", desc: "Verify transaction safety" },
-    { id: 12, name: "Early Offer", icon: "--", desc: "Dynamic settlement deals" },
-    { id: 3, name: "Auto Nudge", icon: "--", desc: "Smart WhatsApp reminders" },
-    { id: 7, name: "Instalments", icon: "---", desc: "Split large bills" },
-    { id: 4, name: "Quick Draft", icon: "--", desc: "Natural language billing" },
-    { id: 13, name: "Stock Audit", icon: "--", desc: "Festival strategy command" },
-    { id: 14, name: "Neural Audit", icon: "---", desc: "360° Forensic Impact" },
-    { id: 9, name: "Currency", icon: "--", desc: "Live FX conversion" },
+    { id: 1, name: "Payment Risk Analysis", icon: <AlertTriangle size={14} />, desc: "AI predicts probability of late payments" },
+    { id: 11, name: "Cashflow Forecast", icon: <TrendingUp size={14} />, desc: "Advanced 30-day liquidity projections" },
+    { id: 5, name: "Fraud Guard", icon: <ShieldCheck size={14} />, desc: "Neural anomaly & safe transaction verification" },
+    { id: 3, name: "Smart Auto-Nudge", icon: <MessageCircle size={14} />, desc: "Automated AI-timed WhatsApp reminders" },
+    { id: 10, name: "Tax Optimization", icon: <Calculator size={14} />, desc: "Automated GST logic & tax credit tracking" },
+    { id: 2, name: "Payment Matcher", icon: <Check size={14} />, desc: "Smart reconciliation of bank entries" },
+    { id: 12, name: "Dynamic Settlement", icon: <Zap size={14} />, desc: "Algorithm-based early payment discount offers" },
+    { id: 4, name: "Quick Draft", icon: <FileText size={14} />, desc: "Natural language smart invoice creation" },
   ];
 
   return (
@@ -1242,11 +1238,14 @@ Hello! I am your simple business assistant. I can explain any feature in very ea
                     onClick={() => handleQuerySubmit(undefined, action.name)}
                     className="w-full p-4 bg-white border border-slate-200/60 rounded-[1.5rem] hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/5 transition-all text-left group"
                   >
-                     <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-black text-slate-900 uppercase tracking-tighter">{action.name}</span>
+                     <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1.5">
+                           <div className="text-indigo-500">{action.icon}</div>
+                           <span className="text-[10px] font-black text-slate-900 uppercase tracking-tighter">{action.name}</span>
+                        </div>
                         <ChevronRight size={14} className="text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
                      </div>
-                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">{action.desc}</p>
+                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight leading-relaxed">{action.desc}</p>
                   </button>
                ))}
             </div>

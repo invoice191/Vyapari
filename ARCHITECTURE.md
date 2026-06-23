@@ -27,6 +27,7 @@ graph TD
         ITCShield["ITCShield (GST Compliance UI)"]
         FraudGuard["FraudGuard (Margin/Drift Monitoring)"]
         MarketSimulator["MarketSimulator ( Monte Carlo Slider UI )"]
+        PaymentPortal["PaymentPortal (Unified Checkout UI)"]
     end
 
     %% State & Service Orchestration Layer
@@ -42,6 +43,8 @@ graph TD
         disputeGuardService["disputeGuardService.ts (Conflict Scorer)"]
         fraudGuardService["fraudGuardService.ts (Margin & Cost Anomaly Monitor)"]
         itcShieldService["itcShieldService.ts (Fuzzy GSTR-2B Matching)"]
+        stripeService["stripeService.ts (Stripe Checkout SDK)"]
+        razorpayService["razorpayService.ts (Razorpay Checkout SDK)"]
     end
 
     %% Cloud Infrastructure Layer
@@ -49,15 +52,17 @@ graph TD
         DB[(PostgreSQL Database)]
         RLS["Row-Level Security (RLS)"]
         Storage["Supabase Storage (Invoice PDFs)"]
-        Functions["Supabase Edge Functions (VANI Brain, OCR, WhatsApp)"]
+        Functions["Supabase Edge Functions (VANI Brain, OCR, WhatsApp, Checkout)"]
         invoice_payment_splits["invoice_payment_splits Table"]
         credit_notes["credit_notes Table"]
         peer_drafts["peer_drafts Table (Extended Dispute Buffer)"]
         invoices["invoices Table (Extended Agency Fields)"]
+        settlement_transactions["settlement_transactions Table"]
+        gstr2b_records["gstr2b_records Table"]
     end
 
     %% AI Core Layer
-    subgraph AI ["AI Brain Core (Gemini 2.5 Flash / 1.5 Pro)"]
+    subgraph AI ["AI Brain Core (Gemini 2.5 Flash / 1.5 Pro / 2.0 Flash)"]
         VaniBrain["vani-brain (Intent Resolver)"]
         DssAI["dss-ai (Strategy Orchestrator)"]
         OcrService["ocr-service (Document Intel)"]
@@ -107,10 +112,16 @@ graph TD
     FraudGuard --> fraudGuardService
     fraudGuardService --> DB
     MarketSimulator --> DssAI
+    PaymentPortal --> stripeService
+    PaymentPortal --> razorpayService
+    stripeService --> Functions
+    razorpayService --> Functions
     
     %% DB Relations
     invoices --> invoice_payment_splits
     peer_drafts --> credit_notes
+    invoices --> settlement_transactions
+    gstr2b_records --> invoices
 ```
 
 ---
@@ -120,15 +131,16 @@ graph TD
 The frontend is built on **React 19** and compiled via **Vite**. The UI implements a custom **"Modern Executive" Design System**, utilizing premium typography (Outfit, Space Grotesk), glassmorphic elevations, and a sophisticated indigo-neon palette over a subtle grid-based neural background.
 
 ### 2.1 Core Component Architecture Mapping
-All front-end components are modularly isolated inside `src/components`:
+All front-end components are modularly isolated inside `src/components` and `src/pages`:
 - **`3d/InventoryHeatmap.tsx`**: Uses `@react-three/fiber` to render an interactive 3D box heatmap displaying stock volumes and velocity.
-- **`VANI/VANI.tsx`**: Floating console capturing user audio, routing text inputs to the `vani-brain` engine.
+- **`VANI/VANI.tsx`**: Floating console capturing user audio, routing text inputs to the VANI processing pipeline.
 - **`dashboard/Dashboard.tsx`**: The main "Executive War Room" dashboard, using **Neural Pulse** micro-animations and high-density KPI ribbons.
 - **`inventory/ProductInsights.tsx`**: High-fidelity detail view for individual products, showing historical price trends and velocity metrics.
 - **`contacts/CustomerDetail.tsx`**: Analytical dashboard for customer behavior, including CLV (Customer Lifetime Value) and RFM scores.
 - **`dss/SimulationEngine.tsx`**: The core of the **Simulation Lab**, allowing users to run "What-If" scenarios on pricing and market conditions.
 - **`banker/BankerStrategicView.tsx`**: Specialized module for institutional credit readiness, visualizing debt-to-equity and cash flow waterfalls.
 - **`common/RoleGuard.tsx`**: Enforces Role-Based Access Control (RBAC) across sensitive modules (e.g., Banker's View restricted to Owners/Bankers).
+- **`pages/PaymentPortal.tsx`**: The customer-facing, secure checkout gateway supporting instant UPI QR payments, Stripe credit/debit card processing, and Razorpay regional banking channels.
 
 ### 2.2 Advanced Intelligence & Automation Components
 - **`auth/BiometricShield.tsx`**: Cryptographic identity verification modal window using hardware-level biometrics (WebAuthn) for sensitive ledger overrides and bankers transactions.
@@ -165,6 +177,11 @@ To handle enterprise-grade datasets without UI lag, Vyapari implements a **Dual-
 
 ### 3.1 Neural Event Bus
 The platform utilizes a custom event-driven architecture where AI-driven insights (e.g., a "Critical Stockout" predicted by the AI) are broadcast via the **Neural Event Bus**. This allows UI components to react to background AI processes without polling.
+Standard events include:
+- `app:navigate`: Triggers router synchronization across disparate workspaces.
+- `app:toast`: Broadcasts smart system-wide AI recommendations.
+- `app:inventory-search`: Signals the inventory layout to filter by keyword.
+- `app:audit-search`: Triggers targeted compliance audit logs scanning.
 
 ---
 
@@ -177,6 +194,8 @@ The platform leverages a Postgres schema with Row-Level Security (RLS) to enforc
 - **`credit_notes`**: Records ledger credit balances generated from partial peer draft acceptances to offset future B2B trade debts.
 - **`gstr2b_records`**: Captures GSTR-2B compliance data imported from the tax portal for neural reconciliation matching.
 - **`settlement_transactions`**: Logs the details of dynamic early settlement offers, including baseline limits, active discounts, and expiry metrics.
+- **`peer_drafts`**: Buffers incoming collaborative peer ledger transactions before formal book integration.
+- **`vani_logs`**: Logs voice command activity parameters (transcript, intent, confidence, execution status) to audit companion performance.
 
 ### 4.2 Invoice Table Extension Fields
 - `preferred_settlement` (`settlement_path` ENUM: `standard`, `liquid_discount`, `factored_bank`, `split_installments`, `debt_endorsement`).
@@ -187,6 +206,8 @@ The platform leverages a Postgres schema with Row-Level Security (RLS) to enforc
 - `secure_escrow_hold`: Boolean indicating that the tax portion is held back.
 - `itc_status` (`itc_compliance_status` ENUM: `unverified`, `matched`, `mismatched`, `held_escrow`).
 - `tax_escrow_held_amount` & `gstr_2b_matching_id`.
+- `digital_fingerprint`: SHA-256 validation code matching ledger parity.
+- `active_offer`: JSON field capturing active dynamic payment discount offers.
 
 ### 4.3 Database Intelligence (PL/pgSQL triggers)
 - **`auto_generate_payment_splits()`**: An active table trigger executing after insertions or updates on `invoices`. If `split_installments` is selected with intervals greater than 1, it automatically creates weekly micro-installment records:
@@ -197,21 +218,10 @@ DECLARE
     v_split_amount NUMERIC;
     v_counter INTEGER := 1;
     v_due_date TIMESTAMP WITH TIME ZONE;
-BEGIN
-    IF NEW.preferred_settlement = 'split_installments' AND NEW.installment_intervals > 1 THEN
-        v_split_amount := NEW.total / NEW.installment_intervals;
-        DELETE FROM invoice_payment_splits WHERE invoice_id = NEW.id;
-        WHILE v_counter <= NEW.installment_intervals LOOP
-            v_due_date := NEW.created_at + (v_counter * INTERVAL '7 days');
-            INSERT INTO invoice_payment_splits (invoice_id, split_number, due_date, amount, status)
-            VALUES (NEW.id, v_counter, v_due_date, v_split_amount, 'unpaid');
-            v_counter := v_counter + 1;
-        END LOOP;
-    END IF;
-    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 ```
+*(Triggers parse installment bounds, auto-apportion remaining amounts, clean up historical splits, and populate the installments table).*
 
 - **`apply_liquid_settlement()`**: Safely processes early payment discounts, locking rows with `FOR UPDATE`, computing pressure coefficients based on business health metrics, adjusting invoice totals, and writing records to audit ledgers.
 
@@ -235,43 +245,51 @@ The **Decision Support System (DSS)** orchestrates multiple mathematical and heu
 Vyapari's intelligence layers are backed by formal mathematical structures. The logic of these models is fully reflected across active codebases:
 
 ### 6.1 The Liquid Invoice Engine (Dynamic Early Payment Discount)
-The discount percentage ($\delta_t$) offered on an invoice scales with the remaining days until the due date ($T_{rem} = T_{due} - t_{settle}$) and the business's cash pressure coefficient ($\lambda$).
+The discount percentage ($\delta_t$) offered on an invoice scales with the remaining days until the due date ($T_{rem} = T_{due} - t_{settle}$) and the customer's credit trust rating.
 $$\delta_t = \max\left(\delta_{min}, \min\left(\delta_{max}, \delta_{base} + (T_{rem} \times 0.05) - (\text{TrustBonus} \times 0.2)\right)\right)$$
 Where:
 - $\delta_{base} = 1.0\%$
 - $\delta_{min} = 0.5\%$
 - $\delta_{max} = 5.0\%$
-- $\text{TrustBonus} = \frac{\text{CreditScore} - 600}{300}$ (calculated based on customer credit records).
+- $\text{TrustBonus} = \max\left(0, \min\left(1, \frac{\text{CreditScore} - 600}{300}\right)\right)$ (evaluated from customer credit profiles, scaling between 0 and 1).
 
 ### 6.2 Predictive Dispute Guard (Conflict Risk Scoring)
 Evaluates the probability of a dispute arising from credit sales:
 $$P(\text{Dispute}) = \min(RiskScore, 95)$$
-Where $RiskScore$ is computed by a multi-factor check:
+Where $RiskScore$ is computed by a multi-factor checks:
 $$RiskScore = OverdueFactor(40) + HighValueFactor(25) + NewCustomerFactor(15)$$
-- *Overdue Factor*: Coded as $40$ if active overdue count > 3.
-- *High Value Factor*: Coded as $25$ if invoice items contain value > ₹50,000.
-- *New Customer Factor*: Coded as $15$ if customer invoice history length <= 1.
+- **Overdue Factor**: Add $40$ risk points if the customer's active overdue invoice count > 3.
+- **High Value Factor**: Add $25$ risk points if invoice items contain individual unit values > ₹50,000.
+- **New Customer Factor**: Add $15$ risk points if the customer's invoice history length <= 1.
 
 ### 6.3 Neural Fraud Guard & Margin Protection
-1. **Margin Erosion Check**: Protects core pricing margins:
+1. **Margin Erosion Check**: Warns or halts transactions depending on bleeding margins:
 $$\text{Margin}\% = \frac{S_p - C_p}{S_p} \times 100$$
-Warnings are raised if $\text{Margin}\% < 10\%$. If the margin is negative, a critical override is logged, disabling item sales.
-2. **Vendor Price Drift Check**: Detects sudden vendor markup deviations:
+Warnings are raised if $\text{Margin}\% < 10\%$. Critical alerts are flagged if margins go negative, signaling direct asset bleeding.
+2. **Vendor Price Drift Check (Z-Score)**: Analyzes incoming vendor prices against a sliding history window of size $N$ (where $N \ge 3$, typically $N = 10$) using statistical standard deviations:
+$$\mu_{cost} = \frac{1}{N}\sum_{i=1}^N C_i$$
+$$\sigma = \sqrt{\frac{1}{N}\sum_{i=1}^N (C_i - \mu_{cost})^2}$$
+$$Z = \frac{C_{new} - \mu_{cost}}{\sigma}$$
+If $Z > 2.0$ and the absolute drift percentage exceeds $5\%$, a warning is dispatched for price inflation:
 $$\text{Drift}\% = \frac{C_{new} - \mu_{cost}}{\mu_{cost}} \times 100$$
-Drifts exceeding $15\%$ against historical average ($\mu_{cost}$) raise warning alarms for purchase auditing.
-3. **High-Value Auditing**: Invoice risk scores are calculated by checking:
-$$RiskScore = DuplicateInvoice(80) + HighAmount(20)$$
-(Threshold is ₹100,000).
+3. **Invoice Fraud Risk Scoring**: Real-time validation checking:
+$$RiskScore = DuplicateInvoice(85) + VelocityRisk(40) + OutlierRisk(30) + RoundNumberRisk(15)$$
+Where:
+- *DuplicateInvoice*: Coded as $85$ if an invoice has the same invoice number and supplier ID as an existing record.
+- *VelocityRisk*: Coded as $40$ if more than 5 invoices are logged for the same contact within 24 hours.
+- *OutlierRisk*: Coded as $30$ if the total invoice value exceeds ₹250,000.
+- *RoundNumberRisk*: Coded as $15$ if the amount exceeds ₹50,000 and is an exact multiple of ₹10,000.
+- The total score is capped: $RiskScore_{final} = \min(RiskScore, 100)$.
 
 ### 6.4 Neural GSTR-2B Matching (ITC Shield)
 Leverages a dual-pass matching score based on fuzzy billing comparisons:
-$$MatchScore = 0.7 \times FuzzyScore(Inv_1, Inv_2) + 0.3 \times AmtScore(Amt_1, Amt_2)$$
+$$MatchScore = 0.7 \times FuzzyScore(Inv_{books}, Inv_{portal}) + 0.3 \times AmtScore(Amt_{books}, Amt_{portal})$$
 Where:
 - $FuzzyScore$ uses Levenshtein distance:
-$$FuzzyScore(s1, s2) = 1 - \frac{\text{Levenshtein}(s1, s2)}{\max(|s1|, |s2|)}$$
-- $AmtScore$ matches the taxable difference:
+$$FuzzyScore(s_1, s_2) = 1 - \frac{\text{Levenshtein}(s_1, s_2)}{\max(|s_1|, |s_2|)}$$
+- $AmtScore$ evaluates the taxable difference:
 $$AmtScore = \begin{cases} 1.0, & \text{if } |Amt_1 - Amt_2| < 1 \\ 0.9, & \text{if } 1 \le |Amt_1 - Amt_2| < 10 \\ 0.0, & \text{otherwise} \end{cases}$$
-Reconciliations with $MatchScore > 0.95$ are marked `matched`.
+Reconciliations with $MatchScore > 0.95$ are marked `matched`. Scores between $0.60$ and $0.95$ are marked `mismatched` for manual resolution, and others are classified `missing_in_books`.
 
 ---
 
@@ -284,22 +302,22 @@ Reconciliations with $MatchScore > 0.95$ are marked `matched`.
 |    Business A    |                   |    Business B    |
 | (Sales Invoice)  |                   | (Purchase Draft) |
 +--------+---------+                   +--------+---------+
-         |                                      ^
-         |  1. Generate SHA-256 Fingerprint     |
-         +--------------------------------------+
-         |  2. Insert to isolated peer_drafts  |
-         +--------------------------------------+
-         |  3. Realtime WebSocket Broadcast     |
-         +--------------------------------------+
-         |                                      |
-         |                                      |  4. Hybrid Acceptance Choice
-         |                                      +-------------------------------+
-         |                                      |  - Deduct Credit Note (Opt A) |
-         |                                      |  - Hold Tax Escrow    (Opt B) |
-         |                                      +-------------------------------+
-         |                                      |
-         |<------- 5. Update Status 'accepted'--+
-         |
+          |                                      ^
+          |  1. Generate SHA-256 Fingerprint     |
+          +--------------------------------------+
+          |  2. Insert to isolated peer_drafts  |
+          +--------------------------------------+
+          |  3. Realtime WebSocket Broadcast     |
+          +--------------------------------------+
+          |                                      |
+          |                                      |  4. Hybrid Acceptance Choice
+          |                                      +-------------------------------+
+          |                                      |  - Deduct Credit Note (Opt A) |
+          |                                      |  - Hold Tax Escrow    (Opt B) |
+          |                                      +-------------------------------+
+          |                                      |
+          |<------- 5. Update Status 'accepted'--+
+          |
 +--------v---------+                   +--------v---------+
 |  Active Ledger   |                   |  Purchase Entry  |
 |  Status: Paid    |                   |  Status: Draft   |
@@ -335,9 +353,10 @@ Vyapari connects physical logistics with digital ledgers using advanced image pr
 
 ### 9.2 Smart Auto-Replenishment (Procurement Agent)
 The procurement layer checks inventory levels against custom reorder lines. If stock is low:
-- Grouping: Items are bundled by supplier in memory.
-- PO Generation: Autonomously inserts records to `purchase_orders` and `purchase_order_items`.
-- Dispatching: Invokes the `whatsapp-processor` Edge Function to send structured procurement notifications directly to supplier phone numbers.
+- **Grouping**: Items are bundled by supplier in memory.
+- **PO Generation**: Autonomously inserts records to `purchase_orders` and `purchase_order_items`.
+- **Dispatching**: Invokes the `whatsapp-processor` Edge Function to send structured procurement notifications directly to supplier phone numbers.
+- **Fallback**: Opens a direct WhatsApp API redirection window (`https://wa.me/{phone}?text={message}`) if direct server-side hooks fail.
 
 ---
 
@@ -356,6 +375,116 @@ CREATE POLICY invoices_peer_isolation ON invoices
 ```
 - **`peer_drafts`**: Accessible strictly to participating sender or target tenants.
 - **`invoice_payment_splits`** & **`credit_notes`**: Scoped to corresponding invoice relationships.
+
+---
+
+## 11. Payment Gateway Architecture & Checkout Infrastructure
+
+Vyapari features a production-ready, dual-gateway payment integration layer connected directly to customer-facing checkout views and auto-reconciliation ledgers.
+
+```
+                  +--------------------------------+
+                  |  Customer opens Invoice Link   |
+                  +---------------+----------------+
+                                  |
+                                  v
+                  +---------------+----------------+
+                  |      PaymentPortal (/pay)      |
+                  +---------------+----------------+
+                                  |
+            +---------------------+---------------------+
+            |                     |                     |
+            v                     v                     v
+    +-------+-------+     +-------+-------+     +-------+-------+
+    |   Stripe Checkout   |  |  Razorpay Checkout |  |   UPI QR Code   |
+    +-------+-------+     +-------+-------+     +-------+-------+
+            |                     |                     |
+            | (Load V3 SDK)       | (Load v1 SDK)       | (upi:// protocol)
+            v                     v                     v
+    +-------+-------+     +-------+-------+     +-------+-------+
+    | Create Session|     |  Create Order |     |  Scan QR Code |
+    | Edge Function |     |  Edge Function|     |  & Pay App    |
+    +-------+-------+     +-------+-------+     +-------+-------+
+            |                     |                     |
+            v                     v                     v
+    +-------+-------+     +-------+-------+     +-------+-------+
+    | Redirect to   |     | Open Popup    |     | Trigger Auto  |
+    | stripe.com    |     | Checkout      |     | DB Mutation   |
+    +-------+-------+     +-------+-------+     +-------+-------+
+            |                     |                     |
+            +---------------------+---------------------+
+                                  |
+                                  v
+                  +---------------+----------------+
+                  |  Update Invoice Status: Paid   |
+                  +--------------------------------+
+```
+
+### 11.1 Dynamic Stripe Checkout Flow
+- **SDK Dynamically Loaded**: The browser loads the Stripe.js script `https://js.stripe.com/v3/` only on invocation, maximizing performance.
+- **Edge Session Handshake**: The client invokes the `stripe-checkout` Supabase Edge Function with metadata detailing the target `invoiceId` and `amount`.
+- **API Isolation**: The Edge Function acts as a secure proxy. It initiates a session with the Stripe API using secret server keys, returning a secure checkout URL.
+- **Redirect & Completion**: The client redirects to the hosted Stripe page. On completion, the customer returns to the portals `/pay?status=success&session_id=...`, which automatically updates the invoice status to `paid`.
+
+### 11.2 Razorpay Integration
+- **SDK Dynamically Loaded**: Loads the Razorpay checkout script `https://checkout.razorpay.com/v1/checkout.js` dynamically.
+- **Order Generation**: Invokes the `razorpay-checkout` Edge Function to obtain a real order ID, preventing key tampering and ensuring exact pricing parity.
+- **Checkout Modal**: Opens the official Razorpay Checkout popup over the active browser thread.
+- **Instant Mutation Handler**: Successful payment triggers a secure callback hook that immediately updates the `status` column to `paid` inside the database, bypassing redirection delays.
+
+### 11.3 Instant UPI QR Payments
+- **Dynamic QR Code**: Generates a standard UPI URL schema `upi://pay?pa={upiId}&pn={businessName}&am={amount}&tn={invoiceRef}`.
+- **Rendering**: Converts this schema into a clean, client-side QR code block.
+- **UPI Deep Link**: Customers on mobile devices can tap the payment option to launch any installed UPI app (GPay, PhonePe, Paytm).
+- **UPI Simulation**: Offers developers a mock success path that updates status instantly in development environments to check ledger alignment.
+
+---
+
+## 12. VANI Voice Intelligence & NLP Pipeline
+
+**V.A.N.I.** (Voice Activated Network Intelligence) acts as the operational commander of Vyapari, offering zero-latency voice recognition and proactive business insights.
+
+### 12.1 Language & Parser Calibrations
+- **Multilingual Support**: Calibrated to parse inputs across standard English, Hinglish, Hindi, Marathi, Tamil, Telugu, Gujarati, Kannada, and Bengali.
+- **Dual-Pass Intent Execution**:
+  1. **Direct Regex/Fuzzy Matching**: Evaluates keywords (e.g., *bills*, *mal satha*, *khata*) locally using pre-configured dictionaries. This enables zero-latency responses for navigation intents.
+  2. **Direct Gemini Cloud Engine**: If fuzzy matches fall below confidence limits, it dispatches the query to a Gemini model using the system prompt:
+```
+You are V.A.N.I. (Voice Activated Network Intelligence) — modeled after J.A.R.V.I.S...
+Analyze the JSON Context Data and user transcript to return a structured JSON response containing intent and params.
+```
+
+### 12.2 Active Intent & State Mapping
+Intents are mapped to actions via `vaniExecutor.ts`:
+- `NAVIGATE`: Fires global `app:navigate` events to load dashboards or pages.
+- `CREATE_INVOICE`: Matches input parameters against the contacts database and pre-fills transaction drawers.
+- `CHECK_STOCK`: Redirects the inventory workspace to search for matching stock profiles.
+- `STRATEGIC_PLAN`: Compiles cash-flow parameters and loads predictions.
+- `SEND_REMINDER`: Inserts alerts into `reminders` and dispatches WhatsApp messages.
+- `AUTONOMOUS_REORDER`: Activates the procurement agent to compile reorder sheets.
+
+---
+
+## 13. Universal Reporting Engine & Document Generation
+
+Vyapari employs a robust, client-side document generation and export system designed to standardize reporting across all modules (invoices, inventory, analytics, compliance, etc.). The reporting architecture enforces branded, context-aware filenames and standardizes output formats.
+
+### 13.1 Document Generation Handlers
+- **`generatePDFReport` (jsPDF & jspdf-autotable)**: Programmatically constructs branded PDF documents complete with multi-page footers, dynamic tables, and custom CSS color variables mapped to the executive design system.
+- **`generateXLSXReport` (SheetJS)**: Compiles complex, multi-sheet Excel workbooks with frozen header rows, automated column width calculations, and structured summary data.
+- **`generateCSVReport`**: Safely escapes string data and constructs UTF-8 encoded, BOM-prefixed CSV files, guaranteeing flawless compatibility with enterprise spreadsheet software.
+
+### 13.2 Intelligent File Naming Convention
+A strict metadata-driven naming system handles all file designations. The central `downloadReport.ts` controller maps report types to uniform file definitions:
+- Examples: 
+  - `INV-{invoice_number}_{contact_name}_{YYYY-MM-DD}.pdf`
+  - `Vyapari_Inventory_{business_name}_{YYYY-MM-DD}.xlsx`
+  - `Vyapari_AuditLog_{business_name}_{YYYY-MM-DD}.csv`
+
+### 13.3 Supabase Storage UUID Resolution
+The engine natively corrects legacy workflows where Supabase Storage saved objects using bare UUIDs (e.g., `3796d1c8-a862-4fd9-b194-f5bd344b14a3`).
+- **Upload Interception (`uploadReport.ts`)**: Forces explicit storage paths matching the dynamic naming convention.
+- **Download Transformation (`downloadFromSupabase`)**: Automatically intercepts UUID-formatted file blobs from Supabase Storage and re-casts them with standard `.pdf` or `.xlsx` extensions before downloading.
 
 ---
 
