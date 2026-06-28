@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { TrendingUp, TrendingDown, Calendar, AlertTriangle, Info, Lightbulb, Zap, Rocket, Filter, Sun, Cloud, Music, ShoppingBag, Loader2, Sparkles, Target } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
@@ -24,7 +24,7 @@ export const ForecastEngine: React.FC = () => {
     // Simple grouping by date
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const history = days.map((day, i) => {
-       const base = 1000 + (Math.random() * 5000);
+       const base = 2500 + (i * 300) - ((i % 2) * 150);
        return {
           name: day,
           actual: base,

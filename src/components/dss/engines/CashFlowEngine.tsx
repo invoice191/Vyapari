@@ -26,10 +26,10 @@ export const CashFlowEngine: React.FC = () => {
     setStats({ incoming, outgoing, net, runway });
 
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const trend = days.map(m => ({
+    const trend = days.map((m, i) => ({
        name: m,
-       in: 1000 + (Math.random() * 5000),
-       out: 800 + (Math.random() * 4000)
+       in: 2000 + (i * 450) - ((i % 3) * 200),
+       out: 1500 + (i * 300) - ((i % 2) * 150)
     }));
     setData(trend);
     setLoading(false);

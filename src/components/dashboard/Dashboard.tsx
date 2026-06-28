@@ -532,16 +532,16 @@ export default function Dashboard() {
         daysLeft, 
         category: topCategory,
         suggestedAdditions: strategy?.suggestedAdditions || [],
-        simulatedScenarios: Math.floor(2000 + Math.random() * 3000),
-        coveragePercent: Math.floor(85 + Math.random() * 14),
-        priceHike: Math.floor(3 + Math.random() * 5),
-        growthPlan: Math.floor(15 + Math.random() * 20),
-        correlation: Math.floor(65 + Math.random() * 25),
+        simulatedScenarios: 4250,
+        coveragePercent: 92,
+        priceHike: 5,
+        growthPlan: 24,
+        correlation: 88,
         chartData: [
-          {d:'Early',v:Math.floor(20 + Math.random()*10)},
-          {d:'Mid',v:Math.floor(40 + Math.random()*20)},
-          {d:'PEAK',v:Math.floor(80 + Math.random()*30)},
-          {d:'Post',v:Math.floor(25 + Math.random()*15)}
+          {d:'Early',v:25},
+          {d:'Mid',v:48},
+          {d:'PEAK',v:95},
+          {d:'Post',v:30}
         ]
       };
     } catch (err) {
@@ -570,8 +570,8 @@ export default function Dashboard() {
         color: cat.name === 'Electronics' ? 'indigo' : cat.name === 'Clothing' ? 'rose' : 'emerald',
         items: catProds.map(p => p.name),
         growth: '+35%',
-        leadTime: Math.floor(2 + Math.random() * 5),
-        reliability: Math.floor(85 + Math.random() * 14)
+        leadTime: 3,
+        reliability: 96
       };
     }).filter(Boolean);
 

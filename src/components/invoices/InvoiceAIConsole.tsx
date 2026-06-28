@@ -92,7 +92,7 @@ export default function InvoiceAIConsole(props: InvoiceAIConsoleProps) {
   const addMessage = (msg: Omit<Message, 'id' | 'timestamp'>) => {
     const newMsg: Message = {
       ...msg,
-      id: Math.random().toString(36).substring(7),
+      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36),
       timestamp: new Date()
     };
     setMessages(prev => [...prev, newMsg]);
@@ -306,7 +306,8 @@ export default function InvoiceAIConsole(props: InvoiceAIConsoleProps) {
         case 1: { // LATE PAYMENT PREDICTION
           const amount = selectedInvoice.total_amount || 0;
           const isLate = new Date(selectedInvoice.due_date) < new Date();
-          const score = isLate ? 85 : Math.floor(Math.random() * 40) + 20;
+          const daysUntilDue = Math.ceil((new Date(selectedInvoice.due_date).getTime() - Date.now()) / (1000 * 3600 * 24));
+          const score = isLate ? 85 : Math.max(15, 60 - (daysUntilDue * 2));
           const tier = score <= 30 ? "Low" : score <= 65 ? "Medium" : "High";
 
           result = {
