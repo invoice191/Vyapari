@@ -1404,7 +1404,7 @@ export default function Dashboard() {
                            </div>
                         </div>
                         <div className="text-right">
-                           <div className="text-2xl font-black text-rose-500">+{prod.target - prod.stock}</div>
+                           <div className="text-2xl font-black text-rose-500">-{prod.target - prod.stock}</div>
                            <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Units Gap</div>
                         </div>
                       </div>
