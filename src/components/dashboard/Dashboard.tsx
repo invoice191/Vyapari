@@ -556,20 +556,19 @@ export default function Dashboard() {
     // Group products by category and find gaps
     const gaps = dbCategories.map(cat => {
       const catProds = (products || []).filter(p => p.category_id === cat.id);
-      const lowStockItems = catProds.filter(p => (Number(p.quantity) || 0) < 50); // Threshold for demo, real would be more complex
       
-      if (lowStockItems.length === 0) return null;
+      if (catProds.length === 0) return null;
 
-      const totalStock = lowStockItems.reduce((sum, p) => sum + (Number(p.quantity) || 0), 0);
-      const targetStock = lowStockItems.length * 150; // Target 150 per item for festival
+      const totalStock = catProds.reduce((sum, p) => sum + (Number(p.quantity) || 0), 0);
+      const targetStock = catProds.length * 150; // Target 150 per item for festival
 
       return {
         name: cat.name,
-        count: lowStockItems.length,
+        count: catProds.length,
         stock: totalStock,
         target: targetStock,
         color: cat.name === 'Electronics' ? 'indigo' : cat.name === 'Clothing' ? 'rose' : 'emerald',
-        items: lowStockItems.map(p => p.name),
+        items: catProds.map(p => p.name),
         growth: '+35%',
         leadTime: Math.floor(2 + Math.random() * 5),
         reliability: Math.floor(85 + Math.random() * 14)
@@ -1404,7 +1403,11 @@ export default function Dashboard() {
                            </div>
                         </div>
                         <div className="text-right">
-                           <div className="text-2xl font-black text-rose-500">-{prod.target - prod.stock}</div>
+                           {prod.stock < prod.target ? (
+                              <div className="text-2xl font-black text-rose-500">-{prod.target - prod.stock}</div>
+                           ) : (
+                              <div className="text-2xl font-black text-emerald-500">+{prod.stock - prod.target}</div>
+                           )}
                            <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Units Gap</div>
                         </div>
                       </div>
