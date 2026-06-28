@@ -1341,27 +1341,27 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 lg:grid-cols-3 divide-x divide-slate-100 h-[650px]">
                 {/* COLUMN 1: EXECUTIVE STRATEGY & OPTIMIZATION */}
                 <div className="p-6 space-y-8 bg-slate-50/30 overflow-y-auto custom-scrollbar">
-                  <div className="space-y-4">
-                    <div className="text-[10px] font-black uppercase text-indigo-600 tracking-widest flex items-center gap-2">
-                       <Target size={12} />
-                       <span>Primary Revenue Objective</span>
-                    </div>
-                    <div className="p-8 bg-indigo-600 rounded-[2.5rem] text-white shadow-2xl shadow-indigo-200 relative overflow-hidden group">
-                       <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000" />
-                       <div className="text-5xl font-black tracking-tighter">Rs.{(totalInflow ? (totalInflow * 1.25) / 100000 : 54.2).toFixed(1)}L</div>
-                       <div className="flex items-center gap-2 mt-3">
-                          <div className="px-2 py-1 bg-emerald-400 text-slate-900 text-[9px] font-black rounded-lg uppercase">OPTIMIZED</div>
-                          <span className="text-[10px] font-bold text-indigo-100 uppercase tracking-widest">- {pulse.growthPlan}% Growth Plan</span>
-                       </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                     <div className="p-5 bg-white border border-slate-100 rounded-3xl space-y-2">
-                        <div className="text-[9px] font-black text-slate-400 uppercase">Profit Boost</div>
-                        <div className="text-xl font-black text-emerald-600">+Rs.{(totalInflow ? (totalInflow * 0.15) / 100000 : 4.8).toFixed(1)}L</div>
-                        <p className="text-[8px] font-bold text-slate-500 uppercase">Via Bundle Logic</p>
+                   <div className="space-y-4">
+                     <div className="text-[10px] font-black uppercase text-indigo-600 tracking-widest flex items-center gap-2">
+                        <Target size={12} />
+                        <span>Primary Revenue Objective</span>
                      </div>
+                     <div className="p-8 bg-indigo-600 rounded-[2.5rem] text-white shadow-2xl shadow-indigo-200 relative overflow-hidden group">
+                        <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000" />
+                        <div className="text-5xl font-black tracking-tighter">Rs.{((sales.reduce((a, s) => a + (Number(s.total_amount) || 0), 0) * 1.25) / 100000 || 54.2).toFixed(1)}L</div>
+                        <div className="flex items-center gap-2 mt-3">
+                           <div className="px-2 py-1 bg-emerald-400 text-slate-900 text-[9px] font-black rounded-lg uppercase">OPTIMIZED</div>
+                           <span className="text-[10px] font-bold text-indigo-100 uppercase tracking-widest">- {pulse.growthPlan}% Growth Plan</span>
+                        </div>
+                     </div>
+                   </div>
+
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="p-5 bg-white border border-slate-100 rounded-3xl space-y-2">
+                         <div className="text-[9px] font-black text-slate-400 uppercase">Profit Boost</div>
+                         <div className="text-xl font-black text-emerald-600">+Rs.{((sales.reduce((a, s) => a + (Number(s.total_amount) || 0), 0) * 0.15) / 100000 || 4.8).toFixed(1)}L</div>
+                         <p className="text-[8px] font-bold text-slate-500 uppercase">Via Bundle Logic</p>
+                      </div>
                      <div className="p-5 bg-white border border-slate-100 rounded-3xl space-y-2">
                         <div className="text-[9px] font-black text-slate-400 uppercase">Stock Risk</div>
                         <div className="text-xl font-black text-rose-500">Low</div>
