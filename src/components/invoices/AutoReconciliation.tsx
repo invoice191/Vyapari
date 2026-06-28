@@ -45,10 +45,9 @@ export default function AutoReconciliation({ isOpen, onClose }: Props) {
       const matchedArray = [];
       const usedIds = new Set();
       
-      const numMatches = Math.min(Math.floor(Math.random() * 3) + 1, pendingInvoices.length);
-      
+      const numMatches = Math.min(2, pendingInvoices.length);
       for (let i = 0; i < numMatches; i++) {
-        const randomInv = pendingInvoices[Math.floor(Math.random() * pendingInvoices.length)];
+        const randomInv = pendingInvoices[i];
         if (!usedIds.has(randomInv.id)) {
           usedIds.add(randomInv.id);
           matchedArray.push({
@@ -57,7 +56,7 @@ export default function AutoReconciliation({ isOpen, onClose }: Props) {
               date: new Date().toLocaleDateString('en-IN'),
               description: `IMPS/NEFT/RTGS - ${randomInv.contacts?.name?.toUpperCase()?.substring(0,8) || 'CUST'}`,
               amount: randomInv.total_amount,
-              confidence: Math.floor(Math.random() * 15) + 85 // 85-99%
+              confidence: 96 - (i * 2) // 96%, 94%, etc.
             }
           });
         }

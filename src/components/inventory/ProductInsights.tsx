@@ -54,7 +54,7 @@ export default function ProductInsights({
       const date = new Date(now);
       date.setDate(now.getDate() + i);
       const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-      const baseValue = velocity * (1 + (Math.random() * 0.4 - 0.2));
+      const baseValue = velocity * (1 + (Math.sin(i) * 0.2));
       const value = isWeekend ? baseValue * 1.5 : baseValue;
       data.push({
         name: date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
