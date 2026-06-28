@@ -171,7 +171,7 @@ function App() {
       case "users":     return <ModuleErrorBoundary moduleName="My Team"><RoleGuard module="Settings"><TeamHub /></RoleGuard></ModuleErrorBoundary>;
       case "audit":     return <ModuleErrorBoundary moduleName="Activity History"><RoleGuard module="Settings"><AuditLogs /></RoleGuard></ModuleErrorBoundary>;
       case "smart_analytics": return <ModuleErrorBoundary moduleName="Smart Retail Analytics"><SmartRetailAnalytics /></ModuleErrorBoundary>;
-      case "mesh":      return <ModuleErrorBoundary moduleName="Mesh Inbox"><MeshInbox businessId={businessId} /></ModuleErrorBoundary>;
+      case "mesh":      return <ModuleErrorBoundary moduleName="Mesh Inbox"><MeshInbox businessId={profile?.business_id || ""} /></ModuleErrorBoundary>;
       default:          return <ModuleErrorBoundary moduleName="Home"><Dashboard /></ModuleErrorBoundary>;
     }
   };
