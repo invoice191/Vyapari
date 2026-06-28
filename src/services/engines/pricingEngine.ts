@@ -1,4 +1,4 @@
-﻿import { EngineInput, DSSRecommendation } from '../dssService';
+import { EngineInput, DSSRecommendation } from '../dssService';
 
 export const pricingEngine = {
   analyze: (input: EngineInput): DSSRecommendation[] => {
@@ -42,6 +42,14 @@ function findPricingOpportunities(products: any[], sales: any[]) {
       const increase = margin < 0.15 ? 8 : 5;
       const suggested = Math.round(sellingPrice * (1 + increase / 100));
       
+      // Calculate real historical volume for this product
+      const historicalVolume = sales.reduce((sum, sale) => {
+        if (sale.product_id === p.id) {
+          return sum + (Number(sale.quantity) || 1);
+        }
+        return sum;
+      }, 0) || 10; // Fallback to 10 if no history yet
+      
       return {
         id: p.id,
         name: p.name,
@@ -49,7 +57,7 @@ function findPricingOpportunities(products: any[], sales: any[]) {
         suggested,
         increase,
         margin: (margin * 100).toFixed(1) + '%',
-        revenueLift: Math.round(sellingPrice * 0.05 * 50), // Mock calc
+        revenueLift: Math.round((suggested - sellingPrice) * historicalVolume), // Dynamic calculation
         confidence: Math.round(velocity * 80),
       };
     })

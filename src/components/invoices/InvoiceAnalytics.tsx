@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
   Clock, 
@@ -61,6 +61,33 @@ export default function InvoiceAnalytics() {
 
       const lineData = Object.entries(dailyRevenue).map(([name, value]) => ({ name, value })).slice(-7);
 
+      // Top Customers Logic
+      const customerTotals: Record<string, {name: string, total: number}> = {};
+      invoices.forEach(inv => {
+        const contactName = inv.contacts?.name || 'Unknown';
+        if (!customerTotals[contactName]) {
+          customerTotals[contactName] = { name: contactName, total: 0 };
+        }
+        customerTotals[contactName].total += Number(inv.total_amount);
+      });
+      const topCustomers = Object.values(customerTotals)
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 5)
+        .map(c => ({ contacts: { name: c.name }, total_amount: c.total }));
+
+      // AR Aging Logic
+      const arAging = { current: 0, late: 0, veryLate: 0, critical: 0 };
+      const nowTime = now.getTime();
+      invoices.filter(inv => inv.status !== 'paid' && Number(inv.amount_remaining) > 0).forEach(inv => {
+        const invoiceTime = new Date(inv.created_at).getTime();
+        const daysOld = Math.floor((nowTime - invoiceTime) / (1000 * 3600 * 24));
+        const rem = Number(inv.amount_remaining);
+        if (daysOld <= 30) arAging.current += rem;
+        else if (daysOld <= 60) arAging.late += rem;
+        else if (daysOld <= 90) arAging.veryLate += rem;
+        else arAging.critical += rem;
+      });
+
       setStats({
         totalInvoiced,
         totalCollected,
@@ -69,7 +96,8 @@ export default function InvoiceAnalytics() {
         overdue,
         pieData,
         lineData,
-        topCustomers: invoices.slice(0, 5) // Mock for now
+        topCustomers,
+        arAging
       });
     } catch (err) {
       console.error(err);
@@ -168,10 +196,17 @@ export default function InvoiceAnalytics() {
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all">
           <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">AR Aging Summary</h3>
           <div className="space-y-6">
-            <AgingBar label="Current (0-30)" amount={45000} color="bg-indigo-500" percent={75} />
-            <AgingBar label="Late (31-60)" amount={12000} color="bg-amber-500" percent={20} />
-            <AgingBar label="Very Late (61-90)" amount={5000} color="bg-orange-500" percent={8} />
-            <AgingBar label="Critical (90+)" amount={2000} color="bg-red-500" percent={3} />
+            {stats.arAging && (() => {
+              const total = stats.arAging.current + stats.arAging.late + stats.arAging.veryLate + stats.arAging.critical || 1;
+              return (
+                <>
+                  <AgingBar label="Current (0-30)" amount={stats.arAging.current} color="bg-indigo-500" percent={(stats.arAging.current / total) * 100} />
+                  <AgingBar label="Late (31-60)" amount={stats.arAging.late} color="bg-amber-500" percent={(stats.arAging.late / total) * 100} />
+                  <AgingBar label="Very Late (61-90)" amount={stats.arAging.veryLate} color="bg-orange-500" percent={(stats.arAging.veryLate / total) * 100} />
+                  <AgingBar label="Critical (90+)" amount={stats.arAging.critical} color="bg-red-500" percent={(stats.arAging.critical / total) * 100} />
+                </>
+              );
+            })()}
           </div>
         </div>
 

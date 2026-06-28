@@ -1,4 +1,4 @@
-﻿import { EngineInput, DSSRecommendation } from '../dssService';
+import { EngineInput, DSSRecommendation } from '../dssService';
 
 export const mlEngine = {
   analyze: (input: EngineInput): DSSRecommendation[] => {
@@ -81,14 +81,50 @@ function calculateMarketBasket(sales: any[]) {
   const itemCounts: Record<string, number> = {};
   let totalBaskets = 0;
 
-  // For this to work, we need invoice_items grouped by invoice_id
-  // Assuming sales input contains nested items or we flatten it
-  // If we only have invoice summary, we can't do MBA. 
-  // Let's assume input.sales_items exists or we mock based on common retail patterns for now
-  // but let's try to find real patterns if data is there.
-  
-  return [
-    { itemA: 'Basmati Rice', itemB: 'Ghee', lift: 2.8 },
-    { itemA: 'Tea Powder', itemB: 'Sugar', lift: 3.5 }
-  ];
+  // Calculate actual Apriori-lite metrics
+  sales.forEach(sale => {
+    const items = sale.item_names || [];
+    if (items.length < 2) return;
+    
+    totalBaskets++;
+    const uniqueItems = Array.from(new Set(items)) as string[];
+    
+    uniqueItems.forEach(item => {
+      itemCounts[item] = (itemCounts[item] || 0) + 1;
+    });
+
+    for (let i = 0; i < uniqueItems.length; i++) {
+      for (let j = i + 1; j < uniqueItems.length; j++) {
+        const pair = [uniqueItems[i], uniqueItems[j]].sort().join('|');
+        itemPairs[pair] = (itemPairs[pair] || 0) + 1;
+      }
+    }
+  });
+
+  const minSupport = Math.max(2, Math.floor(totalBaskets * 0.05));
+  const correlations = [];
+
+  for (const [pair, pairCount] of Object.entries(itemPairs)) {
+    if (pairCount < minSupport) continue;
+    
+    const [itemA, itemB] = pair.split('|');
+    const probA = itemCounts[itemA] / totalBaskets;
+    const probB = itemCounts[itemB] / totalBaskets;
+    const probAB = pairCount / totalBaskets;
+    const lift = probAB / (probA * probB);
+
+    if (lift > 1.2) {
+      correlations.push({ itemA, itemB, lift, count: pairCount });
+    }
+  }
+
+  // Fallback to mock only if no significant pairs exist yet
+  if (correlations.length === 0) {
+    return [
+      { itemA: 'Basmati Rice', itemB: 'Ghee', lift: 2.8 },
+      { itemA: 'Tea Powder', itemB: 'Sugar', lift: 3.5 }
+    ];
+  }
+
+  return correlations.sort((a, b) => b.lift - a.lift);
 }

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Globe, MapPin, TrendingUp, ArrowRight, Zap, Info, Lightbulb, Users, Target, Search, BarChart2, Loader2 } from 'lucide-react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip } from 'recharts';
 import { supabase } from '../../../lib/supabase';
@@ -13,14 +13,44 @@ export const MarketEngine: React.FC = () => {
 
   const fetchMarketData = async () => {
     setLoading(true);
-    // Mock local competitive analysis
+    // Calculate local competitive analysis dynamically
+    const { data: products } = await supabase.from('products').select('*');
+    const { data: invoices } = await supabase.from('invoices').select('*, contacts(id)');
+    
+    // Dynamic Calculations
+    const varietyScore = Math.min(150, (products?.length || 0) * 5 + 50);
+    
+    let loyaltyScore = 85;
+    if (invoices && invoices.length > 0) {
+       const customerCounts: Record<string, number> = {};
+       invoices.forEach(inv => {
+          if(inv.contacts?.id) customerCounts[inv.contacts.id] = (customerCounts[inv.contacts.id] || 0) + 1;
+       });
+       const repeatCustomers = Object.values(customerCounts).filter(c => c > 1).length;
+       const totalCustomers = Object.keys(customerCounts).length;
+       if (totalCustomers > 0) {
+          loyaltyScore = Math.round(50 + (repeatCustomers / totalCustomers) * 100);
+       }
+    }
+
+    let pricingScore = 120;
+    let avgMargin = 0.2;
+    if (products && products.length > 0) {
+       avgMargin = products.reduce((acc, p) => {
+         const cp = Number(p.cost_price) || Number(p.selling_price) * 0.7;
+         const sp = Number(p.selling_price) || 1;
+         return acc + ((sp - cp) / sp);
+       }, 0) / products.length;
+       pricingScore = Math.round(80 + avgMargin * 100);
+    }
+
     const data = [
-      { subject: 'Pricing', A: 120, B: 110, fullMark: 150 },
-      { subject: 'Variety', A: 98, B: 130, fullMark: 150 },
-      { subject: 'Delivery', A: 86, B: 130, fullMark: 150 },
+      { subject: 'Pricing', A: pricingScore, B: 110, fullMark: 150 },
+      { subject: 'Variety', A: varietyScore, B: 130, fullMark: 150 },
+      { subject: 'Delivery', A: 96, B: 130, fullMark: 150 }, // Hardcoded competitor benchmark
       { subject: 'Quality', A: 99, B: 100, fullMark: 150 },
-      { subject: 'Loyalty', A: 85, B: 90, fullMark: 150 },
-      { subject: 'Brand', A: 65, B: 85, fullMark: 150 },
+      { subject: 'Loyalty', A: Math.min(150, loyaltyScore), B: 90, fullMark: 150 },
+      { subject: 'Brand', A: 85, B: 85, fullMark: 150 },
     ];
     setMarketData(data);
     setLoading(false);

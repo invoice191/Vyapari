@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Package, Trash2, ArrowRight, Zap, Info, Lightbulb, ShoppingCart, RefreshCw, AlertTriangle, TrendingDown, Target, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { supabase } from '../../../lib/supabase';
@@ -13,19 +13,41 @@ export const DeadStockEngine: React.FC = () => {
 
   const fetchDeadStock = async () => {
     setLoading(true);
+    // Fetch products
     const { data: products } = await supabase
       .from('products')
       .select('*')
       .gt('quantity', 0)
-      .limit(20);
+      .limit(50);
+      
+    // Fetch invoice items to find the last sold date for each product
+    const { data: invoiceItems } = await supabase
+      .from('invoice_items')
+      .select('product_id, created_at, quantity')
+      .order('created_at', { ascending: false });
 
-    const processed = (products || []).map(p => ({
-       name: p.name,
-       qty: p.quantity,
-       value: p.quantity * p.cost_price,
-       days: Math.floor(Math.random() * 90) + 30, // Mock days sitting
-       status: p.quantity > 50 ? 'High Risk' : 'Slow'
-    })).sort((a, b) => b.value - a.value);
+    const lastSoldMap: Record<string, Date> = {};
+    if (invoiceItems) {
+      invoiceItems.forEach(item => {
+        if (!lastSoldMap[item.product_id]) {
+          lastSoldMap[item.product_id] = new Date(item.created_at);
+        }
+      });
+    }
+
+    const now = new Date();
+    const processed = (products || []).map(p => {
+       const lastActiveDate = lastSoldMap[p.id] || new Date(p.created_at || now);
+       const daysIdle = Math.max(0, Math.floor((now.getTime() - lastActiveDate.getTime()) / (1000 * 3600 * 24)));
+       
+       return {
+         name: p.name,
+         qty: p.quantity,
+         value: (Number(p.quantity) || 0) * (Number(p.cost_price) || Number(p.selling_price) || 0),
+         days: daysIdle,
+         status: daysIdle > 60 ? 'High Risk' : 'Slow'
+       };
+    }).sort((a, b) => b.value - a.value).filter(p => p.days > 15).slice(0, 20);
 
     setData(processed);
     setLoading(false);

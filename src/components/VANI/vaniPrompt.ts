@@ -1,12 +1,4 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { GoogleGenerativeAI } from "npm:@google/generative-ai@0.21.0";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-const SYSTEM_PROMPT = `
+export const SYSTEM_PROMPT = `
 ════════════════════════════════════════════════════════════════
 VANI 3.0 — VYAPARI INTELLIGENCE CORE
 Tesla-Grade · Ground Zero Build · Production Ready
@@ -549,67 +541,3 @@ Transcript: "woh wala karo na"
   "session_update": { "last_intent": "CLARIFY", "active_entities": [], "follow_up_suggested": null }
 }
 `;
-
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
-  try {
-    const { transcript, context } = await req.json();
-    if (!transcript?.trim()) throw new Error("Empty transcript");
-
-    // Initialize Gemini AI
-    const genAI = new GoogleGenerativeAI(Deno.env.get("GEMINI_API_KEY")!);
-
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      systemInstruction: SYSTEM_PROMPT,
-      generationConfig: {
-        temperature: 0.35,
-        responseMimeType: "application/json",
-        maxOutputTokens: 2048,
-      },
-    });
-
-    // Build chat with full conversation history
-    const history = (context.conversation_history ?? []).map(
-      (m: { role: string; content: string }) => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
-      })
-    );
-
-    const chat = model.startChat({ history });
-
-    const userMsg = \`<transcript>\${transcript}</transcript><context>\${JSON.stringify({
-      ...context,
-      conversation_history: undefined,
-    })}</context>\`;
-
-    const result = await chat.sendMessage(userMsg);
-    const text = result.response.text();
-
-    let parsed;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      parsed = JSON.parse(text.replace(/\`\`\`json|\`\`\`/g, "").trim());
-    }
-
-    return new Response(JSON.stringify(parsed), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-
-  } catch (err: any) {
-    console.error("[vani-brain]", err);
-    return new Response(JSON.stringify({
-      reply: "System momentarily unavailable. Please try in a moment.",
-      action: null,
-      spoken_response: "System error. Please try again.",
-      data_sourced_from: [],
-      entities_resolved: { contact: null, product: null, invoice: null },
-      session_update: { last_intent: null, active_entities: [], follow_up_suggested: null },
-    }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 });
-  }
-});

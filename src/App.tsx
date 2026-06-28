@@ -28,8 +28,9 @@ import PaymentPortal from "./pages/PaymentPortal";
 import AuthCallback from "./pages/AuthCallback";
 import Onboarding from "./components/onboarding/Onboarding";
 import InvoiceAIConsole from "./components/invoices/InvoiceAIConsole";
+import { SmartRetailAnalytics } from "./components/analytics/SmartRetailAnalytics";
 
-import VANI from "./components/VANI/VANI";
+import { VANIPanel } from "./components/VANI";
 import { Routes, Route, Navigate } from "react-router-dom";
 import CommandPalette from "./components/common/CommandPalette";
 import { motion, AnimatePresence } from "motion/react";
@@ -168,6 +169,7 @@ function App() {
       case "settings":  return <ModuleErrorBoundary moduleName="Settings"><Settings /></ModuleErrorBoundary>;
       case "users":     return <ModuleErrorBoundary moduleName="My Team"><RoleGuard module="Settings"><TeamHub /></RoleGuard></ModuleErrorBoundary>;
       case "audit":     return <ModuleErrorBoundary moduleName="Activity History"><RoleGuard module="Settings"><AuditLogs /></RoleGuard></ModuleErrorBoundary>;
+      case "smart_analytics": return <ModuleErrorBoundary moduleName="Smart Retail Analytics"><SmartRetailAnalytics /></ModuleErrorBoundary>;
       default:          return <ModuleErrorBoundary moduleName="Home"><Dashboard /></ModuleErrorBoundary>;
     }
   };
@@ -179,6 +181,7 @@ function App() {
     inventory: "My Stock", contacts: "Customers & Suppliers", ledger: "Money History", banker: "Loan Ready Check",
     invoice_ai: "Smart Billing Assistant",
     settings: "Settings", users: "My Team", audit: "Activity Log",
+    smart_analytics: "Smart Retail Analytics",
   };
 
 
@@ -375,10 +378,7 @@ function App() {
       )}
 
       {/* VANI Assistant Overlay */}
-      <VANI 
-        activeModule={active} 
-        onCommand={setActive} 
-      />
+      <VANIPanel />
 
       {/* Global Command Palette (-K) */}
       <CommandPalette 

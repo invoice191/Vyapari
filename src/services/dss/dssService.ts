@@ -48,10 +48,14 @@ export const dssService = {
         id: item.invoice_id,
         timestamp: item.created_at || new Date().toISOString(),
         amount: 0,
-        item_ids: []
+        item_ids: [],
+        item_names: []
       };
       current.amount += (Number(item.total_price) || Number(item.line_total) || 0);
       current.item_ids.push(item.product_id);
+      if (item.product?.name) {
+        current.item_names.push(item.product.name);
+      }
       saleMap.set(item.invoice_id, current);
     }
     const realSales = Array.from(saleMap.values());

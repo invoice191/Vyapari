@@ -72,22 +72,45 @@ export const ChurnEngine: React.FC = () => {
           const { data: contacts, error } = await supabase
             .from('contacts')
             .select('*, invoices(total_amount, created_at)')
-            .eq('business_id', profile.business_id)
-            .limit(10);
+            .eq('business_id', profile.business_id);
 
           if (!error && contacts) {
-            processed = contacts.map(c => {
+            const now = new Date();
+            const calculated = contacts.map(c => {
                const invoices = (c.invoices as any[]) || [];
                const total = invoices.reduce((acc, inv) => acc + (inv.total_amount || 0), 0);
+               
+               let maxDate = new Date(0);
+               invoices.forEach(inv => {
+                 const d = new Date(inv.created_at);
+                 if (d > maxDate) maxDate = d;
+               });
+               
+               const daysSince = invoices.length > 0 ? Math.floor((now.getTime() - maxDate.getTime()) / (1000 * 3600 * 24)) : 999;
+               
+               // Risk score algorithm
+               let riskScore = 0;
+               if (daysSince > 60) riskScore = 95;
+               else if (daysSince > 30) riskScore = 80 + Math.min(15, (daysSince - 30) / 2);
+               else if (daysSince > 14) riskScore = 60 + Math.min(20, (daysSince - 14));
+               else riskScore = Math.max(10, 50 - daysSince);
+
                return {
                   id: c.id,
                   name: c.name,
                   phone: c.phone,
-                  riskScore: Math.floor(Math.random() * 30) + 65, // 65% - 95% risk
-                  value: total || 1500,
-                  lastVisit: '24 Days Ago'
+                  riskScore: Math.round(riskScore),
+                  value: total,
+                  lastVisit: invoices.length > 0 ? `${daysSince} Days Ago` : 'Never',
+                  daysSince
                };
             });
+            
+            // Filter to customers with actual history who are showing churn risk signs
+            processed = calculated
+              .filter(c => c.value > 0 && c.daysSince > 10)
+              .sort((a, b) => b.riskScore - a.riskScore)
+              .slice(0, 10);
           }
         } catch (dbErr) {
           console.warn("Supabase fetch failed inside ChurnEngine, falling back to mock:", dbErr);

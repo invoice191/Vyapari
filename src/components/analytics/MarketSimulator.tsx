@@ -12,6 +12,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { supabase } from '../../lib/supabase';
 
 export default function MarketSimulator() {
   const [scenario, setScenario] = useState({
@@ -24,23 +25,33 @@ export default function MarketSimulator() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [results, setResults] = useState<any>(null);
 
-  const runSimulation = () => {
+  const runSimulation = async () => {
     setIsSimulating(true);
+    
+    // Fetch actual profit baseline from ledger
+    const { data: ledger } = await supabase.from('ledger_entries').select('amount, type');
+    let realBaseProfit = 150000; // Fallback
+    if (ledger && ledger.length > 0) {
+       const credits = ledger.filter(l => l.type === 'credit').reduce((s, l) => s + (Number(l.amount) || 0), 0);
+       const debits = ledger.filter(l => l.type === 'debit').reduce((s, l) => s + (Number(l.amount) || 0), 0);
+       realBaseProfit = Math.max(10000, credits - debits); // Ensure it's not negative for % calculation
+    }
+
     setTimeout(() => {
-      // Mock Simulation Logic
-      const baseProfit = 150000;
+      // Dynamic Simulation Logic
+      const baseProfit = realBaseProfit;
       const profitDelta = (scenario.priceChange * 1000) - (scenario.costChange * 800) + (scenario.demandShift * 500);
       const newProfit = baseProfit + profitDelta;
       
       setResults({
         projectedProfit: newProfit,
         profitChange: ((newProfit - baseProfit) / baseProfit) * 100,
-        riskScore: scenario.competitionLevel === 'high' ? 85 : 45,
+        riskScore: scenario.competitionLevel === 'high' ? 85 : scenario.competitionLevel === 'medium' ? 65 : 45,
         confidence: 92
       });
       setIsSimulating(false);
       toast.success("Market Simulation Complete");
-    }, 2000);
+    }, 1500);
   };
 
   return (

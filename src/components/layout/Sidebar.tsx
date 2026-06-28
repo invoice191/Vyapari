@@ -21,6 +21,7 @@ import {
   Lock,
   Bot,
   Sparkles,
+  TrendingUp,
 } from "lucide-react";
 import { useRBAC } from "../../hooks/useRBAC";
 
@@ -66,6 +67,7 @@ const MODULE_GROUPS = [
     items: [
       { key: "contacts", label: "Customers & Suppliers", icon: Users },
       { key: "dss", label: "Business Tips", icon: Brain },
+      { key: "smart_analytics", label: "Retail Analytics", icon: TrendingUp },
       { key: "reports", label: "Reports", icon: BarChart3 },
       { key: "users", label: "My Team", icon: Users },
     ]
